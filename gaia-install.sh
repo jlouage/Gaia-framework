@@ -6,7 +6,7 @@ set -euo pipefail
 # Installs, updates, validates, and reports on GAIA installations.
 # ─────────────────────────────────────────────────────────────────────────────
 
-readonly VERSION="1.1.1"
+readonly VERSION="1.1.2"
 readonly GITHUB_REPO="https://github.com/J-louage/Gaia-framework.git"
 readonly MANIFEST_REL="_gaia/_config/manifest.yaml"
 
@@ -414,7 +414,7 @@ cmd_update() {
   )
 
   step "Updating framework files..."
-  local updated=0 skipped=0
+  local updated=0 skipped=0 changed=0
 
   for entry in "${update_targets[@]}"; do
     local src_path="$source/_gaia/$entry"
@@ -424,6 +424,10 @@ cmd_update() {
       [[ "$OPT_VERBOSE" == true ]] && detail "Source missing, skipped: $entry"
       continue
     fi
+
+    # Show progress for each update target
+    local entry_label="${entry}"
+    [[ "$OPT_VERBOSE" != true ]] && detail "Processing: $entry_label"
 
     if [[ -f "$src_path" ]]; then
       # Single file
@@ -438,6 +442,8 @@ cmd_update() {
       done < <(find "$src_path" -type f -print0)
     fi
   done
+
+  detail "Processed $updated file(s) across ${#update_targets[@]} targets"
 
   # Update slash commands (add new ones, update existing with backup)
   step "Updating slash commands..."
