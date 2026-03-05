@@ -11,6 +11,7 @@ used_by: ['create-story']
 > **Date:** {date}
 > **Author:** {agent_name}
 > **Status:** backlog | ready-for-dev | in-progress | review | done
+> **Traces to:** {requirement_id}
 
 ## User Story
 
@@ -44,10 +45,10 @@ As a {role}, I want to {action}, so that {benefit}.
 
 ## Test Scenarios
 
-| Scenario | Input | Expected |
-|----------|-------|----------|
-| {happy path} | {input} | {output} |
-| {edge case} | {input} | {output} |
+| # | Scenario | Input | Expected |
+|---|----------|-------|----------|
+| 1 | {happy path} | {input} | {output} |
+| 2 | {edge case} | {input} | {output} |
 
 ### Project Structure Notes
 
