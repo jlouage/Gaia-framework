@@ -28,4 +28,7 @@
     Generate onboarding document with: existing project summary, gap analysis, architecture (as-is and target), stories for gaps, developer quick-start guide.
   </template-output>
 </step>
+<next-step command="/gaia-readiness-check">
+  Run /gaia-readiness-check in the Claude Code terminal to validate implementation readiness before starting development.
+</next-step>
 </workflow>
