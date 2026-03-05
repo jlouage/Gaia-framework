@@ -19,7 +19,7 @@
 <step n="3" title="Aggregate Status">
   <action>Join scanned story statuses to epic-story mapping from step 1</action>
   <action>Stories in manifest but with no file: mark as backlog</action>
-  <action>Per epic: count done, in-progress, blocked, review, ready-for-dev, backlog</action>
+  <action>Per epic: count done, in-progress, blocked, review, ready-for-dev, validating, backlog</action>
   <action>Per epic: compute completion percentage (done / total * 100)</action>
   <action>Compute overall totals across all epics</action>
   <action>Collect any story files found that are NOT in any epic (untracked)</action>

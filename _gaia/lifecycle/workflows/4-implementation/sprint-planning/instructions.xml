@@ -1,6 +1,6 @@
 <workflow name="sprint-planning">
 <critical>
-  <mandate>Use sprint state machine: backlog, ready-for-dev, in-progress, blocked, review, done</mandate>
+  <mandate>Use sprint state machine: backlog, validating, ready-for-dev, in-progress, blocked, review, done</mandate>
   <mandate>Support multi-sprint via sprint_id tracking</mandate>
 </critical>
 <step n="1" title="Load Epics and Stories">

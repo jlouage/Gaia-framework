@@ -12,3 +12,5 @@ validation-target: 'Story validation'
 - [ ] Dependencies valid
 - [ ] Definition of Done items defined
 - [ ] Validation result appended to story file
+- [ ] Status updated to ready-for-dev (if PASS) or kept as validating (if FAIL)
+- [ ] sprint-status.yaml updated

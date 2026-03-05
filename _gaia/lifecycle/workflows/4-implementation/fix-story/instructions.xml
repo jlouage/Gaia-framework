@@ -34,8 +34,9 @@
   <action>Remove the --- separator and the entire "## Validation Report" section from the end of the story</action>
 </step>
 <step n="6" title="Save Corrected Story">
+  <action>Story status remains 'validating' — user must re-run /gaia-validate-story to promote to ready-for-dev</action>
   <template-output file="{implementation_artifacts}/{story_key}-{story_title_slug}.md">
-    Save the corrected story file with all FAIL issues resolved and the old validation report removed. The story should now pass all validation checks.
+    Save the corrected story file with all FAIL issues resolved and the old validation report removed. The story should now pass all validation checks. Inform the user to run /gaia-validate-story to validate and promote the story to ready-for-dev.
   </template-output>
 </step>
 </workflow>

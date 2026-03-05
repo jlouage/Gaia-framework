@@ -10,7 +10,7 @@ used_by: ['create-story']
 > **Sprint:** {sprint_number}
 > **Date:** {date}
 > **Author:** {agent_name}
-> **Status:** backlog | ready-for-dev | in-progress | review | done
+> **Status:** backlog | validating | ready-for-dev | in-progress | blocked | review | done
 > **Traces to:** {requirement_id}
 
 ## User Story

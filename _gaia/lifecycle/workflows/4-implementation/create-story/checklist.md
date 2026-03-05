@@ -11,9 +11,9 @@ validation-target: 'Story file'
 ## Quality
 - [ ] Each AC is testable
 - [ ] Dependencies correctly declared
-- [ ] Status set to ready-for-dev
+- [ ] Status set to validating
 ## Sprint Status
-- [ ] sprint-status.yaml updated with story status set to ready-for-dev
+- [ ] sprint-status.yaml updated with story status set to validating
 ## Output Verification
 - [ ] Story file exists at {implementation_artifacts}/{story_key}-{story_title_slug}.md
 - [ ] Filename starts with story key (e.g., 1.2-user-login.md)

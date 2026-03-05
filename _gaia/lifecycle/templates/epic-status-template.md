@@ -47,7 +47,8 @@ Stories listed in epics-and-stories.md with no `.md` file found (assumed `backlo
 | Status | Description |
 |--------|-------------|
 | `backlog` | Not yet started, no story file or story file with backlog status |
-| `ready-for-dev` | Story refined and ready for development |
+| `validating` | Story created, awaiting validation before development |
+| `ready-for-dev` | Story validated and ready for development |
 | `in-progress` | Currently being worked on |
 | `blocked` | Work stopped due to dependency or issue |
 | `review` | Implementation complete, awaiting review |

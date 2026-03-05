@@ -30,10 +30,10 @@
 </step>
 <step n="7" title="Update Sprint Status">
   <action>Read {implementation_artifacts}/sprint-status.yaml</action>
-  <action>Find the story entry matching {story_key} and update its status to ready-for-dev</action>
-  <action>If sprint-status.yaml does not exist, create it with the story entry set to ready-for-dev</action>
+  <action>Find the story entry matching {story_key} and update its status to validating</action>
+  <action>If sprint-status.yaml does not exist, create it with the story entry set to validating</action>
   <template-output file="{implementation_artifacts}/sprint-status.yaml">
-    Update the sprint status file with the story status set to ready-for-dev.
+    Update the sprint status file with the story status set to validating.
   </template-output>
 </step>
 </workflow>
