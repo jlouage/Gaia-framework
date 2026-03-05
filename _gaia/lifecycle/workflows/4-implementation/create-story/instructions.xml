@@ -23,8 +23,9 @@
   <action>Append DoD checklist: all AC met, tests pass, code reviewed, docs updated</action>
 </step>
 <step n="6" title="Generate Output">
+  <action>Read the story template from {project-root}/_gaia/lifecycle/templates/story-template.md</action>
   <template-output file="{implementation_artifacts}/{story_key}-{story_title_slug}.md">
-    Generate story file using story-template.md. The filename must use the story key and slugified title (e.g., 1.2-user-login.md). Fill all template sections: User Story, Acceptance Criteria, Tasks/Subtasks (linked to AC numbers), Dev Notes, Technical Notes, Dependencies, Test Scenarios, Project Structure Notes, References, Dev Agent Record, and Estimate.
+    Generate story file following the story-template.md structure. The filename must use the story key and slugified title (e.g., 1.2-user-login.md). Fill all template sections: User Story, Acceptance Criteria, Tasks/Subtasks (linked to AC numbers), Dev Notes, Technical Notes, Dependencies, Test Scenarios, Project Structure Notes, References, Dev Agent Record, and Estimate.
   </template-output>
 </step>
 <step n="7" title="Update Sprint Status">
