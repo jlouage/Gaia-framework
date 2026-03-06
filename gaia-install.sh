@@ -6,7 +6,7 @@ set -euo pipefail
 # Installs, updates, validates, and reports on GAIA installations.
 # ─────────────────────────────────────────────────────────────────────────────
 
-readonly VERSION="1.4.1"
+readonly VERSION="1.4.2"
 readonly GITHUB_REPO="https://github.com/J-louage/Gaia-framework.git"
 readonly MANIFEST_REL="_gaia/_config/manifest.yaml"
 
@@ -457,7 +457,7 @@ cmd_update() {
     done
   fi
 
-  # Update version in global.yaml (only the framework_version field)
+  # Update version in global.yaml and CLAUDE.md
   if [[ -n "$src_version" && "$src_version" != "$cur_version" ]]; then
     step "Updating framework version: $cur_version → $src_version"
     if [[ "$OPT_DRY_RUN" != true ]]; then
@@ -466,6 +466,16 @@ cmd_update() {
         sed -i '' "s/^framework_version:.*/framework_version: \"$src_version\"/" "$global_file"
       else
         sed -i "s/^framework_version:.*/framework_version: \"$src_version\"/" "$global_file"
+      fi
+      # Update version in CLAUDE.md heading
+      local claude_file="$TARGET/CLAUDE.md"
+      if [[ -f "$claude_file" ]]; then
+        if [[ "$(uname)" == "Darwin" ]]; then
+          sed -i '' "s/^# GAIA Framework v.*/# GAIA Framework v$src_version/" "$claude_file"
+        else
+          sed -i "s/^# GAIA Framework v.*/# GAIA Framework v$src_version/" "$claude_file"
+        fi
+        [[ "$OPT_VERBOSE" == true ]] && detail "Updated CLAUDE.md version heading" || true
       fi
     fi
   fi
