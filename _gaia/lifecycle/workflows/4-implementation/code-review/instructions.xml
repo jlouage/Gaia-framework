@@ -31,9 +31,19 @@
   <action>If Review Gate table is missing: initialize it with EXACTLY 3 rows — Code Review (PENDING), QA Tests (PENDING), Security Review (PENDING). Do NOT add any other rows.</action>
   <action>If APPROVE: update Code Review row status to PASSED, link report file</action>
   <action>If REQUEST_CHANGES: update Code Review row status to FAILED, link report file, set story status to 'in-progress' in story file and sprint-status.yaml</action>
-  <invoke-protocol name="review-gate-check" />
   <template-output file="{implementation_artifacts}/{story_key}.md">
     Update story file Review Gate table with code review result and report link. If REQUEST_CHANGES, also update story status to in-progress.
+  </template-output>
+</step>
+<step n="8" title="Review Gate Check">
+  <action>MANDATORY: Read the Review Gate table you just updated in the story file</action>
+  <action>The table must have EXACTLY 3 rows: Code Review, QA Tests, Security Review. Remove any other rows.</action>
+  <action>Count how many rows show PASSED vs PENDING vs FAILED</action>
+  <action>If ALL 3 rows are PASSED: set story status to 'done' in story file AND in sprint-status.yaml. Log "Review gate PASSED — all reviews complete. Story is done."</action>
+  <action>If any row is FAILED: log which reviews failed. Story stays in current status.</action>
+  <action>If any row is PENDING: log which reviews are still pending. Story stays in current status.</action>
+  <template-output file="{implementation_artifacts}/sprint-status.yaml">
+    If all 3 reviews PASSED: update sprint-status.yaml with story status set to done.
   </template-output>
 </step>
 </workflow>

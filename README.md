@@ -1,5 +1,7 @@
 # GAIA — Generative Agile Intelligence Architecture
 
+> **WARNING: This framework is currently in BETA. Workflows, commands, and APIs may change without notice. Use in production at your own risk.**
+
 AI agent framework for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) that orchestrates software product development through 25 specialized agents, 59 workflows, and 8 shared skills — from initial research all the way to deployment.
 
 GAIA gives you a team of AI agents with distinct personas, structured workflows that follow a proven product lifecycle, built-in quality gates, checkpoint/resume for long-running sessions, and persistent agent memory across conversations.
@@ -557,7 +559,7 @@ The single source of truth for project settings at `_gaia/_config/global.yaml`:
 
 ```yaml
 framework_name: "GAIA"
-framework_version: "1.1.20"
+framework_version: "1.1.21"
 
 user_name: "your-name"
 project_name: "your-project"
