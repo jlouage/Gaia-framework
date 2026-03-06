@@ -39,4 +39,11 @@
     Save the corrected story file with all FAIL issues resolved and the old validation report removed. The story should now pass all validation checks. Inform the user to run /gaia-validate-story to validate and promote the story to ready-for-dev.
   </template-output>
 </step>
+<step n="7" title="Update Sprint Status">
+  <action>Read {implementation_artifacts}/sprint-status.yaml</action>
+  <action>Ensure the story entry status is set to 'validating'</action>
+  <template-output file="{implementation_artifacts}/sprint-status.yaml">
+    Update sprint-status.yaml to confirm the story status is validating. User must run /gaia-validate-story to promote to ready-for-dev.
+  </template-output>
+</step>
 </workflow>

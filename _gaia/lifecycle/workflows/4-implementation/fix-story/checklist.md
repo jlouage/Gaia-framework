@@ -9,3 +9,4 @@ validation-target: 'Story fix after validation'
 - [ ] Old validation report removed from end of file
 - [ ] No new issues introduced
 - [ ] Corrected story file saved
+- [ ] sprint-status.yaml updated with story status as validating
