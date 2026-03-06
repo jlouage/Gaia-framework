@@ -1,0 +1,42 @@
+<workflow name="triage-findings">
+<critical>
+  <mandate>Every finding must be triaged — none may be left unprocessed</mandate>
+  <mandate>New stories created from findings must have status 'backlog'</mandate>
+  <mandate>Source story findings must be marked as triaged with the target story key or dismissed</mandate>
+</critical>
+<step n="1" title="Scan for Findings">
+  <action>Scan story files in {implementation_artifacts}/ for non-empty Findings tables</action>
+  <action>Collect all findings from stories in review or done status</action>
+  <action>Skip findings already marked as [TRIAGED] or [DISMISSED]</action>
+  <action>If no untriaged findings found: inform user "No findings to triage" and stop</action>
+</step>
+<step n="2" title="Present Findings">
+  <action>Group findings by severity (critical first, then high, medium, low)</action>
+  <action>For each finding, show: source story key, type, severity, description, suggested action</action>
+  <action>Present to user for triage decisions</action>
+</step>
+<step n="3" title="Triage Each Finding">
+  <action>For each finding, user decides one of:</action>
+  <action>  a. CREATE STORY — generate a new story file with status 'backlog', referencing the source story and finding</action>
+  <action>  b. ADD TO EXISTING — append finding to an existing backlog story's tasks</action>
+  <action>  c. DISMISS — finding is not actionable or already resolved</action>
+</step>
+<step n="4" title="Create Backlog Stories">
+  <action>For each CREATE STORY decision: generate a new story file using the story template</action>
+  <action>Set status to 'backlog', link back to source story in Dependencies section</action>
+  <action>Use the finding's suggested action as the basis for the story's user story and acceptance criteria</action>
+  <action>Add to sprint-status.yaml as a backlog item</action>
+</step>
+<step n="5" title="Mark Findings as Triaged">
+  <action>In each source story's Findings table, update the processed findings:</action>
+  <action>  - CREATE STORY: append "[TRIAGED → {new_story_key}]" to the Finding column</action>
+  <action>  - ADD TO EXISTING: append "[TRIAGED → {existing_story_key}]" to the Finding column</action>
+  <action>  - DISMISS: append "[DISMISSED]" to the Finding column</action>
+  <template-output file="{implementation_artifacts}/sprint-status.yaml">
+    Update sprint-status.yaml with any new backlog stories created from findings.
+  </template-output>
+</step>
+<step n="6" title="Summary">
+  <action>Present triage summary: total findings processed, stories created, items added to existing stories, dismissed</action>
+</step>
+</workflow>

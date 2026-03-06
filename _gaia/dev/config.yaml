@@ -2,7 +2,7 @@
 inherits: "{project-root}/_gaia/_config/global.yaml"
 
 module_name: "dev"
-module_version: "1.0.1"
+module_version: "1.0.2"
 
 agents_path: "{project-root}/_gaia/dev/agents"
 skills_path: "{project-root}/_gaia/dev/skills"

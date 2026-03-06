@@ -1,6 +1,6 @@
 # GAIA — Generative Agile Intelligence Architecture
 
-AI agent framework for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) that orchestrates software product development through 25 specialized agents, 58 workflows, and 8 shared skills — from initial research all the way to deployment.
+AI agent framework for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) that orchestrates software product development through 25 specialized agents, 59 workflows, and 8 shared skills — from initial research all the way to deployment.
 
 GAIA gives you a team of AI agents with distinct personas, structured workflows that follow a proven product lifecycle, built-in quality gates, checkpoint/resume for long-running sessions, and persistent agent memory across conversations.
 
@@ -163,7 +163,7 @@ _gaia/
 |-----------|-------|
 | Modules | 5 (core, lifecycle, dev, creative, testing) |
 | Agents | 25 with distinct personas |
-| Workflows | 57 covering the full product lifecycle |
+| Workflows | 59 covering the full product lifecycle |
 | Standalone tasks | 16 (reviews, audits, utilities) |
 | Shared skills | 8 with 47 loadable sections |
 | Slash commands | 100 |
@@ -278,6 +278,7 @@ Workflows are structured multi-step processes. Each has a `workflow.yaml` config
 | `/gaia-code-review` | Code Review | Stack dev | `docs/implementation-artifacts/` |
 | `/gaia-qa-tests` | QA Generate Tests | Vera | `docs/implementation-artifacts/` |
 | `/gaia-security-review` | Security Review | Zara | `docs/implementation-artifacts/` |
+| `/gaia-triage-findings` | Triage Findings | Nate | `docs/implementation-artifacts/` |
 | `/gaia-correct-course` | Correct Course | Nate | `docs/implementation-artifacts/` |
 | `/gaia-retro` | Retrospective | Nate | `docs/implementation-artifacts/` |
 
@@ -556,7 +557,7 @@ The single source of truth for project settings at `_gaia/_config/global.yaml`:
 
 ```yaml
 framework_name: "GAIA"
-framework_version: "1.1.18"
+framework_version: "1.1.19"
 
 user_name: "your-name"
 project_name: "your-project"
@@ -614,6 +615,7 @@ A full product lifecycle from idea to deployment:
 /gaia-code-review          → review the code
 /gaia-qa-tests             → generate tests
 /gaia-security-review      → security audit
+/gaia-triage-findings      → triage dev findings into backlog
 /gaia-release-plan         → plan the release
 /gaia-deploy-checklist     → pre-deploy verification
 /gaia-post-deploy          → post-deploy health check

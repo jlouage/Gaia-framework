@@ -71,6 +71,17 @@ As a {role}, I want to {action}, so that {benefit}.
 
 ### File List
 
+## Findings
+
+> Out-of-scope issues discovered during implementation. Each finding becomes a candidate for a backlog story.
+
+| # | Type | Severity | Finding | Suggested Action |
+|---|------|----------|---------|-----------------|
+| — | — | — | — | — |
+
+> **Types:** bug, tech-debt, enhancement, missing-setup, documentation
+> **Severity:** critical, high, medium, low
+
 ## Review Gate
 
 | Review | Status | Report |

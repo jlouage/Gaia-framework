@@ -34,21 +34,26 @@
   <action>  d. Mark subtask complete in story file</action>
   <action>  e. Write checkpoint</action>
 </step>
-<step n="7" title="Load Skills JIT">
+<step n="7" title="Capture Findings">
+  <action>Review any out-of-scope issues discovered during implementation (e.g., missing setup scripts, environment gaps, tech debt, broken tooling)</action>
+  <action>For each finding: add a row to the Findings table in the story file with type, severity, finding description, and suggested action</action>
+  <action>If no findings were discovered, leave the Findings table empty</action>
+</step>
+<step n="8" title="Load Skills JIT">
   <action>Load git-workflow:commits section for commit conventions</action>
   <action>Apply conventional commit format to all commits</action>
 </step>
-<step n="8" title="Commit Changes">
+<step n="9" title="Commit Changes">
   <action>Stage all changes</action>
   <action>Commit with conventional commit format: type(scope): description</action>
 </step>
-<step n="9" title="Post-Complete Gate">
+<step n="10" title="Post-Complete Gate">
   <action>Verify all tests pass</action>
   <action>Verify all acceptance criteria met</action>
   <action>Verify all subtasks marked complete</action>
   <check if="any_test_fails">HALT: All tests must pass before marking complete</check>
 </step>
-<step n="10" title="Update Status">
+<step n="11" title="Update Status">
   <action>Set story status to 'review' in story file</action>
   <action>Update sprint-status.yaml: set story to 'review'</action>
   <action>Append files changed list to story file</action>

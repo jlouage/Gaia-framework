@@ -77,6 +77,12 @@ abstract: true
 - If tests fail after 3 attempts: escalate, set status to `blocked`
 - If story has unresolved `depends_on`: HALT, notify user
 
+## Findings Protocol
+- When you discover an issue outside the story's scope (e.g., missing setup scripts, environment gaps, tech debt), do NOT fix it inline
+- Log it in the story file's Findings table: type, severity, description, suggested action
+- Continue with the story — findings are triaged by the SM after story completion
+- Only fix out-of-scope issues inline if they are blocking the current story (then also log them as findings)
+
 </shared-behavior>
 
 <rules>
@@ -92,6 +98,7 @@ abstract: true
   <r>ALWAYS use conventional commit format</r>
   <r>ALWAYS address QA test failures before re-submitting for review</r>
   <r>ALWAYS address security findings (critical/high) before re-submitting for review</r>
+  <r>ALWAYS log out-of-scope discoveries in the Findings table, never fix silently</r>
 </rules>
 
 <quality-gates>
