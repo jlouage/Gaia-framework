@@ -321,6 +321,7 @@ Testing workflows are **integrated into the main lifecycle** — they are not op
 | Lifecycle Point | Required Testing Workflow | Gate Type |
 |---|---|---|
 | After `/gaia-create-arch` | `/gaia-test-design` | HALT at `/gaia-create-epics` |
+| After `/gaia-test-design` | `/gaia-test-framework` (optional) | Prompted if no framework detected |
 | Before `/gaia-dev-story` (high-risk) | `/gaia-atdd` | HALT (conditional on risk_level) |
 | Before `/gaia-readiness-check` | `/gaia-trace` + `/gaia-ci-setup` | HALT |
 | During `/gaia-brownfield` | `/gaia-nfr` + `/gaia-perf-testing` | REQUIRED steps |
@@ -601,7 +602,7 @@ The single source of truth for project settings at `_gaia/_config/global.yaml`:
 
 ```yaml
 framework_name: "GAIA"
-framework_version: "1.3.0"
+framework_version: "1.4.0"
 
 user_name: "your-name"
 project_name: "your-project"
@@ -638,39 +639,77 @@ Pre-built team compositions for different project types:
 
 ---
 
-## Typical Workflow
+## Typical Workflows
 
-A full product lifecycle from idea to deployment:
+### Greenfield — New project from idea to deployment
 
 ```
+# Phase 1: Analysis
 /gaia-brainstorm           → brainstorm the idea
 /gaia-product-brief        → create a product brief
 /gaia-market-research      → validate market fit
+
+# Phase 2: Planning
 /gaia-create-prd           → write the PRD (optional: adversarial review)
 /gaia-create-ux            → design the UX
+
+# Phase 3: Solutioning
 /gaia-create-arch          → design the architecture (optional: adversarial review)
-/gaia-test-design          → create test plan (REQUIRED before epics)
+/gaia-test-design          → create test plan (optional: scaffold test framework)
 /gaia-create-epics         → break into epics and stories (optional: adversarial review)
-/gaia-trace                → generate traceability matrix (REQUIRED before readiness)
-/gaia-ci-setup             → scaffold CI pipeline (REQUIRED before readiness)
+/gaia-trace                → generate traceability matrix
+/gaia-ci-setup             → scaffold CI pipeline
 /gaia-readiness-check      → verify everything is ready (optional: adversarial review)
-/gaia-sprint-plan          → plan the first sprint (risk-aware)
+
+# Phase 4: Implementation (repeat per sprint)
+/gaia-sprint-plan          → plan the sprint
 /gaia-create-story         → create detailed stories
 /gaia-validate-story       → validate story completeness
 /gaia-fix-story            → fix issues from validation
 /gaia-atdd                 → write acceptance tests (REQUIRED for high-risk stories)
-/gaia-dev-story            → implement stories (gates on ATDD for high-risk)
+/gaia-dev-story            → implement stories
 /gaia-code-review          → review the code
 /gaia-qa-tests             → generate tests
 /gaia-security-review      → security audit
 /gaia-triage-findings      → triage dev findings into backlog
+/gaia-retro                → sprint retrospective
+
+# Phase 5: Deployment
 /gaia-release-plan         → plan the release
 /gaia-deploy-checklist     → pre-deploy verification (enforced gates)
 /gaia-post-deploy          → post-deploy health check
-/gaia-retro                → sprint retrospective
 ```
 
-For small changes, skip the ceremony:
+### Brownfield — Onboard an existing project
+
+```
+# Onboarding (scans codebase, generates knowledge base)
+/gaia-brownfield           → deep project discovery (10 steps)
+                              1. Scan codebase → project-documentation.md
+                              2. API documentation (if APIs detected)
+                              3. UX assessment (if frontend detected)
+                              4. Event catalog (if messaging detected)
+                              5. Dependency map
+                              6. NFR assessment & baselines
+                              7. Performance test plan
+                              8. Gap-focused PRD (gaps only, not existing features)
+                              9. Architecture with as-is/target diagrams
+                             10. Epics/stories for gaps + developer knowledge base
+
+# Readiness & Implementation (same as greenfield from here)
+/gaia-trace                → generate traceability matrix
+/gaia-ci-setup             → scaffold CI pipeline
+/gaia-readiness-check      → verify everything is ready (optional: adversarial review)
+/gaia-sprint-plan          → plan the first sprint
+/gaia-dev-story            → implement gap stories
+/gaia-code-review          → review the code
+/gaia-qa-tests             → generate tests
+/gaia-security-review      → security audit
+/gaia-deploy-checklist     → pre-deploy verification
+/gaia-post-deploy          → post-deploy health check
+```
+
+### Quick Flow — Small changes, minimal ceremony
 
 ```
 /gaia-quick-spec           → rapid tech spec

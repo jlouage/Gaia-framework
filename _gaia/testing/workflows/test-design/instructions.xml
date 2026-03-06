@@ -26,4 +26,10 @@
   <action>Compile test plan with risk assessment, strategy, and quality gates</action>
   <template-output file="{test_artifacts}/test-plan.md" />
 </step>
+<step n="7" title="Optional: Scaffold Test Framework">
+  <action>Check if the project already has a test framework configured (look for jest.config, vitest.config, playwright.config, pytest.ini, build.gradle test blocks, etc.)</action>
+  <ask>Would you like to scaffold the test framework now? /gaia-test-framework will detect your stack, generate config files, folder structure, fixture patterns, and a sample test. Recommended if no test framework is installed yet. (yes/no)</ask>
+  <action>If yes: run /gaia-test-framework</action>
+  <action>If no: skip — you can run /gaia-test-framework anytime later</action>
+</step>
 </workflow>
