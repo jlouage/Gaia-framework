@@ -19,6 +19,8 @@
 <step n="3" title="Consistency Check">
   <action>Verify stories trace to PRD requirements</action>
   <action>Verify architecture covers all functional areas</action>
+  <action>Verify prd.md contains a "## Review Findings Incorporated" section — confirms adversarial review findings were consumed</action>
+  <action>Verify architecture.md contains a "## Review Findings Incorporated" section — confirms adversarial review findings were consumed</action>
   <action>Check for terminology consistency across documents</action>
 </step>
 <step n="4" title="TEA Readiness">
@@ -47,6 +49,7 @@
   <action>Verify architecture.md has as-is and target sections with Mermaid diagrams</action>
   <action>Verify PRD NFR section references nfr-assessment.md baselines (not blank targets)</action>
   <action>Verify brownfield-onboarding.md links to all generated artifacts</action>
+  <action>Verify {planning_artifacts}/dependency-audit-*.md exists — required dependency audit was completed</action>
 </step>
 <step n="8" title="Generate Gate Report">
   <template-output file="{planning_artifacts}/readiness-report.md">

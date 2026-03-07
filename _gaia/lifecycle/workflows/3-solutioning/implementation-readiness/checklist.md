@@ -10,6 +10,8 @@ validation-target: 'Readiness gate report'
 ## Consistency
 - [ ] Stories trace to PRD requirements
 - [ ] Architecture covers all features
+- [ ] prd.md contains "Review Findings Incorporated" section
+- [ ] architecture.md contains "Review Findings Incorporated" section
 ## TEA Readiness
 - [ ] Acceptance criteria are testable
 - [ ] NFR targets quantified
@@ -30,6 +32,7 @@ validation-target: 'Readiness gate report'
 - [ ] architecture.md has as-is/target sections with Mermaid diagrams
 - [ ] PRD NFR section references nfr-assessment.md baselines
 - [ ] brownfield-onboarding.md links to all generated artifacts
+- [ ] dependency-audit-{date}.md exists in planning-artifacts
 ## Report
 - [ ] Machine-readable YAML frontmatter present
 - [ ] PASS/FAIL status clear

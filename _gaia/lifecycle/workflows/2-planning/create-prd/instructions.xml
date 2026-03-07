@@ -47,9 +47,16 @@
     Generate PRD with all sections: overview, user personas, functional requirements (prioritized), non-functional requirements, user journeys, data requirements, integrations, constraints, assumptions, success criteria.
   </template-output>
 </step>
-<step n="11" title="Optional: Adversarial Review">
-  <ask>Would you like to run an adversarial review on the PRD? Open a new Claude Code terminal and run /gaia-adversarial — it runs in a separate context to preserve this session's budget. It will critically examine the document from 10 perspectives (feasibility, completeness, contradictions, assumptions, scale, failure modes, dependencies, security, user impact, business risk). Recommended for complex or high-stakes products. (yes, I'll open a new terminal / skip)</ask>
-  <action>If yes: the user opens a new terminal and runs /gaia-adversarial targeting {planning_artifacts}/prd.md. Wait for confirmation before proceeding.</action>
-  <action>If skip: adversarial review can be run anytime later with /gaia-adversarial in a separate terminal</action>
+<step n="11" title="Adversarial Review">
+  <ask>Open a new Claude Code terminal and run /gaia-adversarial targeting {planning_artifacts}/prd.md. This is required — findings will be incorporated back into the PRD. Confirm here once it completes. (ok)</ask>
+  <action>Wait for user to confirm adversarial-review-{date}.md exists in {planning_artifacts}/</action>
+</step>
+<step n="12" title="Incorporate Adversarial Findings">
+  <action>Read {planning_artifacts}/adversarial-review-{date}.md — extract critical and high severity findings</action>
+  <action>For each critical/high finding: add as a new requirement or refine an existing requirement in the PRD</action>
+  <action>Add a "## Review Findings Incorporated" section to the PRD listing each finding, its severity, and how it was addressed (new requirement added / existing requirement refined / acknowledged as risk)</action>
+  <template-output file="{planning_artifacts}/prd.md">
+    Update the PRD with adversarial review findings incorporated. Critical/high findings become new requirements or refine existing ones. Add "Review Findings Incorporated" section.
+  </template-output>
 </step>
 </workflow>

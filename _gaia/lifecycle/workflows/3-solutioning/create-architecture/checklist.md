@@ -23,5 +23,10 @@ required-inputs:
 ## ADRs
 - [ ] Decisions recorded in architect-sidecar
 - [ ] Each ADR has context, decision, consequences
+## Gates
+- [ ] PRD has "Review Findings Incorporated" section (hard gate — required before architecture)
+## Adversarial Review
+- [ ] Adversarial review completed on architecture document
+- [ ] Architecture has "Review Findings Incorporated" section
 ## Output Verification
 - [ ] Output file exists at {planning_artifacts}/architecture.md

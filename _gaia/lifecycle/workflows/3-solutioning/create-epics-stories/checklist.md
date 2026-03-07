@@ -6,6 +6,8 @@ required-inputs:
   - '{planning_artifacts}/architecture.md'
   - '{test_artifacts}/test-plan.md'
 ---
+## Gates
+- [ ] Architecture has "Review Findings Incorporated" section (hard gate — required before epics)
 ## Epics
 - [ ] Epics group related features logically
 - [ ] Each epic has description and goal

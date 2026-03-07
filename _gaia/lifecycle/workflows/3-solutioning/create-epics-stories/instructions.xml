@@ -7,6 +7,7 @@
 <step n="1" title="Load PRD and Architecture">
   <action>Read {planning_artifacts}/prd.md — extract functional requirements</action>
   <action>Read {planning_artifacts}/architecture.md — extract technical components</action>
+  <action>GATE: verify architecture.md contains a "## Review Findings Incorporated" section. If missing, HALT — run /gaia-create-arch first to complete adversarial review and architecture refinement.</action>
 </step>
 <step n="2" title="Detect Mode">
   <action>Check {planning_artifacts}/prd.md header for "Mode: Brownfield"</action>
