@@ -7,28 +7,37 @@
   <action>Read {planning_artifacts}/epics-and-stories.md</action>
   <action>Parse all stories with their priorities, sizes, dependencies</action>
 </step>
-<step n="2" title="Sprint Scoping">
+<step n="2" title="Optional: Memory Hygiene Check" optional="true">
+  <action>Check if any sidecar directories under _gaia/_memory/*-sidecar/ contain content beyond their template header</action>
+  <check if="any sidecars have content">
+    <ask>Agent memory sidecars contain decisions from previous sessions. Would you like to run /gaia-memory-hygiene to check for stale or contradicted entries before sprint planning? Open a new Claude Code terminal and run /gaia-memory-hygiene. Recommended if architecture or requirement changes occurred since last sprint. (yes, I'll open a new terminal / skip)</ask>
+    <action>If yes: the user opens a new terminal and runs /gaia-memory-hygiene. Wait for confirmation before proceeding.</action>
+    <action>If skip: memory hygiene can be run anytime with /gaia-memory-hygiene in a separate terminal</action>
+  </check>
+  <check if="no sidecars have content">Skip — no sidecar data to review.</check>
+</step>
+<step n="3" title="Sprint Scoping">
   <ask>Sprint duration (1 week / 2 weeks / custom)?</ask>
   <ask>Team velocity estimate (story points)?</ask>
   <ask>Sprint number (for multi-sprint tracking)?</ask>
 </step>
-<step n="3" title="Story Selection">
+<step n="4" title="Story Selection">
   <action>Select stories for this sprint based on priority and dependencies</action>
   <action>Ensure total size fits within velocity estimate</action>
   <action>Respect dependency ordering — blocked stories cannot be selected without their blockers</action>
   <action>If {test_artifacts}/test-plan.md exists: apply risk levels to story selection — buffer 20% for high-risk stories in velocity estimate</action>
   <action>Flag any high-risk story that does not have a corresponding {test_artifacts}/atdd-{story_key}.md file — add a sprint risk note</action>
 </step>
-<step n="4" title="Optional: Mobile Testing">
+<step n="5" title="Optional: Mobile Testing">
   <ask>Would you like to create a mobile test plan? Open a new Claude Code terminal and run /gaia-mobile-testing — it runs in a separate context to preserve this session's budget. It will define the device matrix, configure Appium infrastructure, set up React Native testing patterns, and design responsive viewport tests. Recommended for mobile or responsive applications. (yes, I'll open a new terminal / skip)</ask>
   <action>If yes: the user opens a new terminal and runs /gaia-mobile-testing. Wait for confirmation before proceeding.</action>
   <action>If skip: mobile testing can be set up anytime later with /gaia-mobile-testing in a separate terminal</action>
 </step>
-<step n="5" title="Sprint Plan Generation">
+<step n="6" title="Sprint Plan Generation">
   <action>Create sprint plan with story assignments and execution order</action>
   <action>Order by dependency resolution + priority</action>
 </step>
-<step n="6" title="Status Initialization">
+<step n="7" title="Status Initialization">
   <action>Set all selected stories to 'backlog' status</action>
   <action>Generate sprint-status.yaml with format:
     sprint_id: "sprint-{N}"
@@ -41,7 +50,7 @@
         updated: "{date}"
   </action>
 </step>
-<step n="7" title="Generate Output">
+<step n="8" title="Generate Output">
   <template-output file="{implementation_artifacts}/sprint-{sprint_id}-plan.md">
     Generate sprint plan document with: sprint goals, selected stories (ordered), velocity target, risk assessment, and a Testing Readiness section listing high-risk stories, ATDD file status for each, and any missing test artifacts.
   </template-output>

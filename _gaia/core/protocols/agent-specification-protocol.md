@@ -50,6 +50,23 @@ inline specification block holds agent-specific scope, authority, and DoD.
   <rule>NEVER read another agent's sidecar unless explicitly instructed by user</rule>
 </memory-access>
 
+<memory-hygiene>
+  <purpose>Defines lifecycle states for sidecar entries and rules for the /gaia-memory-hygiene workflow.</purpose>
+  <entry-states>
+    <state name="ACTIVE">Entry is consistent with current reference artifacts.</state>
+    <state name="STALE">Referenced artifact has changed since entry was recorded.</state>
+    <state name="CONTRADICTED">Current artifact explicitly contradicts this entry.</state>
+    <state name="ORPHANED">Referenced component or feature no longer exists in any artifact.</state>
+    <state name="ARCHIVED">Entry was moved to the Archived section by user action.</state>
+  </entry-states>
+  <rules>
+    <rule>The /gaia-memory-hygiene workflow may read all sidecars — this is user-initiated cross-sidecar access per memory-access rule 5.</rule>
+    <rule>No sidecar entry is modified without explicit user confirmation.</rule>
+    <rule>Archived entries are moved to a ## Archived Decisions section at the end of the sidecar file.</rule>
+    <rule>The sidecar file header and append marker comment must always be preserved.</rule>
+  </rules>
+</memory-hygiene>
+
 <escalation-framework>
   <trigger>Agent encounters a decision outside its declared scope</trigger>
   <trigger>Blocking dependency on another agent's output that doesn't exist</trigger>

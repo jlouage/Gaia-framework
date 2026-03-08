@@ -358,6 +358,7 @@ Available at any point in the lifecycle.
 | `/gaia-brainstorming` | Brainstorming | Facilitated brainstorming session |
 | `/gaia-party` | Party Mode | Multi-agent group discussion |
 | `/gaia-advanced-elicitation` | Advanced Elicitation | Deep requirements elicitation |
+| `/gaia-memory-hygiene` | Memory Hygiene | Detect stale or contradicted decisions in agent memory sidecars |
 
 ### Brownfield Onboarding (Deep Dive)
 
@@ -634,7 +635,7 @@ The single source of truth for project settings at `_gaia/_config/global.yaml`:
 
 ```yaml
 framework_name: "GAIA"
-framework_version: "1.15.0"
+framework_version: "1.16.0"
 
 user_name: "your-name"
 project_name: "your-project"

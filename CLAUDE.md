@@ -1,4 +1,4 @@
-# GAIA Framework v1.15.0
+# GAIA Framework v1.16.0
 
 This project uses the **GAIA** (Generative Agile Intelligence Architecture) framework — an AI agent framework for Claude Code that orchestrates software product development through 25 specialized agents, 62 workflows, and 8 shared skills.
 
@@ -123,6 +123,10 @@ backlog → validating → ready-for-dev → in-progress → blocked → review 
 - `/gaia-review-perf` — PASSED or FAILED
 
 If any review fails, the story returns to `in-progress`. The Review Gate table in the story file tracks progress.
+
+## Memory Hygiene
+
+Agent memory sidecars accumulate decisions across sessions. Run `/gaia-memory-hygiene` periodically (recommended before each sprint) to detect stale, contradicted, or orphaned entries by cross-referencing sidecar decisions against current planning and architecture artifacts.
 
 ## Do Not
 
