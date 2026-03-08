@@ -1,25 +1,34 @@
 <workflow name="sprint-status">
 <critical>
   <mandate>Highlight blocked stories prominently with reason</mandate>
+  <mandate>Reconcile sprint-status.yaml with story file frontmatter before displaying — story files are the source of truth for story status</mandate>
 </critical>
 <step n="1" title="Load Sprint Status">
   <action>Read {implementation_artifacts}/sprint-status.yaml</action>
-  <action>Parse all story statuses</action>
+  <action>Parse all story entries with their statuses</action>
 </step>
-<step n="2" title="Display Status">
+<step n="2" title="Reconcile With Story Files">
+  <action>For each story in sprint-status.yaml: find the story file matching the story key pattern ({story_key}*.md) in {implementation_artifacts}/</action>
+  <action>Read ONLY the YAML frontmatter (stop at closing ---) and the Review Gate table from each story file</action>
+  <action>Compare the Status field in the story file frontmatter with the status in sprint-status.yaml</action>
+  <action>If they differ: the story file frontmatter is authoritative — update sprint-status.yaml to match</action>
+  <action>If a story file has all 6 Review Gate rows PASSED and status 'done' but sprint-status.yaml still shows 'review': update sprint-status.yaml to 'done'</action>
+  <action>Log any reconciliation changes: "Reconciled {story_key}: {old_status} → {new_status} (synced from story file)"</action>
+</step>
+<step n="3" title="Display Status">
   <action>Show stories grouped by status in a table</action>
   <action>Highlight blocked stories with blocking reason</action>
   <action>Show progress: done/total, percentage complete</action>
   <action>If {implementation_artifacts}/tech-debt-dashboard.md exists: read summary metrics section only</action>
   <action>Show debt summary line: "Tech Debt: {count} items ({fix_now} FIX NOW, {overdue} overdue)"</action>
-  <action>If any FIX NOW items are overdue: include in Step 3 risk flags</action>
+  <action>If any FIX NOW items are overdue: include in Step 4 risk flags</action>
 </step>
-<step n="3" title="Surface Risks">
+<step n="4" title="Surface Risks">
   <action>Identify at-risk stories: blocked, dependencies not met</action>
   <action>Flag stories that may miss sprint deadline</action>
   <action>Suggest mitigation actions</action>
   <template-output file="{implementation_artifacts}/sprint-status.yaml">
-    Update sprint status with current story states, progress metrics, and risk flags.
+    Save reconciled sprint status with current story states, progress metrics, and risk flags.
   </template-output>
 </step>
 </workflow>

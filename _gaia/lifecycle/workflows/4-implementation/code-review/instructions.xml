@@ -30,7 +30,7 @@
   <action>Read story file, locate Review Gate table</action>
   <action>If Review Gate table is missing: initialize it with EXACTLY 6 rows — Code Review (PENDING), QA Tests (PENDING), Security Review (PENDING), Test Automation (PENDING), Test Review (PENDING), Performance Review (PENDING). Do NOT add any other rows.</action>
   <action>If APPROVE: update Code Review row status to PASSED, link report file</action>
-  <action>If REQUEST_CHANGES: update Code Review row status to FAILED, link report file, set story status to 'in-progress' in story file and sprint-status.yaml</action>
+  <action>If REQUEST_CHANGES: update Code Review row status to FAILED, link report file, set story status to 'in-progress' in story file frontmatter</action>
   <template-output file="{implementation_artifacts}/{story_key}.md">
     Update story file Review Gate table with code review result and report link. If REQUEST_CHANGES, also update story status to in-progress.
   </template-output>
@@ -41,12 +41,9 @@
   </critical>
   <action>Re-read the story file now. Check two things: (1) the Review Gate table rows, (2) the current story status.</action>
   <action>The Review Gate table must have EXACTLY 6 rows: Code Review, QA Tests, Security Review, Test Automation, Test Review, Performance Review. Remove any other rows.</action>
-  <action>If ALL 6 rows show PASSED AND the story status is still 'review': you MUST change the story status to 'done' in the story file AND in sprint-status.yaml. This is a REQUIRED write operation, not informational.</action>
+  <action>If ALL 6 rows show PASSED AND the story status is still 'review': you MUST change the story status to 'done' in the story file frontmatter. Do NOT write to sprint-status.yaml — the sprint-status sync will pick up this change.</action>
   <action>If ALL 6 rows show PASSED AND the story status is already 'done': log "Story already done. No update needed."</action>
   <action>If any row is FAILED: log which reviews failed. Do not change story status.</action>
   <action>If any row is PENDING: log which reviews are still pending. Do not change story status.</action>
-  <template-output file="{implementation_artifacts}/sprint-status.yaml">
-    Read sprint-status.yaml. If all 6 Review Gate rows are PASSED and the story status is 'review', update the story status to 'done' and save the file.
-  </template-output>
 </step>
 </workflow>

@@ -15,14 +15,12 @@
 <step n="2" title="Evaluate Gate and Transition">
   <critical>
     <mandate>You MUST execute the transition even if the gate was already fully passed before this run. The purpose is to ensure story status matches gate state.</mandate>
+    <mandate>Do NOT write to sprint-status.yaml from review workflows. Story file frontmatter is the source of truth. Sprint status is synced separately via /gaia-sprint-status.</mandate>
   </critical>
   <action>Check two things: (1) the Review Gate table rows, (2) the current story status</action>
-  <action>If ALL 6 rows show PASSED AND the story status is still 'review': you MUST change the story status to 'done' in the story file AND in sprint-status.yaml. This is a REQUIRED write operation.</action>
+  <action>If ALL 6 rows show PASSED AND the story status is still 'review': you MUST change the story status to 'done' in the story file frontmatter ONLY. Do NOT write to sprint-status.yaml.</action>
   <action>If ALL 6 rows show PASSED AND the story status is already 'done': log "Story already done. No update needed."</action>
   <action>If any row is FAILED: log which reviews failed. Do not change story status.</action>
   <action>If any row is PENDING: log which reviews are still pending. Do not change story status.</action>
-  <template-output file="{implementation_artifacts}/sprint-status.yaml">
-    Read sprint-status.yaml. If all 6 Review Gate rows are PASSED and the story status is 'review', update the story status to 'done' and save the file.
-  </template-output>
 </step>
 </protocol>
