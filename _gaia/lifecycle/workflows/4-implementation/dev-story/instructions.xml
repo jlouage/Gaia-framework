@@ -20,6 +20,7 @@
 </step>
 <step n="3" title="Check for WIP">
   <action>Look for checkpoint file at _memory/checkpoints/dev-story-{story_key}.yaml</action>
+  <check if="checkpoint_exists and has files_touched">Validate checksums (shasum -a 256) for each entry in files_touched — flag DELETED or MODIFIED files, offer Proceed / Start fresh / Review before resuming</check>
   <check if="checkpoint_exists">Offer to resume from last checkpoint or start fresh</check>
 </step>
 <step n="4" title="Update Status">
@@ -38,6 +39,7 @@
   <action>  c. Refactor while tests stay green (REFACTOR)</action>
   <action>  d. Mark subtask complete in story file</action>
   <action>  e. Write checkpoint</action>
+  <action>  f. Update files_touched in checkpoint: for each file created/modified so far, record path, checksum (shasum -a 256), last_modified (ISO 8601)</action>
 </step>
 <step n="7" title="Capture Findings">
   <action>Review any out-of-scope issues discovered during implementation (e.g., missing setup scripts, environment gaps, tech debt, broken tooling)</action>

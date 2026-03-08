@@ -1,4 +1,4 @@
-# GAIA Framework v1.14.0
+# GAIA Framework v1.15.0
 
 This project uses the **GAIA** (Generative Agile Intelligence Architecture) framework — an AI agent framework for Claude Code that orchestrates software product development through 25 specialized agents, 62 workflows, and 8 shared skills.
 
@@ -69,6 +69,8 @@ _gaia/                    # Framework root
 ### Checkpoint Discipline
 - Write a checkpoint to `_gaia/_memory/checkpoints/` after each step completes
 - Include: workflow name, step number, key variables, output file path
+- Include `files_touched` with sha256 checksums (`shasum -a 256`) for every file created/modified during the workflow
+- On resume: validate checksums — warn user of changed files, offer Proceed / Start fresh / Review
 - If context is lost, `/gaia-resume` recovers from the last checkpoint
 
 ### Quality Gates

@@ -17,6 +17,10 @@ active_agent: string       # Agent ID currently executing
 output_file: string        # Primary output file path
 key_variables: object      # Key resolved variables (user_name, sprint_id, etc.)
 notes: string              # Free-text progress notes
+files_touched:             # Files created/modified during workflow execution
+  - path: string           # Relative path from project root
+    checksum: string       # "sha256:{hex}" — via: shasum -a 256 {path}
+    last_modified: string  # ISO 8601 timestamp from file system
 ```
 
 ## File Location
@@ -30,3 +34,15 @@ notes: string              # Free-text progress notes
 2. **Updated** after each step completes
 3. **Archived** to `completed/` when workflow finishes successfully
 4. **Deleted** if user discards via `/gaia-resume`
+
+## Integrity Validation
+
+On resume (`/gaia-resume`), the engine validates `files_touched` checksums:
+
+1. For each entry in `files_touched`: run `shasum -a 256 {path}`, compare against stored checksum
+2. If file deleted since checkpoint: flag as **DELETED**
+3. If checksum differs: flag as **MODIFIED**
+4. If all match: report "All files unchanged" and proceed
+5. If mismatches found: display list, offer **Proceed** / **Start fresh** / **Review** (show `git diff`)
+
+Old checkpoints without `files_touched` skip validation gracefully.

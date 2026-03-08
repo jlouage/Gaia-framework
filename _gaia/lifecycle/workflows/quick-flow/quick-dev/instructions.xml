@@ -7,12 +7,13 @@
   <action>Check for WIP checkpoint at _memory/checkpoints/quick-dev-{spec_name}.yaml</action>
 </step>
 <step n="2" title="Check WIP">
+  <check if="checkpoint_exists and has files_touched">Validate checksums (shasum -a 256) for each entry in files_touched — flag DELETED or MODIFIED files, offer Proceed / Start fresh / Review before resuming</check>
   <check if="checkpoint_exists">Offer to resume from last checkpoint or start fresh</check>
 </step>
 <step n="3" title="Implement">
   <action>Follow spec implementation steps</action>
   <action>Apply TDD where practical</action>
-  <action>Write checkpoint after each step</action>
+  <action>Write checkpoint after each step — include files_touched with path, checksum (shasum -a 256), last_modified (ISO 8601) for all files created/modified</action>
 </step>
 <step n="4" title="Verify">
   <action>Run tests</action>

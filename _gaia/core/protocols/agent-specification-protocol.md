@@ -63,7 +63,8 @@ inline specification block holds agent-specific scope, authority, and DoD.
 
 <resume-behavior>
   <rule>On activation: check _memory/checkpoints/ for active checkpoint matching current workflow</rule>
-  <rule>If checkpoint found: offer to resume from last completed step</rule>
+  <rule>If checkpoint found and has files_touched: validate checksums (shasum -a 256) before offering resume — flag DELETED or MODIFIED files, offer Proceed / Start fresh / Review</rule>
+  <rule>If checkpoint found without files_touched: skip validation, offer resume normally</rule>
   <rule>If no checkpoint: start fresh</rule>
   <rule>Use /gaia-resume for cross-session recovery</rule>
 </resume-behavior>

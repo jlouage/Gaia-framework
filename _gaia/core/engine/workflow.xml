@@ -67,7 +67,7 @@ execution modes (normal/yolo), checkpoints, and quality gates.
   <step n="4" title="Load Instructions">
     <action>Read the FULL instructions file (xml or md)</action>
     <action>Count total steps in the instructions</action>
-    <action>Write initial checkpoint: workflow started, step 0 of N</action>
+    <action>Write initial checkpoint: workflow started, step 0 of N, files_touched: []</action>
   </step>
 
   <step n="5" title="Process Instructions">
@@ -79,7 +79,7 @@ execution modes (normal/yolo), checkpoints, and quality gates.
     <action>At template-output: save output to declared file path</action>
     <action>At template-output in normal mode: show user the output, offer [c]ontinue [y]olo [e]dit</action>
     <action>At template-output in yolo mode: auto-continue</action>
-    <action>After each step completes: write checkpoint with step number, key variables, output paths</action>
+    <action>After each step completes: write checkpoint with step number, key variables, output paths, and files_touched (for each file created/modified during this workflow, run shasum -a 256 {path} and record path, checksum as "sha256:{hex}", last_modified as ISO 8601)</action>
   </step>
 
   <step n="6" title="Completion">
