@@ -10,6 +10,9 @@
   <action>Show stories grouped by status in a table</action>
   <action>Highlight blocked stories with blocking reason</action>
   <action>Show progress: done/total, percentage complete</action>
+  <action>If {implementation_artifacts}/tech-debt-dashboard.md exists: read summary metrics section only</action>
+  <action>Show debt summary line: "Tech Debt: {count} items ({fix_now} FIX NOW, {overdue} overdue)"</action>
+  <action>If any FIX NOW items are overdue: include in Step 3 risk flags</action>
 </step>
 <step n="3" title="Surface Risks">
   <action>Identify at-risk stories: blocked, dependencies not met</action>

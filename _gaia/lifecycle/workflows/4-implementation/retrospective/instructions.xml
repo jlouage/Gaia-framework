@@ -14,11 +14,18 @@
   <ask>What could improve?</ask>
   <action>Document challenges and pain points</action>
 </step>
-<step n="4" title="Action Items">
+<step n="4" title="Tech Debt Reflection">
+  <action>If {implementation_artifacts}/tech-debt-dashboard.md exists: read summary metrics and trend section</action>
+  <action>Present debt trend to user: items added vs resolved this sprint, current debt ratio</action>
+  <ask>Did technical debt affect velocity this sprint? If so, how?</ask>
+  <ask>Are there debt items the team wants to escalate for next sprint?</ask>
+  <action>Document debt-related observations for action items in next step</action>
+</step>
+<step n="5" title="Action Items">
   <action>Define concrete improvements for next sprint</action>
   <action>Assign ownership for each action item</action>
 </step>
-<step n="5" title="Generate Output">
+<step n="6" title="Generate Output">
   <template-output file="{implementation_artifacts}/retro-{sprint_id}.md">
     Generate retrospective report with: sprint metrics, what went well, improvements, action items.
   </template-output>

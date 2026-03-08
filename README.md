@@ -2,7 +2,7 @@
 
 > **WARNING: This framework is currently in BETA. Workflows, commands, and APIs may change without notice. Use in production at your own risk.**
 
-AI agent framework for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) that orchestrates software product development through 25 specialized agents, 61 workflows, and 8 shared skills — from initial research all the way to deployment.
+AI agent framework for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) that orchestrates software product development through 25 specialized agents, 62 workflows, and 8 shared skills — from initial research all the way to deployment.
 
 GAIA gives you a team of AI agents with distinct personas, structured workflows that follow a proven product lifecycle, built-in quality gates, checkpoint/resume for long-running sessions, and persistent agent memory across conversations.
 
@@ -281,6 +281,7 @@ Workflows are structured multi-step processes. Each has a `workflow.yaml` config
 | `/gaia-qa-tests` | QA Generate Tests | Vera | `docs/implementation-artifacts/` |
 | `/gaia-security-review` | Security Review | Zara | `docs/implementation-artifacts/` |
 | `/gaia-triage-findings` | Triage Findings | Nate | `docs/implementation-artifacts/` |
+| `/gaia-tech-debt-review` | Tech Debt Review | Nate | `docs/implementation-artifacts/` |
 | `/gaia-change-request` | Change Request | Derek | `docs/planning-artifacts/` |
 | `/gaia-add-stories` | Add Stories | Derek | `docs/planning-artifacts/` |
 | `/gaia-correct-course` | Correct Course | Nate | `docs/implementation-artifacts/` |
@@ -633,7 +634,7 @@ The single source of truth for project settings at `_gaia/_config/global.yaml`:
 
 ```yaml
 framework_name: "GAIA"
-framework_version: "1.10.1"
+framework_version: "1.11.0"
 
 user_name: "your-name"
 project_name: "your-project"
