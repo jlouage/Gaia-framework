@@ -1,0 +1,54 @@
+<workflow name="change-request">
+<critical>
+  <mandate>Every change request must be documented with a CR ID before any work begins</mandate>
+  <mandate>Classification determines the path — do not skip classification</mandate>
+</critical>
+
+<step n="1" title="Capture Change Request">
+  <ask>Describe the change request: What needs to change and why?</ask>
+  <ask>Is this driven by: user feedback, stakeholder request, technical discovery, or market shift?</ask>
+  <action>Assign CR ID: CR-{date}-{seq} (e.g., CR-2026-03-07-1)</action>
+</step>
+
+<step n="2" title="Load Current State">
+  <action>Read {planning_artifacts}/prd.md — scan section headers and feature list</action>
+  <action>Read {planning_artifacts}/architecture.md — scan component list and tech stack</action>
+  <action>Read {planning_artifacts}/epics-and-stories.md — scan epic/story list</action>
+  <action>Read {implementation_artifacts}/sprint-status.yaml — check current sprint state</action>
+</step>
+
+<step n="3" title="Classify Impact">
+  <action>Assess against three criteria:</action>
+  <action>1. SCOPE: How many files affected? &lt;5 = small, 5-15 = medium, &gt;15 = large</action>
+  <action>2. ARTIFACT IMPACT:</action>
+  <action>   - None (cosmetic/config) → QUICK</action>
+  <action>   - PRD only (new requirement, no arch change) → PRD-ONLY</action>
+  <action>   - PRD + Architecture (new component, API change, tech decision) → PRD+ARCH</action>
+  <action>   - PRD + Architecture + new epic → FULL</action>
+  <action>3. SPRINT IMPACT: Current sprint can absorb, or needs next sprint?</action>
+  <action>Present classification to user for confirmation</action>
+</step>
+
+<step n="4" title="Route Decision">
+  <action>Based on classification, recommend path:</action>
+  <action>QUICK: → /gaia-quick-spec → /gaia-quick-dev. No artifact updates.</action>
+  <action>PRD-ONLY: → /gaia-edit-prd. Architecture check optional.</action>
+  <action>PRD+ARCH: → /gaia-edit-prd → update architecture → /gaia-adversarial on architecture.md → /gaia-add-stories → /gaia-correct-course.</action>
+  <action>FULL: → /gaia-edit-prd → architecture update + adversarial → /gaia-add-stories (new epic) → /gaia-correct-course.</action>
+  <action>Get user confirmation on the recommended path.</action>
+</step>
+
+<step n="5" title="Generate Change Request Record">
+  <template-output file="{planning_artifacts}/change-request-{cr_id}.md">
+    Generate change request document with: CR ID, date, source, description,
+    classification (QUICK/PRD-ONLY/PRD+ARCH/FULL), artifact impact, sprint impact,
+    recommended execution path (ordered /gaia commands), status: OPEN.
+  </template-output>
+</step>
+
+<step n="6" title="Next Steps">
+  <action>Present the recommended command sequence to the user</action>
+  <action>If QUICK: "Run /gaia-quick-spec now"</action>
+  <action>If PRD-ONLY or higher: "Run /gaia-edit-prd now"</action>
+</step>
+</workflow>

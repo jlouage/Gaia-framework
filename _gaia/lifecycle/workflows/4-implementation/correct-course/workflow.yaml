@@ -11,6 +11,9 @@ input_file_patterns:
   status:
     whole: "{implementation_artifacts}/sprint-status.yaml"
     load_strategy: "FULL_LOAD"
+  epics:
+    whole: "{planning_artifacts}/epics-and-stories.md"
+    load_strategy: "SELECTIVE_LOAD"
 on_error:
   missing_file: "ask_user"
   unresolved_variable: "halt"

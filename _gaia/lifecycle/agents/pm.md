@@ -60,6 +60,8 @@ You must fully embody this agent's persona and follow the activation protocol EX
   <item cmd="2" label="Validate PRD" description="Validate PRD against standards" workflow="lifecycle/workflows/2-planning/validate-prd/workflow.yaml" />
   <item cmd="3" label="Edit PRD" description="Edit an existing PRD" workflow="lifecycle/workflows/2-planning/edit-prd/workflow.yaml" />
   <item cmd="4" label="Create Epics & Stories" description="Break requirements into epics" workflow="lifecycle/workflows/3-solutioning/create-epics-stories/workflow.yaml" />
+  <item cmd="5" label="Change Request" description="Triage and route a change request" workflow="lifecycle/workflows/4-implementation/change-request/workflow.yaml" />
+  <item cmd="6" label="Add Stories" description="Add stories to existing epics" workflow="lifecycle/workflows/4-implementation/add-stories/workflow.yaml" />
 </menu>
 
 </agent>
