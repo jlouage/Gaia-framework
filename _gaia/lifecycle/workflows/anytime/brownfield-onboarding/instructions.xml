@@ -16,7 +16,7 @@
   <action>Frontend Detection: scan for React, Angular, Vue, Flutter, SwiftUI, UI frameworks, CSS/styling. Set {has_frontend} flag (true/false)</action>
   <action>Testing infrastructure: identify test framework, coverage config, test count, test patterns</action>
   <action>CI/CD: identify GitHub Actions, Jenkins, Docker, Terraform, or other pipeline files</action>
-  <action>Log detected flags for use in conditional steps below</action>
+  <action>Generate brownfield assessment: read {installed_path}/../../templates/brownfield-assessment-template.md — capture component inventory, technical debt, migration constraints, coexistence strategy, and adoption path. Output to {planning_artifacts}/brownfield-assessment.md</action>
   <template-output file="{planning_artifacts}/project-documentation.md">
     Generate enhanced project documentation following the project documentation conventions. Include all standard sections plus: detected capability flags (has_apis, has_events, has_external_deps, has_frontend), testing infrastructure summary, and CI/CD pipeline summary.
   </template-output>

@@ -94,13 +94,19 @@ used_by: ['brownfield-onboarding']
 
 **Full documentation:** [NFR Assessment](nfr-assessment.md)
 
-## 9. Gap Analysis & Roadmap
+## 9. Brownfield Assessment
+
+{Summary of as-is architecture, technical debt severity, migration constraints, and coexistence strategy.}
+
+**Full documentation:** [Brownfield Assessment](brownfield-assessment.md)
+
+## 10. Gap Analysis & Roadmap
 
 {Summary of identified gaps between current state and desired state. Key priorities.}
 
 **Full documentation:** [Product Requirements (Gaps)](prd.md)
 
-## 10. Stories for Development
+## 11. Stories for Development
 
 {Summary of epics and story count. Current sprint focus.}
 
@@ -110,7 +116,7 @@ used_by: ['brownfield-onboarding']
 
 **Full documentation:** [Epics and Stories](epics-and-stories.md)
 
-## 11. Conventions & Patterns
+## 12. Conventions & Patterns
 
 ### Code Conventions
 
@@ -132,7 +138,7 @@ used_by: ['brownfield-onboarding']
 - **Required coverage:** {threshold if configured}
 - **Test types used:** {unit / integration / e2e}
 
-## 12. Key Files & Entry Points
+## 13. Key Files & Entry Points
 
 | File | Purpose |
 |------|---------|

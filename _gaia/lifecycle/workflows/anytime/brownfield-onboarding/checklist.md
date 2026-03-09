@@ -9,6 +9,7 @@ validation-target: 'Brownfield onboarding output'
 - [ ] Capability flags detected (has_apis, has_events, has_external_deps, has_frontend)
 - [ ] Testing infrastructure assessed
 - [ ] CI/CD pipeline documented
+- [ ] Brownfield assessment generated at {planning_artifacts}/brownfield-assessment.md
 ## API Documentation (if has_apis)
 - [ ] OpenAPI/Swagger spec status checked (existing spec found or generated)
 - [ ] Endpoint inventory table complete

@@ -15,7 +15,11 @@
 <step n="4" title="Reliability Assessment">
   <action>Availability, fault tolerance, recovery</action>
 </step>
-<step n="5" title="Generate Report">
+<step n="5" title="Migration Assessment (Brownfield)" optional="true">
+  <action>If assessment context is brownfield: evaluate data migration performance, backward compatibility, dual-write latency, legacy API parity, and session continuity</action>
+  <action>Rate each migration risk dimension: high, medium, low with justification</action>
+</step>
+<step n="6" title="Generate Report">
   <action>Compile with risk ratings per dimension</action>
   <template-output file="{test_artifacts}/nfr-assessment.md" />
 </step>

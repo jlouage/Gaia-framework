@@ -74,7 +74,17 @@ used_by: ['brownfield-onboarding']
 | Environment management | {dev / staging / prod — how managed} | {details} |
 | Infrastructure as code | {Terraform / CloudFormation / Docker / none} | {details} |
 
-## 7. NFR Baseline Summary
+## 7. Migration & Coexistence (Brownfield Only)
+
+| Aspect | Current State | Target | Risk Level |
+|--------|--------------|--------|------------|
+| Data migration performance | {volume, estimated migration time, downtime budget} | {target window} | {High / Medium / Low} |
+| Backward compatibility | {API versioning, schema compatibility, client impact} | {zero breaking changes / managed deprecation} | {High / Medium / Low} |
+| Dual-write latency | {if dual-write strategy: measured overhead, consistency lag} | {max acceptable lag} | {High / Medium / Low / N/A} |
+| Legacy API parity | {response time of legacy endpoints vs. new replacements} | {equal or better} | {High / Medium / Low} |
+| Session continuity | {user session handling during cutover: sticky sessions, token migration} | {zero session loss} | {High / Medium / Low} |
+
+## 8. NFR Baseline Summary
 
 | Category | Current Baseline | Recommended Target | Gap Severity |
 |----------|-----------------|-------------------|-------------|
