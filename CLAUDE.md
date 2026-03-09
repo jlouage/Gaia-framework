@@ -1,4 +1,4 @@
-# GAIA Framework v1.25.0
+# GAIA Framework v1.26.0
 
 This project uses the **GAIA** (Generative Agile Intelligence Architecture) framework — an AI agent framework for Claude Code that orchestrates software product development through 25 specialized agents, 62 workflows, and 8 shared skills.
 
@@ -65,6 +65,7 @@ _gaia/                    # Framework root
 - Save output at every `<template-output>` checkpoint
 - In normal mode: WAIT for user confirmation at template-outputs
 - In YOLO mode: auto-proceed (user can toggle back to normal with "switch to normal mode")
+- In planning mode: present execution plan BEFORE processing steps; wait for user approval; user selects normal or yolo for runtime
 
 ### Checkpoint Discipline
 - Write a checkpoint to `_gaia/_memory/checkpoints/` after each step completes

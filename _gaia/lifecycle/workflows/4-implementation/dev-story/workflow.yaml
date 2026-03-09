@@ -2,6 +2,7 @@ name: dev-story
 description: 'Execute story implementation following story spec'
 module: lifecycle
 agent: dev-*
+execution_mode: planning
 config_resolved: "{project-root}/_gaia/lifecycle/.resolved/dev-story.yaml"
 config_source: "{project-root}/_gaia/lifecycle/config.yaml"
 installed_path: "{project-root}/_gaia/lifecycle/workflows/4-implementation/dev-story"

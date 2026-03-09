@@ -3,7 +3,7 @@
 <objective>
 Universal workflow execution engine for GAIA. Loads workflow.yaml configs,
 resolves variables, processes instructions files step-by-step, and manages
-execution modes (normal/yolo), checkpoints, and quality gates.
+execution modes (normal/yolo/planning), checkpoints, and quality gates.
 </objective>
 
 <llm critical="true">
@@ -26,11 +26,12 @@ execution modes (normal/yolo), checkpoints, and quality gates.
   <rule n="8">LOAD the instructions file specified by 'instructions' key</rule>
   <rule n="9">READ the ENTIRE instructions file — never use offset/limit</rule>
   <rule n="10">CHECK quality_gates.pre_start — HALT if any gate fails</rule>
-  <rule n="11">PROCESS each step in the instructions file in strict numerical order</rule>
-  <rule n="12">After each step: WRITE checkpoint to _memory/checkpoints/</rule>
-  <rule n="13">At template-output: SAVE to file, then prompt user (unless YOLO mode)</rule>
-  <rule n="14">CHECK quality_gates.post_complete — HALT if any gate fails</rule>
-  <rule n="15">On completion: archive checkpoint to completed/</rule>
+  <rule n="11">If workflow.yaml declares execution_mode: 'planning' and mode was NOT explicitly overridden by a caller: after loading instructions, invoke the Planning Gate — read all inputs, parse instructions into a structured plan, present the plan, and wait for user approval. User selects runtime mode (normal/yolo) at approval.</rule>
+  <rule n="12">PROCESS each step in the instructions file in strict numerical order</rule>
+  <rule n="13">After each step: WRITE checkpoint to _memory/checkpoints/</rule>
+  <rule n="14">At template-output: SAVE to file, then prompt user (unless YOLO mode)</rule>
+  <rule n="15">CHECK quality_gates.post_complete — HALT if any gate fails</rule>
+  <rule n="16">On completion: archive checkpoint to completed/</rule>
 </WORKFLOW-RULES>
 
 <flow>
@@ -70,7 +71,23 @@ execution modes (normal/yolo), checkpoints, and quality gates.
     <action>Write initial checkpoint: workflow started, step 0 of N, files_touched: []</action>
   </step>
 
-  <step n="5" title="Process Instructions">
+  <step n="5" title="Planning Gate" if="execution_mode == 'planning'">
+    <action>Check workflow.yaml for 'execution_mode' field — default to 'normal' if absent</action>
+    <action if="execution_mode != 'planning'">Skip this step — proceed to Process Instructions</action>
+    <action if="mode was explicitly set by caller (subagent prompt)">Skip this step — use the caller-requested mode</action>
+    <action>Invoke discover-inputs protocol to load all declared input files</action>
+    <action>Parse the loaded instructions to extract: step titles, action summaries, template-output paths, optional steps, skill references, subagent invocations</action>
+    <action>For input files: extract brief context (key metadata, not full content)</action>
+    <action>Present structured execution plan to user using the planning-output format: Context, Files to Modify, Detailed Edits, Version Bumps (if applicable), Implementation Order, Verification. Omit empty sections.</action>
+    <action>Prompt: "[a] Approve (normal) | [y] Approve (YOLO) | [r] Revise plan | [x] Abort"</action>
+    <action if="[a]">Set runtime mode to normal — proceed to Process Instructions</action>
+    <action if="[y]">Set runtime mode to yolo — proceed to Process Instructions</action>
+    <action if="[r]">Ask for feedback, regenerate plan, re-prompt</action>
+    <action if="[x]">HALT — write checkpoint noting user abort</action>
+    <action>Write checkpoint: planning gate approved, selected runtime mode</action>
+  </step>
+
+  <step n="6" title="Process Instructions">
     <action>Execute each step in strict numerical order</action>
     <action>For each step: read any required skills/knowledge JIT</action>
     <action>For each step: drop prior step's skills/knowledge from context</action>
@@ -82,7 +99,7 @@ execution modes (normal/yolo), checkpoints, and quality gates.
     <action>After each step completes: write checkpoint with step number, key variables, output paths, and files_touched (for each file created/modified during this workflow, run shasum -a 256 {path} and record path, checksum as "sha256:{hex}", last_modified as ISO 8601)</action>
   </step>
 
-  <step n="6" title="Completion">
+  <step n="7" title="Completion">
     <action>Check quality_gates.post_complete conditions if declared</action>
     <action if="any gate fails">HALT — report which gate failed and why</action>
     <action>Load validation/checklist file if declared</action>
@@ -100,6 +117,15 @@ execution modes (normal/yolo), checkpoints, and quality gates.
   <mode name="yolo">
     Auto-proceed past template-outputs without pausing.
     User can say "switch to normal mode" at any time to return to normal mode.
+  </mode>
+  <mode name="planning">
+    After loading instructions and before processing steps:
+    read all inputs, parse instructions into a structured execution plan,
+    and require user approval before proceeding.
+    Plan format uses structured sections: Context, Files to Modify, Detailed Edits,
+    Version Bumps (if applicable), Implementation Order, Verification. Omit empty sections.
+    User selects runtime mode (normal or yolo) at the approval prompt.
+    If invoked as a subagent with an explicit mode override, skip the planning gate.
   </mode>
 </execution-modes>
 
