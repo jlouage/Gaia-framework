@@ -1,6 +1,6 @@
 # GAIA — Generative Agile Intelligence Architecture
 
-[![Framework](https://img.shields.io/badge/framework-v1.27.1-blue)]()
+[![Framework](https://img.shields.io/badge/framework-v1.27.2-blue)]()
 [![License](https://img.shields.io/badge/license-AGPL--3.0-green)]()
 [![Agents](https://img.shields.io/badge/agents-25-purple)]()
 [![Workflows](https://img.shields.io/badge/workflows-64-orange)]()
@@ -429,7 +429,7 @@ The single source of truth is `_gaia/_config/global.yaml`:
 
 ```yaml
 framework_name: "GAIA"
-framework_version: "1.27.1"
+framework_version: "1.27.2"
 user_name: "your-name"
 project_name: "your-project"
 ```
@@ -470,4 +470,4 @@ By contributing, you agree that your contributions will be licensed under the sa
 
 [AGPL-3.0](LICENSE)
 
-The open-source framework is licensed under the GNU Affero General Public License v3.0. A commercial license is available for teams and enterprises that want to use GAIA without AGPL obligations or connect to the GAIA SaaS platform.
+The open-source framework is licensed under the GNU Affero General Public License v3.0. 
