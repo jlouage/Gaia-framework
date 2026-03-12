@@ -20,7 +20,7 @@
 
 | Group | Items | Fixed | Remaining |
 |-------|-------|-------|-----------|
-| A. Systemic: Next-Step Suggestions | 14 | 0 | 14 |
+| A. Systemic: Next-Step Suggestions | 14 | 14 | 0 |
 | B. Systemic: Normal Mode Pause | 4 | 0 | 4 |
 | C. Systemic: Unregistered Commands | 4 | 2 | 2 |
 | D. Systemic: Wrong Output Directory | 6 | 0 | 6 |
@@ -32,7 +32,7 @@
 | J. Individual High-Severity Bugs | 8 | 0 | 8 |
 | K. Individual Medium-Severity Bugs | 28 | 0 | 28 |
 | L. Individual Low-Severity Bugs | 18 | 0 | 18 |
-| **TOTAL** | **122** | **2** | **120** |
+| **TOTAL** | **122** | **16** | **106** |
 
 > BUG-073 is already closed — not counted above.
 
@@ -46,59 +46,59 @@
 
 **Review comment:** This is the #1 most frequent bug pattern. Fixing each instructions.xml individually works but is fragile — a manifest-based approach prevents future regressions. Priority: **fix the manifest first, then update each workflow.**
 
-- [ ] **BUG-001** (Medium) — `/gaia-brainstorm` suggests `/gaia-product-brief` instead of `/gaia-market-research`
+- [x] **BUG-001** (Medium) — `/gaia-brainstorm` suggests `/gaia-product-brief` instead of `/gaia-market-research`
   - File: `brainstorm-project/instructions.xml` Step 5
   - Fix: Primary suggestion should be `/gaia-market-research` (since `create-product-brief` declares `market-research.md` as FULL_LOAD input)
 
-- [ ] **BUG-003** (Medium) — `/gaia-market-research` suggests `/gaia-product-brief` instead of `/gaia-domain-research`
+- [x] **BUG-003** (Medium) — `/gaia-market-research` suggests `/gaia-product-brief` instead of `/gaia-domain-research`
   - File: `market-research/instructions.xml` final step
   - Fix: Primary suggestion should be `/gaia-domain-research` or `/gaia-tech-research`
 
-- [ ] **BUG-005** (High) — `/gaia-domain-research` suggests `/gaia-product-brief` skipping tech-research
+- [x] **BUG-005** (High) — `/gaia-domain-research` suggests `/gaia-product-brief` skipping tech-research
   - File: `domain-research/instructions.xml` final step
   - Fix: Primary suggestion should be `/gaia-tech-research`
 
-- [ ] **BUG-006** (Medium) — `/gaia-tech-research` primary suggestion skips `advanced-elicitation`
+- [x] **BUG-006** (Medium) — `/gaia-tech-research` primary suggestion skips `advanced-elicitation`
   - File: `tech-research/instructions.xml` final step
   - Fix: After Issue 1 is resolved (moving advanced-elicitation to Phase 1), primary should be `/gaia-advanced-elicitation` (optional) or `/gaia-product-brief`
 
-- [ ] **BUG-009** (Medium) — `/gaia-create-prd` primary suggestion skips `/gaia-validate-prd`
+- [x] **BUG-009** (Medium) — `/gaia-create-prd` primary suggestion skips `/gaia-validate-prd`
   - File: `create-prd/instructions.xml` final step
   - Fix: Primary suggestion MUST be `/gaia-validate-prd` — validation is mandatory before proceeding
 
-- [ ] **BUG-010** (Medium) — `/gaia-validate-prd` suggests `/gaia-create-ux` even when PRD has critical issues
+- [x] **BUG-010** (Medium) — `/gaia-validate-prd` suggests `/gaia-create-ux` even when PRD has critical issues
   - File: `validate-prd/instructions.xml` final step
   - Fix: If validation fails, primary suggestion should be `/gaia-edit-prd`. Only suggest `/gaia-create-ux` on PASS.
 
-- [ ] **BUG-015** (High) — `/gaia-create-ux` suggests wrong next command (should be `/gaia-review-a11y`)
+- [x] **BUG-015** (High) — `/gaia-create-ux` suggests wrong next command (should be `/gaia-review-a11y`)
   - File: `create-ux/instructions.xml` final step
   - Fix: Primary should be `/gaia-review-a11y` (accessibility review is mandatory after UX design)
 
-- [ ] **BUG-017** (Medium) — `/gaia-review-a11y` next step table doesn't prioritize Phase 3 entry
+- [x] **BUG-017** (Medium) — `/gaia-review-a11y` next step table doesn't prioritize Phase 3 entry
   - File: `review-a11y/instructions.xml` final step
   - Fix: Primary should be `/gaia-create-arch` (Phase 3 starts with architecture)
 
-- [ ] **BUG-019** (Medium) — `/gaia-create-arch` primary suggestion misses `/gaia-test-design`
+- [x] **BUG-019** (Medium) — `/gaia-create-arch` primary suggestion misses `/gaia-test-design`
   - File: `create-architecture/instructions.xml` final step
   - Fix: Primary should be `/gaia-test-design` (test plan is needed before epics per quality gate)
 
-- [ ] **BUG-026** (Medium) — `/gaia-test-design` next step suggestion unclear
+- [x] **BUG-026** (Medium) — `/gaia-test-design` next step suggestion unclear
   - File: `test-design/instructions.xml` final step
   - Fix: Primary should be `/gaia-create-epics`
 
-- [ ] **BUG-039** (Medium) — `/gaia-create-epics` next step is ambiguous
+- [x] **BUG-039** (Medium) — `/gaia-create-epics` next step is ambiguous
   - File: `create-epics-stories/instructions.xml` final step
   - Fix: Primary should be `/gaia-atdd` (for high-risk stories) or `/gaia-threat-model`
 
-- [ ] **BUG-042** (Medium) — `/gaia-infra-design` next step is wrong
+- [x] **BUG-042** (Medium) — `/gaia-infra-design` next step is wrong
   - File: `infra-design/instructions.xml` final step
   - Fix: Primary should be `/gaia-trace`
 
-- [ ] **BUG-046** (Medium) — `/gaia-ci-setup` next step is wrong
+- [x] **BUG-046** (Medium) — `/gaia-ci-setup` next step is wrong
   - File: `ci-setup/instructions.xml` final step
   - Fix: Primary should be `/gaia-readiness-check`
 
-- [ ] **BUG-107** (Medium) — `/gaia-threat-model` next step should be `/gaia-infra-design`
+- [x] **BUG-107** (Medium) — `/gaia-threat-model` next step should be `/gaia-infra-design`
   - File: `threat-model/instructions.xml` final step
   - Fix: Primary should be `/gaia-infra-design`
 

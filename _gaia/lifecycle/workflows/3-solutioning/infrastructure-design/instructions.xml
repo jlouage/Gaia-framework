@@ -38,4 +38,7 @@
     Generate infrastructure design with: environment matrix, deployment topology, IaC structure, observability plan, and decision rationale.
   </template-output>
 </step>
+<next-step source="lifecycle-sequence.yaml">
+  <primary command="/gaia-trace">Generate requirements-to-tests traceability matrix</primary>
+</next-step>
 </workflow>

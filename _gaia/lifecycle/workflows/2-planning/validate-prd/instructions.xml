@@ -36,4 +36,8 @@
     Then detailed findings with recommendations.
   </template-output>
 </step>
+<next-step source="lifecycle-sequence.yaml">
+  <on-pass command="/gaia-create-ux">Create UX design specifications</on-pass>
+  <on-fail command="/gaia-edit-prd">Edit the PRD to address validation findings</on-fail>
+</next-step>
 </workflow>

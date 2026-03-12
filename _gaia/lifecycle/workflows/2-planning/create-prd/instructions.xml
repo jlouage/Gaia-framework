@@ -68,4 +68,7 @@
     Update the PRD with adversarial review findings incorporated. Critical/high findings become new requirements or refine existing ones. Add "Review Findings Incorporated" section.
   </template-output>
 </step>
+<next-step source="lifecycle-sequence.yaml">
+  <primary command="/gaia-validate-prd">Validate the PRD against quality standards before proceeding</primary>
+</next-step>
 </workflow>

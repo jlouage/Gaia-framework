@@ -82,4 +82,9 @@
     Update the architecture document with adversarial review findings incorporated. Critical/high findings lead to architecture revisions. Add "Review Findings Incorporated" section.
   </template-output>
 </step>
+<next-step source="lifecycle-sequence.yaml">
+  <primary command="/gaia-test-design">Create risk-based test plan (required before creating epics)</primary>
+  <parallel command="/gaia-threat-model">Create security threat model (can run in parallel)</parallel>
+  <parallel command="/gaia-infra-design">Design infrastructure (can run in parallel)</parallel>
+</next-step>
 </workflow>

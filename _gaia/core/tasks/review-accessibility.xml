@@ -38,4 +38,7 @@
   <format>Markdown accessibility findings with WCAG criteria</format>
   <location>{test_artifacts}/accessibility-review-{date}.md</location>
 </output>
+<next-step source="lifecycle-sequence.yaml">
+  <primary command="/gaia-create-arch">Design system architecture (Phase 3 starts here)</primary>
+</next-step>
 </task>

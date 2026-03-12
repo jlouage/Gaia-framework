@@ -41,4 +41,7 @@
   <action>If yes: run /gaia-test-framework</action>
   <action>If no: skip — you can run /gaia-test-framework anytime later</action>
 </step>
+<next-step source="lifecycle-sequence.yaml">
+  <primary command="/gaia-create-epics">Break requirements into epics and stories (test plan is required before this step)</primary>
+</next-step>
 </workflow>

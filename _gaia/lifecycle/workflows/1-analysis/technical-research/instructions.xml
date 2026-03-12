@@ -27,4 +27,8 @@
     Generate technical research report with: technology overview, evaluation matrix, trade-off analysis, recommendation, and migration/adoption considerations.
   </template-output>
 </step>
+<next-step source="lifecycle-sequence.yaml">
+  <primary command="/gaia-product-brief">Consolidate all research into a product brief</primary>
+  <alternative command="/gaia-advanced-elicitation" context="If deeper requirements exploration is needed (optional)"/>
+</next-step>
 </workflow>

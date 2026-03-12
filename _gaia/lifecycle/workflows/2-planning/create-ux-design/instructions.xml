@@ -39,4 +39,8 @@
   <action>If yes: spawn a subagent using the Agent tool: "Load {project-root}/_gaia/core/tasks/review-accessibility.xml. Read its entire contents. Target: {planning_artifacts}/ux-design.md. Follow the flow steps EXACTLY. Generate accessibility findings report."</action>
   <action>If skip: accessibility review can be run anytime later with /gaia-review-a11y</action>
 </step>
+<next-step source="lifecycle-sequence.yaml">
+  <primary command="/gaia-review-a11y">Review UX design for WCAG 2.1 accessibility compliance</primary>
+  <alternative command="/gaia-create-arch" context="If accessibility review will be done later"/>
+</next-step>
 </workflow>

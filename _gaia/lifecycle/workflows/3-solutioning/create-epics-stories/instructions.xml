@@ -77,4 +77,8 @@
   <action>If yes: spawn a subagent using the Agent tool: "Load {project-root}/_gaia/core/tasks/review-adversarial.xml. Read its entire contents. Target: {planning_artifacts}/epics-and-stories.md. Follow the task instructions EXACTLY."</action>
   <action>If skip: adversarial review can be run anytime later with /gaia-adversarial</action>
 </step>
+<next-step source="lifecycle-sequence.yaml">
+  <primary command="/gaia-atdd">Generate acceptance tests for high-risk stories</primary>
+  <alternative command="/gaia-threat-model" context="If threat modeling not yet done"/>
+</next-step>
 </workflow>

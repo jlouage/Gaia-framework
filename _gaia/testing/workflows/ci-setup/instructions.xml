@@ -18,4 +18,7 @@
   <action>Generate CI pipeline configuration document with quality gates</action>
   <template-output file="{test_artifacts}/ci-setup.md" />
 </step>
+<next-step source="lifecycle-sequence.yaml">
+  <primary command="/gaia-readiness-check">Validate implementation readiness before sprint planning</primary>
+</next-step>
 </workflow>

@@ -34,4 +34,9 @@
     Generate market research report with: executive summary, competitive analysis, customer segments, market sizing (TAM/SAM/SOM), key findings, and strategic recommendations.
   </template-output>
 </step>
+<next-step source="lifecycle-sequence.yaml">
+  <primary command="/gaia-domain-research">Research the domain or industry in depth</primary>
+  <alternative command="/gaia-tech-research" context="If technology evaluation is needed"/>
+  <alternative command="/gaia-product-brief" context="If all research is complete"/>
+</next-step>
 </workflow>

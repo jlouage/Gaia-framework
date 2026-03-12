@@ -106,6 +106,13 @@ execution modes (normal/yolo/planning), checkpoints, and quality gates.
     <action>Evaluate all checklist items against completed work</action>
     <action>Archive checkpoint to _memory/checkpoints/completed/</action>
     <action>Report workflow complete with summary of outputs</action>
+    <action>Load _gaia/_config/lifecycle-sequence.yaml and look up current workflow name in sequence</action>
+    <action>If entry has next.primary: present "Suggested next step: {command}" with description from workflow-manifest.csv</action>
+    <action>If entry has next.on_pass/on_fail: present conditional suggestions based on workflow outcome</action>
+    <action>If entry has next.alternatives or next.parallel: list them with their context</action>
+    <action>If entry has next.standalone: say "This is a standalone workflow. Return to your current lifecycle phase."</action>
+    <action>If entry has next.suggestions: list them as optional suggestions with context</action>
+    <action>IMPORTANT: Only suggest commands that exist in workflow-manifest.csv — never invent command names</action>
   </step>
 </flow>
 

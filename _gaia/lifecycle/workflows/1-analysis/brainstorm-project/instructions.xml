@@ -27,7 +27,12 @@
 </step>
 <step n="5" title="Generate Output">
   <template-output file="{planning_artifacts}/project-brainstorm.md">
-    Generate structured brainstorm output with: vision summary, target users, pain points, competitive landscape, opportunity areas (ranked), and recommended next steps.
+    Generate structured brainstorm output with: vision summary, target users, pain points, competitive landscape, opportunity areas (ranked), and next steps per lifecycle-sequence.yaml.
   </template-output>
 </step>
+<next-step source="lifecycle-sequence.yaml">
+  <primary command="/gaia-market-research">Conduct market research to validate competitive landscape</primary>
+  <alternative command="/gaia-domain-research" context="If domain-specific research is needed first"/>
+  <alternative command="/gaia-tech-research" context="If technology evaluation is needed first"/>
+</next-step>
 </workflow>

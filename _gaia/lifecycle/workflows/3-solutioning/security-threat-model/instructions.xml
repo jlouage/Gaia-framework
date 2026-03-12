@@ -49,4 +49,7 @@
     Generate threat model with: assets table, STRIDE analysis per component, DREAD scores, risk levels, mitigation strategies, and security requirements list.
   </template-output>
 </step>
+<next-step source="lifecycle-sequence.yaml">
+  <primary command="/gaia-infra-design">Design infrastructure topology and IaC structure</primary>
+</next-step>
 </workflow>

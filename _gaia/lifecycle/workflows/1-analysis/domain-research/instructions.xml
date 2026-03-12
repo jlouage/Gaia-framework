@@ -27,4 +27,8 @@
     Generate domain research report with: domain overview, key players, regulatory landscape, trends, terminology glossary, risk assessment, and recommendations.
   </template-output>
 </step>
+<next-step source="lifecycle-sequence.yaml">
+  <primary command="/gaia-tech-research">Evaluate technology options for the project</primary>
+  <alternative command="/gaia-product-brief" context="If all research is complete"/>
+</next-step>
 </workflow>
