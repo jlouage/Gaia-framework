@@ -25,14 +25,14 @@
 | C. Systemic: Unregistered Commands | 4 | 4 | 0 |
 | D. Systemic: Wrong Output Directory | 6 | 6 | 0 |
 | E. Systemic: Story Naming Convention | 3 | 3 | 0 |
-| F. Dev-Story Cluster | 6 | 4 | 2 |
+| F. Dev-Story Cluster | 6 | 6 | 0 |
 | G. Brownfield Cluster | 8 | 8 | 0 |
 | H. Run-All-Reviews Cluster | 5 | 5 | 0 |
 | I. Artifact Wiring Gaps (Issue Report) | 18 | 18 | 0 |
-| J. Individual High-Severity Bugs | 8 | 6 | 2 |
+| J. Individual High-Severity Bugs | 8 | 8 | 0 |
 | K. Individual Medium-Severity Bugs | 28 | 28 | 0 |
 | L. Individual Low-Severity Bugs | 18 | 18 | 0 |
-| **TOTAL** | **122** | **114** | **8** |
+| **TOTAL** | **122** | **118** | **4** |
 
 > BUG-073 is already closed — not counted above.
 
@@ -213,12 +213,12 @@
 - [x] **BUG-050** (High) — `/gaia-dev-story` TDD enforcement is inconsistent
   - Fix: Added critical mandates, `<check>` gates between phases, `<ask>` prompts for user confirmation, vacuous test detection
 
-- [ ] **BUG-051** (High) — Covered in Group B (normal mode pause)
+- [x] **BUG-051** (High) — Covered in Group B (normal mode pause)
 
 - [x] **BUG-052** (Medium) — `/gaia-dev-story` checkpoint saves don't include all required fields
   - Fix: Added explicit checkpoint-write actions at each TDD phase with workflow name, step, phase status, variables, and files_touched with sha256 checksums
 
-- [ ] **BUG-053** (Medium) — Covered in Group E (naming convention)
+- [x] **BUG-053** (Medium) — Covered in Group E (naming convention)
 
 - [x] **BUG-054** (High) — `/gaia-dev-story` Definition of Done checklist incomplete or not enforced
   - File: `dev-story/instructions.xml` final step
@@ -366,9 +366,9 @@ These are not part of a systemic cluster but are individually high-impact.
 - [x] **BUG-033** (High) — `/gaia-trace` doesn't load `prd.md` — matrix built from stories instead of requirements (BUG-020 in report)
   - Fix: Added input_file_patterns (prd, epics_and_stories, test_plan) to workflow.yaml. Rewrote instructions.xml with explicit PRD loading, FR/NFR-based matrix rows, separate NFR section, implementation rate tracking, and gate decision logic.
 
-- [ ] **BUG-041** (High) — Covered in Group E (naming convention)
+- [x] **BUG-041** (High) — Covered in Group E (naming convention)
 
-- [ ] **BUG-064** (High) — Covered in Group G (brownfield)
+- [x] **BUG-064** (High) — Covered in Group G (brownfield)
 
 ---
 
