@@ -27,12 +27,12 @@
 | E. Systemic: Story Naming Convention | 3 | 3 | 0 |
 | F. Dev-Story Cluster | 6 | 4 | 2 |
 | G. Brownfield Cluster | 8 | 0 | 8 |
-| H. Run-All-Reviews Cluster | 5 | 3 | 2 |
+| H. Run-All-Reviews Cluster | 5 | 4 | 1 |
 | I. Artifact Wiring Gaps (Issue Report) | 18 | 0 | 18 |
 | J. Individual High-Severity Bugs | 8 | 6 | 2 |
 | K. Individual Medium-Severity Bugs | 28 | 0 | 28 |
 | L. Individual Low-Severity Bugs | 18 | 0 | 18 |
-| **TOTAL** | **122** | **44** | **78** |
+| **TOTAL** | **122** | **45** | **77** |
 
 > BUG-073 is already closed — not counted above.
 
@@ -272,8 +272,8 @@
 - [x] **BUG-087** (Low) — Sprint status reconciliation doesn't generate a report file (corrected from action list description)
   - Fix: Added reconciliation report output to sprint-status Step 2 — writes `sprint-reconciliation-{date}.md` when discrepancies found.
 
-- [ ] **BUG-088** (Low) — Review gate table in story file not updated atomically
-  - Fix: Update all 6 review columns in one write after all reviews complete
+- [x] **BUG-088** (Medium) — Epic status workflow skips dependency analysis entirely (corrected from action list description)
+  - Fix: Added Step 4 (Dependency Analysis) to epic-status — reads dependencies from story frontmatter, builds cross-epic graph, identifies blocked stories, calculates critical path. Dashboard includes dependency section.
 
 - [ ] **BUG-089** (Low) — No timeout handling for individual review subagents
   - Fix: Add per-review timeout (configurable, default 5 min) with graceful fallback
