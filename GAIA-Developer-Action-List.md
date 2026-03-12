@@ -25,14 +25,14 @@
 | C. Systemic: Unregistered Commands | 4 | 4 | 0 |
 | D. Systemic: Wrong Output Directory | 6 | 0 | 6 |
 | E. Systemic: Story Naming Convention | 3 | 3 | 0 |
-| F. Dev-Story Cluster | 6 | 0 | 6 |
+| F. Dev-Story Cluster | 6 | 1 | 5 |
 | G. Brownfield Cluster | 8 | 0 | 8 |
 | H. Run-All-Reviews Cluster | 5 | 0 | 5 |
 | I. Artifact Wiring Gaps (Issue Report) | 18 | 0 | 18 |
 | J. Individual High-Severity Bugs | 8 | 0 | 8 |
 | K. Individual Medium-Severity Bugs | 28 | 0 | 28 |
 | L. Individual Low-Severity Bugs | 18 | 0 | 18 |
-| **TOTAL** | **122** | **25** | **97** |
+| **TOTAL** | **122** | **26** | **96** |
 
 > BUG-073 is already closed — not counted above.
 
@@ -209,9 +209,8 @@
 
 **Review comment:** Dev-story is the most frequently used workflow in production. These bugs compound — a developer hits the gate issue, then the TDD issue, then the DoD issue all in one session. High priority cluster.
 
-- [ ] **BUG-049** (High) — `/gaia-dev-story` pre-start gate doesn't validate story file exists
-  - File: `dev-story/workflow.yaml` `quality_gates.pre_start`
-  - Fix: Add a pre-start gate that checks for `{implementation_artifacts}/{story_key}*.md`
+- [x] **BUG-049** (High) — `/gaia-dev-story` pre-start gate doesn't validate story file exists + ATDD glob mismatch
+  - Fix: Added story file existence gate to workflow.yaml. Fixed ATDD gate to search both epic-level and story-level patterns. Fixed ATDD variable naming.
 
 - [ ] **BUG-050** (High) — `/gaia-dev-story` TDD enforcement is inconsistent
   - File: `dev-story/instructions.xml`

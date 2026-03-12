@@ -17,6 +17,8 @@ required_skill_sections:
   - "testing-patterns:tdd-cycle"
 quality_gates:
   pre_start:
+    - check: "story_file_exists({implementation_artifacts}/{story_key}-*.md)"
+      on_fail: "HALT: Story file not found. Expected {implementation_artifacts}/{story_key}-*.md. Run /gaia-create-story first."
     - check: "story_status == 'ready-for-dev'"
       on_fail: "HALT: Story must be in ready-for-dev status. Run /gaia-validate-story first to validate the story."
   post_complete:

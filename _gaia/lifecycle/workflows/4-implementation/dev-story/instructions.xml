@@ -14,9 +14,13 @@
   <action>Verify story status is 'ready-for-dev'</action>
   <check if="status != ready-for-dev">HALT: Story must be in ready-for-dev status</check>
   <action>Read story frontmatter: extract risk_level field (default: low if absent)</action>
+  <action>Extract epic_key from story_key — e.g., if story_key is "E1-S1", epic_key is "E1" (everything before the last hyphen-and-story-number)</action>
   <check if="risk_level == high">
-    Verify {test_artifacts}/atdd-{story_key}.md exists.
-    If file does not exist: HALT — This story is marked high-risk. Run /gaia-atdd for story {story_key} before implementation. ATDD acceptance tests must be written (red phase) before implementation begins.
+    Search for ATDD file using BOTH patterns (epic-level first, then story-level):
+    1. Epic-level: {test_artifacts}/atdd-{epic_key}*.md (e.g., atdd-E1.md)
+    2. Story-level: {test_artifacts}/atdd-{story_key}*.md (e.g., atdd-E1-S1.md)
+    If EITHER pattern matches a file, the gate PASSES — log which file was found.
+    If NEITHER pattern matches: HALT — This story is marked high-risk. No ATDD file found (searched for atdd-{epic_key}*.md and atdd-{story_key}*.md). Run /gaia-atdd before implementation.
   </check>
 </step>
 <step n="3" title="Check for WIP">

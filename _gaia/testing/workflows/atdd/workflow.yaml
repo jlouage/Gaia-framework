@@ -8,4 +8,4 @@ installed_path: "{project-root}/_gaia/testing/workflows/atdd"
 instructions: "{installed_path}/instructions.xml"
 validation: "{installed_path}/checklist.md"
 output:
-  primary: "{test_artifacts}/atdd-{story-key}.md"
+  primary: "{test_artifacts}/atdd-{story_key}.md"
