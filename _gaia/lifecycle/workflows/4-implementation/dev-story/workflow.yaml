@@ -24,7 +24,7 @@ quality_gates:
       on_fail: "HALT: All tests must pass before marking complete."
 input_file_patterns:
   story:
-    whole: "{implementation_artifacts}/{{story_key}}.md"
+    whole: "{implementation_artifacts}/{{story_key}}-*.md"
     load_strategy: "FULL_LOAD"
 on_error:
   missing_file: "ask_user"
@@ -32,4 +32,4 @@ on_error:
 story_statuses: [backlog, validating, ready-for-dev, in-progress, blocked, review, done]
 
 output:
-  primary: "{implementation_artifacts}/{story_key}.md"
+  primary: "{implementation_artifacts}/{story_key}-*.md"

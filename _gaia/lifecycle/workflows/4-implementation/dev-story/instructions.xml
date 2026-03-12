@@ -8,6 +8,7 @@
 <step n="1" title="Load Story File">
   <action>Read story .md file, parse YAML frontmatter</action>
   <action>Extract: key, status, acceptance criteria, subtasks, dependencies</action>
+  <action>Resolve story file path: search {implementation_artifacts}/ for {story_key}-*.md. If no match, try {story_key}.md. Use the resolved path for all subsequent reads and writes.</action>
 </step>
 <step n="2" title="Pre-Start Gate">
   <action>Verify story status is 'ready-for-dev'</action>
@@ -87,7 +88,7 @@
   <action>Update sprint-status.yaml: set story to 'review'</action>
   <action>Append files changed list to story file</action>
   <action>Initialize Review Gate section in story file: set all six rows (Code Review, QA Tests, Security Review, Test Automation, Test Review, Performance Review) to PENDING with report link "—". If Review Gate section already exists, reset all rows to PENDING.</action>
-  <template-output file="{implementation_artifacts}/{story_key}.md">
+  <template-output file="{implementation_artifacts}/{story_key}-*.md">
     Update story file with status change to 'review', list of files changed, and initialized Review Gate table (all 6 rows PENDING).
   </template-output>
 </step>

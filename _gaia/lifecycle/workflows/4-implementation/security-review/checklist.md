@@ -2,7 +2,7 @@
 title: 'Security Review Validation'
 validation-target: 'Security review report'
 required-inputs:
-  - '{implementation_artifacts}/{{story_key}}.md'
+  - '{implementation_artifacts}/{{story_key}}-*.md'
 ---
 ## OWASP Coverage
 - [ ] All 10 OWASP categories checked

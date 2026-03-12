@@ -17,4 +17,4 @@ on_error:
 
 output:
   primary: "{implementation_artifacts}/{story_key}-review.md"
-  secondary: "{implementation_artifacts}/{story_key}.md"
+  secondary: "{implementation_artifacts}/{story_key}-*.md"

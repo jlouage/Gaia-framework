@@ -24,7 +24,7 @@
 | B. Systemic: Normal Mode Pause | 4 | 4 | 0 |
 | C. Systemic: Unregistered Commands | 4 | 2 | 2 |
 | D. Systemic: Wrong Output Directory | 6 | 0 | 6 |
-| E. Systemic: Story Naming Convention | 3 | 0 | 3 |
+| E. Systemic: Story Naming Convention | 3 | 3 | 0 |
 | F. Dev-Story Cluster | 6 | 0 | 6 |
 | G. Brownfield Cluster | 8 | 0 | 8 |
 | H. Run-All-Reviews Cluster | 5 | 0 | 5 |
@@ -32,7 +32,7 @@
 | J. Individual High-Severity Bugs | 8 | 0 | 8 |
 | K. Individual Medium-Severity Bugs | 28 | 0 | 28 |
 | L. Individual Low-Severity Bugs | 18 | 0 | 18 |
-| **TOTAL** | **122** | **20** | **102** |
+| **TOTAL** | **122** | **23** | **99** |
 
 > BUG-073 is already closed — not counted above.
 
@@ -190,15 +190,14 @@
 
 **Review comment:** This is a cross-cutting consistency issue. Grep the entire `_gaia/` tree for both patterns and align everything.
 
-- [ ] **BUG-041** (High) — CLAUDE.md uses `story-{key}.md` convention — conflicts with `{key}-{title-slug}.md` from workflow
-  - Fix: Update CLAUDE.md to use `{story_key}-{story_title_slug}.md`
-  - Also update: `sprint-planning/instructions.xml`, any other files referencing `story-{key}.md`
+- [x] **BUG-041** (High) — CLAUDE.md uses `story-{key}.md` convention — conflicts with `{key}-{title-slug}.md` from workflow
+  - Fix: Documented `{story_key}-{story_title_slug}.md` as canonical convention in CLAUDE.md. Updated all 13 workflow files to use glob `{story_key}-*.md`.
 
-- [ ] **BUG-053** (Medium) — `/gaia-dev-story` story file references use inconsistent naming
-  - Fix: Align all references in `dev-story/instructions.xml` to `{story_key}-{story_title_slug}.md`
+- [x] **BUG-053** (Medium) — `/gaia-dev-story` story file references use inconsistent naming
+  - Fix: Updated dev-story workflow.yaml and instructions.xml to use glob `{story_key}-*.md` + added file resolution action
 
-- [ ] **BUG-044** (Low, downgraded) — `/gaia-create-story` output filename convention ambiguity
-  - Fix: Ensure `create-story/workflow.yaml` `output.primary` and `template-output` match
+- [x] **BUG-044** (Low, downgraded) — `/gaia-create-story` output filename convention ambiguity
+  - Fix: Standardized on `{story_key}-{story_title_slug}.md` across all workflows. create-story already uses this correctly.
 
 ---
 

@@ -8,7 +8,7 @@
 
 <step n="1" title="Identify Story">
   <action>Ask user which story to review (story key, e.g., STORY-001)</action>
-  <action>Read story file at {implementation_artifacts}/{story_key}.md</action>
+  <action>Read story file: search {implementation_artifacts}/ for {story_key}-*.md (if not found, try {story_key}.md). Use the resolved path for all subsequent updates.</action>
   <action>Verify story status is 'review'. If not: HALT — story must be in review status</action>
   <action>Read the Review Gate table — note which reviews are already PASSED (skip those)</action>
   <action>Show user: "Running reviews for {story_key}. Already passed: {list}. Will run: {remaining_list}."</action>

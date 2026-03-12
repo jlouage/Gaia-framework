@@ -1,4 +1,4 @@
-# GAIA Framework v1.27.7
+# GAIA Framework v1.27.8
 
 This project uses the **GAIA** (Generative Agile Intelligence Architecture) framework — an AI agent framework for Claude Code that orchestrates software product development through 25 specialized agents, 62 workflows, and 8 shared skills.
 
@@ -101,6 +101,8 @@ _gaia/                    # Framework root
 - Agent files: `{agent-id}.md` with XML `<agent>` block
 - Skill files: `{skill-name}.md` in `_gaia/dev/skills/`
 - Knowledge fragments: `{topic}.md` in `_gaia/{module}/knowledge/{category}/`
+- Story files: `{story_key}-{story_title_slug}.md` (e.g., `E1-S1-user-login.md`) — canonical name set by `/gaia-create-story`
+- Story file lookups use glob `{story_key}-*.md` to match regardless of slug
 
 ## Developer Agent System
 

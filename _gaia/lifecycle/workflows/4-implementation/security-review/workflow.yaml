@@ -13,7 +13,7 @@ quality_gates:
       on_fail: "HALT: Story must be in review status before security review"
 input_file_patterns:
   story:
-    whole: "{implementation_artifacts}/{{story_key}}.md"
+    whole: "{implementation_artifacts}/{{story_key}}-*.md"
     load_strategy: "FULL_LOAD"
   threat_model:
     whole: "{planning_artifacts}/threat-model.md"
@@ -24,4 +24,4 @@ on_error:
 
 output:
   primary: "{implementation_artifacts}/{story_key}-security-review.md"
-  secondary: "{implementation_artifacts}/{story_key}.md"
+  secondary: "{implementation_artifacts}/{story_key}-*.md"

@@ -17,4 +17,4 @@ on_error:
 
 output:
   primary: "{test_artifacts}/{story_key}-qa-tests.md"
-  secondary: "{implementation_artifacts}/{story_key}.md"
+  secondary: "{implementation_artifacts}/{story_key}-*.md"
