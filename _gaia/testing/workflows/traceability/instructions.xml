@@ -2,22 +2,47 @@
 <critical>
   <mandate>Map every requirement to at least one test</mandate>
   <mandate>Identify requirements without test coverage as gaps</mandate>
+  <mandate>Matrix rows MUST be PRD requirements (FR-001…FR-N, NFR-001…NFR-N), NOT story acceptance criteria. Stories are an intermediate mapping between requirements and tests, not the primary dimension.</mandate>
 </critical>
 <step n="1" title="Load Requirements">
-  <action>Read requirements from PRD, stories, and acceptance criteria</action>
+  <action>Load {planning_artifacts}/prd.md — extract ALL functional requirements (FR-001 through FR-N) and non-functional requirements (NFR-001 through NFR-N) as the primary requirement inventory. These are the matrix rows.</action>
+  <check>If prd.md does not exist or cannot be loaded: HALT — "PRD not found at {planning_artifacts}/prd.md. Run /gaia-create-prd first. The traceability matrix requires PRD requirements as its primary dimension."</check>
+  <action>Load {planning_artifacts}/epics-and-stories.md — for each story, identify which FR/NFR it implements. Build a mapping: FR/NFR → Story(s) → Story ACs.</action>
+  <action>Load {test_artifacts}/test-plan.md if it exists — extract planned test IDs and their categories (Unit, Integration, E2E, Manual, Performance, Security, Accessibility).</action>
 </step>
 <step n="2" title="Load Test Inventory">
-  <action>Scan existing test files and test descriptions</action>
+  <action>Scan existing test files and test descriptions from test-plan.md</action>
+  <action>For each test, record: test ID, test type (Unit/Integration/E2E/Manual/Performance/Security/Accessibility), implementation status (planned/implemented), and file path if implemented</action>
 </step>
 <step n="3" title="Build Matrix">
-  <action>Map requirements → tests → test results</action>
+  <action>Build the Functional Requirements matrix section:
+    Rows: FR-001 through FR-N (from PRD)
+    Columns: FR ID | Description | Story(s) | Unit | Integration | E2E | Manual | Coverage %
+    For each FR, map to its implementing story(s) via the FR→Story mapping from Step 1, then map stories to their planned/implemented tests.</action>
+  <action>Build the Non-Functional Requirements matrix section:
+    Rows: NFR-001 through NFR-N (from PRD)
+    Columns: NFR ID | Description | Category | Target | Test(s) | Status
+    Categories: Performance, Security, Accessibility, Scalability, Reliability, etc.
+    Map each NFR to its non-functional test(s) — these may not have story intermediaries.</action>
+  <action>Build the Story→Test detail section as a supplementary view:
+    For each story with ACs, list the specific test IDs covering each AC.
+    This section supports the primary FR/NFR matrix but is NOT the primary dimension.</action>
 </step>
 <step n="4" title="Gap Analysis">
-  <action>Identify requirements without test coverage</action>
-  <action>Prioritize gaps by risk level</action>
+  <action>Identify FR/NFR requirements with no mapped story — flag as "No implementing story" gap</action>
+  <action>Identify FR/NFR requirements with stories but no mapped tests — flag as "No test coverage" gap</action>
+  <action>Identify tests with no requirement mapping — flag as "Orphan test" warning</action>
+  <action>Prioritize gaps by risk level (High-risk FR/NFRs without coverage are blocking)</action>
+  <action>Calculate implementation rate: count implemented tests vs total planned tests. Record as: Total planned: N, Implemented: M ({percentage}%)</action>
 </step>
 <step n="5" title="Generate Matrix">
-  <action>Generate traceability matrix with requirement-to-test mapping and gap analysis</action>
+  <action>Generate traceability matrix with:
+    1. FR Requirements → Test mapping table
+    2. NFR Requirements → Test mapping table
+    3. Story AC → Test detail (supplementary)
+    4. Gap analysis summary
+    5. Coverage statistics
+    6. Implementation-readiness gate decision: if all High-risk FR/NFRs have at least one planned test AND implementation rate > 50%, declare PASS. If any High-risk FR/NFR has zero test coverage, declare BLOCKED. Otherwise declare CONDITIONAL.</action>
   <template-output file="{test_artifacts}/traceability-matrix.md" />
 </step>
 </workflow>

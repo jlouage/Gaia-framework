@@ -7,5 +7,15 @@ config_source: "{project-root}/_gaia/testing/config.yaml"
 installed_path: "{project-root}/_gaia/testing/workflows/traceability"
 instructions: "{installed_path}/instructions.xml"
 validation: "{installed_path}/checklist.md"
+input_file_patterns:
+  prd:
+    whole: "{planning_artifacts}/prd.md"
+    load_strategy: "FULL_LOAD"
+  epics_and_stories:
+    whole: "{planning_artifacts}/epics-and-stories.md"
+    load_strategy: "FULL_LOAD"
+  test_plan:
+    whole: "{test_artifacts}/test-plan.md"
+    load_strategy: "FULL_LOAD"
 output:
   primary: "{test_artifacts}/traceability-matrix.md"

@@ -29,10 +29,10 @@
 | G. Brownfield Cluster | 8 | 0 | 8 |
 | H. Run-All-Reviews Cluster | 5 | 0 | 5 |
 | I. Artifact Wiring Gaps (Issue Report) | 18 | 0 | 18 |
-| J. Individual High-Severity Bugs | 8 | 5 | 3 |
+| J. Individual High-Severity Bugs | 8 | 6 | 2 |
 | K. Individual Medium-Severity Bugs | 28 | 0 | 28 |
 | L. Individual Low-Severity Bugs | 18 | 0 | 18 |
-| **TOTAL** | **122** | **40** | **82** |
+| **TOTAL** | **122** | **41** | **81** |
 
 > BUG-073 is already closed — not counted above.
 
@@ -349,10 +349,8 @@ These are not part of a systemic cluster but are individually high-impact.
 - [x] **BUG-030** (High) — `/gaia-readiness-check` declares PASS while traceability matrix declares BLOCKED
   - Fix: Added critical mandate, enhanced Step 6 to read matrix's gate decision field and implementation rate, added traceability_gate_decision and traceability_implementation_rate to YAML output, added consistency check in Step 10.
 
-- [ ] **BUG-033** (High) — `/gaia-trace` doesn't load `prd.md` — matrix built from stories instead of requirements
-  - File: `traceability/workflow.yaml`
-  - Fix: Add `prd` to `input_file_patterns` with FULL_LOAD. Matrix rows should be FR-001…FR-N and NFR-001…NFR-N, not story ACs.
-  - **Comment:** This is the most impactful single bug in Phase 3. The traceability matrix is supposed to answer "is every requirement tested?" but it currently answers "is every story AC tested?" — different question.
+- [x] **BUG-033** (High) — `/gaia-trace` doesn't load `prd.md` — matrix built from stories instead of requirements (BUG-020 in report)
+  - Fix: Added input_file_patterns (prd, epics_and_stories, test_plan) to workflow.yaml. Rewrote instructions.xml with explicit PRD loading, FR/NFR-based matrix rows, separate NFR section, implementation rate tracking, and gate decision logic.
 
 - [ ] **BUG-041** (High) — Covered in Group E (naming convention)
 
