@@ -2,6 +2,7 @@
 <critical>
   <mandate>Output must include machine-readable PASS/FAIL gate report</mandate>
   <mandate>Check ALL artifacts — do not stop at first failure</mandate>
+  <mandate>If the traceability matrix declares its own gate as BLOCKED or FAIL, the readiness report MUST NOT declare traceability_complete: true. Either declare FAIL, or declare CONDITIONAL PASS with explicit justification including the implementation rate percentage.</mandate>
 </critical>
 <step n="1" title="Load All Artifacts">
   <action>Load PRD, UX Design, Architecture, Epics/Stories</action>
@@ -60,9 +61,12 @@
 </step>
 <step n="6" title="Test Infrastructure Readiness">
   <action>Verify traceability-matrix.md covers all PRD requirements — flag uncovered requirements as blocking</action>
+  <action>Extract the traceability matrix's own gate decision: search traceability-matrix.md for the "implementation-readiness gate:" field (or equivalent quality gate section). Record the value as traceability_gate_decision (PASS, BLOCKED, or FAIL). If the field does not exist, record as "NOT_DECLARED".</action>
+  <action>Extract the test implementation rate from traceability-matrix.md: find the total planned tests vs implemented tests count (e.g., "Implemented: 10/109"). Calculate and record as traceability_implementation_rate: {N}%. If not declared, record as "unknown".</action>
   <action>Verify ci-setup.md defines enforced quality gates (coverage %, pass rate thresholds) — flag advisory-only gates as a warning</action>
   <action>Verify test-plan.md exists (from /gaia-test-design) — flag absence as blocking</action>
-  <action>Record findings as: test_plan_exists: true/false, traceability_complete: true/false, ci_gates_enforced: true/false</action>
+  <action>Record findings as: test_plan_exists: true/false, traceability_complete: true/false, traceability_gate_decision: PASS/BLOCKED/FAIL/NOT_DECLARED, traceability_implementation_rate: {N}%, ci_gates_enforced: true/false</action>
+  <check>If traceability_gate_decision is BLOCKED or FAIL, then traceability_complete MUST be false. Do NOT set traceability_complete: true when the matrix's own gate assessment contradicts this — the matrix is the upstream authority on its own readiness.</check>
 </step>
 <step n="7" title="Security Readiness">
   <action>Are security requirements documented in PRD?</action>
@@ -90,7 +94,7 @@
   <template-output file="{planning_artifacts}/readiness-report.md">
     Generate readiness report with YAML frontmatter:
     ---
-    status: PASS or FAIL
+    status: PASS or FAIL or CONDITIONAL PASS
     gate_results:
       prd_complete: true/false
       ux_complete: true/false
@@ -100,6 +104,8 @@
       tea_ready: true/false
       test_plan_exists: true/false
       traceability_complete: true/false
+      traceability_gate_decision: PASS/BLOCKED/FAIL/NOT_DECLARED
+      traceability_implementation_rate: "{N}%"
       ci_gates_enforced: true/false
       security_documented: true/false
       rollback_feasible: true/false
@@ -111,6 +117,7 @@
     blocking_issues:
       - "issue description"
     ---
+    <check>Before finalizing the report: if traceability_gate_decision is BLOCKED or FAIL and traceability_complete is true, this is a self-contradiction. Fix traceability_complete to false and either set status to FAIL, or set status to CONDITIONAL PASS with an explicit justification note (e.g., "Planned test coverage is ~100% but test implementation is {N}% — tests will be implemented during sprint development").</check>
     Then detailed findings for each gate.
     Include a "## Contradictions" section listing each detected contradiction:
     | ID | Type | Source Artifacts | Severity | Authority | Description | Recommended Resolution |

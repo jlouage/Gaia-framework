@@ -29,10 +29,10 @@
 | G. Brownfield Cluster | 8 | 0 | 8 |
 | H. Run-All-Reviews Cluster | 5 | 0 | 5 |
 | I. Artifact Wiring Gaps (Issue Report) | 18 | 0 | 18 |
-| J. Individual High-Severity Bugs | 8 | 4 | 4 |
+| J. Individual High-Severity Bugs | 8 | 5 | 3 |
 | K. Individual Medium-Severity Bugs | 28 | 0 | 28 |
 | L. Individual Low-Severity Bugs | 18 | 0 | 18 |
-| **TOTAL** | **122** | **39** | **83** |
+| **TOTAL** | **122** | **40** | **82** |
 
 > BUG-073 is already closed — not counted above.
 
@@ -346,10 +346,8 @@ These are not part of a systemic cluster but are individually high-impact.
 - [x] **BUG-024** (High) — `/gaia-create-arch` architecture decisions not traceable to requirements
   - Fix: Added "Addresses" field to each ADR listing FR/NFR IDs. Added "Decision → Requirement Mapping" table generation in Step 8 that flags uncovered requirements as gaps.
 
-- [ ] **BUG-030** (High) — `/gaia-test-design` test plan doesn't cover NFRs
-  - File: `test-design/instructions.xml`
-  - Fix: Add explicit NFR test planning section (performance, security, accessibility, scalability targets from PRD NFRs)
-  - **Comment:** Critical gap — NFRs are often the highest-risk requirements and they get zero test coverage in the current test plan.
+- [x] **BUG-030** (High) — `/gaia-readiness-check` declares PASS while traceability matrix declares BLOCKED
+  - Fix: Added critical mandate, enhanced Step 6 to read matrix's gate decision field and implementation rate, added traceability_gate_decision and traceability_implementation_rate to YAML output, added consistency check in Step 10.
 
 - [ ] **BUG-033** (High) — `/gaia-trace` doesn't load `prd.md` — matrix built from stories instead of requirements
   - File: `traceability/workflow.yaml`
