@@ -31,8 +31,8 @@
 | I. Artifact Wiring Gaps (Issue Report) | 18 | 18 | 0 |
 | J. Individual High-Severity Bugs | 8 | 6 | 2 |
 | K. Individual Medium-Severity Bugs | 28 | 28 | 0 |
-| L. Individual Low-Severity Bugs | 18 | 10 | 8 |
-| **TOTAL** | **122** | **106** | **16** |
+| L. Individual Low-Severity Bugs | 18 | 11 | 7 |
+| **TOTAL** | **122** | **107** | **15** |
 
 > BUG-073 is already closed — not counted above.
 
@@ -506,8 +506,8 @@ Documentation, cosmetic, and minor consistency issues.
 - [x] **BUG-080** (Low) — `/gaia-test-automate` report filename doesn't include story key — collisions on multiple stories
   - Fix: Changed output from `automation-report.md` to `{story_key}-test-automation.md` in both instructions.xml and workflow.yaml.
 
-- [ ] **BUG-081** (Low) — `/gaia-test-review` coverage report incomplete
-  - Fix: Include untested paths and edge cases in coverage analysis
+- [x] **BUG-081** (Low) — `/gaia-test-review` coverage report incomplete
+  - Fix: Expanded Step 3 with detailed coverage gap analysis — untested code paths, edge cases, boundary conditions, critical path coverage assessment with risk ratings. Updated template-output to include Coverage Gaps table and Critical Path Coverage section. Updated checklist.
 
 - [ ] **BUG-082** (Low) — `/gaia-review-perf` missing baseline metrics
   - Fix: If no baseline exists, establish one; otherwise compare against existing baseline

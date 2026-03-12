@@ -14,7 +14,10 @@
   <check if="status != review">HALT: Story must be in review status before test review</check>
 </step>
 <step n="3" title="Quality Assessment">
-  <action>Check: determinism, isolation, naming, assertions, coverage</action>
+  <action>Check: determinism (no timing/order dependencies), isolation (no shared mutable state), naming (descriptive test names reflecting behavior), assertions (meaningful assertions, not just "no error")</action>
+  <action>Coverage gap analysis: identify untested code paths — error handling branches, boundary conditions, edge cases, null/empty inputs, concurrent access paths, and failure/retry scenarios</action>
+  <action>Assess critical path coverage: for each high-risk or business-critical function touched by the story, verify that tests exist for the happy path, at least one error path, and boundary values. Flag any critical function with no tests as a blocking gap.</action>
+  <action>List specific coverage gaps: for each gap, note the function/module, the missing scenario (e.g., "no test for timeout handling in fetchUser"), and rate risk as Critical/High/Medium/Low based on likelihood and impact of the untested path failing in production</action>
 </step>
 <step n="4" title="Flakiness Analysis">
   <action>Identify potentially flaky tests: timing, state, network dependencies</action>
@@ -26,7 +29,12 @@
 <step n="6" title="Generate Report">
   <action>Generate test review report with quality assessment and flakiness findings</action>
   <template-output file="{test_artifacts}/{story_key}-test-review.md">
-    Generate test review report with quality assessment, flakiness findings, and machine-readable verdict (PASSED/FAILED).
+    Generate test review report with:
+    - Quality assessment (determinism, isolation, naming, assertions)
+    - Coverage Gaps section: table of untested paths (Function/Module | Missing Scenario | Risk Rating). Include untested error handling, boundary conditions, and edge cases.
+    - Critical Path Coverage: list each critical function and whether it has happy-path, error-path, and boundary tests
+    - Flakiness findings
+    - Machine-readable verdict (PASSED/FAILED)
   </template-output>
 </step>
 <step n="7" title="Update Review Gate and Transition">
