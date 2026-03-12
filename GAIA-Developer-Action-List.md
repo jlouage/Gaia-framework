@@ -25,14 +25,14 @@
 | C. Systemic: Unregistered Commands | 4 | 4 | 0 |
 | D. Systemic: Wrong Output Directory | 6 | 0 | 6 |
 | E. Systemic: Story Naming Convention | 3 | 3 | 0 |
-| F. Dev-Story Cluster | 6 | 2 | 4 |
+| F. Dev-Story Cluster | 6 | 3 | 3 |
 | G. Brownfield Cluster | 8 | 0 | 8 |
 | H. Run-All-Reviews Cluster | 5 | 0 | 5 |
 | I. Artifact Wiring Gaps (Issue Report) | 18 | 0 | 18 |
 | J. Individual High-Severity Bugs | 8 | 0 | 8 |
 | K. Individual Medium-Severity Bugs | 28 | 0 | 28 |
 | L. Individual Low-Severity Bugs | 18 | 0 | 18 |
-| **TOTAL** | **122** | **27** | **95** |
+| **TOTAL** | **122** | **28** | **94** |
 
 > BUG-073 is already closed — not counted above.
 
@@ -217,9 +217,8 @@
 
 - [ ] **BUG-051** (High) — Covered in Group B (normal mode pause)
 
-- [ ] **BUG-052** (Medium) — `/gaia-dev-story` checkpoint saves don't include all required fields
-  - File: `dev-story/instructions.xml` checkpoint steps
-  - Fix: Include `files_touched` with sha256 checksums per CLAUDE.md checkpoint discipline
+- [x] **BUG-052** (Medium) — `/gaia-dev-story` checkpoint saves don't include all required fields
+  - Fix: Added explicit checkpoint-write actions at each TDD phase with workflow name, step, phase status, variables, and files_touched with sha256 checksums
 
 - [ ] **BUG-053** (Medium) — Covered in Group E (naming convention)
 
