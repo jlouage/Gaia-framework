@@ -36,6 +36,16 @@
       Generate adversarial review report with: threat summary (top 3 most critical issues), full findings table (severity, confidence, category, description), and overall risk assessment for proceeding as-is.
     </template-output>
   </step>
+
+  <step n="4" title="Incorporate Findings">
+    <action>Read the adversarial review report just generated at {planning_artifacts}/adversarial-review-{target}-{date}.md</action>
+    <action>Extract critical and high severity findings</action>
+    <action>For each critical/high finding: update the target document — add missing sections, revise decisions, strengthen weak areas, address gaps</action>
+    <action>Add a "## Review Findings Incorporated" section to the target document listing each finding, its severity, and how it was addressed (revised / added / acknowledged as risk)</action>
+    <template-output file="{target_file}">
+      Update the target document with adversarial review findings incorporated. Critical/high findings lead to document revisions. Add "Review Findings Incorporated" section.
+    </template-output>
+  </step>
 </flow>
 
 <output>
