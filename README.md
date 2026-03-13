@@ -1,24 +1,41 @@
 # GAIA — Generative Agile Intelligence Architecture
 
-[![Framework](https://img.shields.io/badge/framework-v1.27.50-blue)]()
+[![Framework](https://img.shields.io/badge/framework-v1.27.52-blue)]()
 [![License](https://img.shields.io/badge/license-AGPL--3.0-green)]()
-[![Agents](https://img.shields.io/badge/agents-25-purple)]()
+[![Agents](https://img.shields.io/badge/agents-27-purple)]()
 [![Workflows](https://img.shields.io/badge/workflows-64-orange)]()
 
-AI agent framework for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) that orchestrates software product development through **25 specialized agents**, **64 workflows**, and **8 shared skills** — from initial research all the way to deployment.
+AI agent framework for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) that orchestrates software product development through **27 specialized agents**, **64 workflows**, and **8 shared skills** — from initial research all the way to deployment.
 
-![GAIA Lifecycle Activity Diagram](GAIA_v1.27.0_Lifecycle_Activity_Diagram.png)
+![GAIA Lifecycle Activity Diagram](GAIA_Lifecycle_Activity_Diagram.png)
 
 ### Why GAIA?
 
-Using Claude Code alone, you prompt an AI assistant. With GAIA, you manage a **team of AI specialists** that follow a proven product lifecycle:
+AI can generate code faster than any human. But speed without structure creates a different kind of technical debt — code that nobody can trace back to a requirement, architectures that no one reviewed, and features that were never validated against actual user needs. The faster you build, the faster you accumulate problems that slow you down later.
 
-- **Structured lifecycle** — 5 phases from analysis to deployment, with quality gates that enforce standards at every transition
-- **25 specialized agents** — each with a persona, domain expertise, and persistent memory that improves over time
-- **Built-in quality gates** — 17 enforced gates that HALT workflows when standards aren't met (not advisory — hard stops)
+GAIA exists because **maintainability matters**. It brings the discipline of a real product team — analysts, architects, QA engineers, security experts — into AI-assisted development, so what you build is something you can actually maintain, scale, and hand off to others.
+
+Without guardrails, every AI session starts from zero. There's no traceability from requirements to code, no architectural consistency across features, no review process, and no way to ensure two developers working on the same project follow the same standards. GAIA solves this by treating AI development the way serious software teams have always worked: with a structured lifecycle, enforced quality gates, and specialized roles — except the roles are played by AI agents that remember decisions across sessions.
+
+**What this gives you:**
+
+- **A structured lifecycle, not ad-hoc prompting** — 5 phases from analysis to deployment, with quality gates that enforce standards at every transition
+- **27 specialized agents** — each with a persona, domain expertise, and persistent memory that improves over time
+- **Enforced quality gates** — 17 gates that HALT workflows when standards aren't met (not advisory — hard stops)
 - **6-gate review process** — every story passes code review, QA, security, test automation, test review, and performance review before completion
+- **Full traceability** — every line of code traces back through stories, epics, architecture decisions, and requirements to the original product brief
 - **Checkpoint/resume** — long-running workflows survive context loss with sha256-verified checkpoints
 - **Brownfield support** — onboard existing codebases with automated discovery, documentation generation, and gap analysis
+
+### Design Principles
+
+GAIA is built on a few core beliefs about how AI-assisted development should work:
+
+- **Human-in-the-loop, always.** AI agents propose, humans decide. Every workflow pauses at meaningful checkpoints for review. YOLO mode exists for experienced users, but the default is deliberate.
+- **Quality gates are not optional.** Gates halt the workflow — they don't just warn. You can't create architecture without a reviewed PRD. You can't deploy without passing all reviews. This is intentional friction that prevents expensive mistakes.
+- **Agents remember.** Each agent has persistent memory that accumulates decisions, patterns, and context across sessions. Your architect remembers why you chose PostgreSQL over MongoDB. Your QA engineer remembers the edge cases from last sprint. The more you use GAIA, the better it gets.
+- **Everything is traceable.** From product brief to deployed feature, every artifact links to the ones that came before it. When something breaks in production, you can trace it back through code, story, epic, architecture, and the original requirement.
+- **Structure scales, prompting doesn't.** A single prompt can produce impressive one-off results. But building a product over weeks or months requires accumulated context, consistent standards, and a process that doesn't reset every session.
 
 ---
 
@@ -122,6 +139,8 @@ npx gaia-framework status .     # version, module list, command count
 ---
 
 ## How It Works
+
+GAIA wraps Claude Code with a full product development lifecycle. Instead of prompting a general-purpose AI and hoping for consistency, you invoke structured workflows that coordinate specialized agents, enforce prerequisites, and produce traceable artifacts. Each workflow knows what inputs it needs, what outputs it produces, and what quality checks must pass before moving forward.
 
 ### 5-phase product lifecycle
 
@@ -412,7 +431,7 @@ _gaia/
 
 | Component | Count |
 |-----------|-------|
-| Agents | 25 with distinct personas |
+| Agents | 27 with distinct personas |
 | Workflows | 64 across 5 lifecycle phases |
 | Standalone tasks | 15 (reviews, audits, utilities) |
 | Slash commands | 104 |
