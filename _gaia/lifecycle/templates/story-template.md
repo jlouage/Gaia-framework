@@ -2,11 +2,6 @@
 template: 'story'
 version: 1.2.0
 used_by: ['create-story']
----
-
-# Story: {story_title}
-
----
 key: "{story_key}"
 title: "{story_title}"
 epic: "{epic_key}"
@@ -22,6 +17,14 @@ traces_to: []
 date: "{creation_date}"
 author: "{agent_name}"
 ---
+
+# Story: {story_title}
+
+> **Epic:** {epic_key}
+> **Priority:** {P0/P1/P2}
+> **Status:** backlog
+> **Date:** {creation_date}
+> **Author:** {agent_name}
 
 ## User Story
 

@@ -7,7 +7,7 @@ modules:
     path: "_gaia/core"
     type: built-in
   - name: lifecycle
-    version: "1.21.48"
+    version: "1.21.49"
     path: "_gaia/lifecycle"
     type: built-in
   - name: dev

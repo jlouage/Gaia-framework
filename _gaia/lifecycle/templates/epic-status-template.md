@@ -1,6 +1,14 @@
+---
+template: 'epic-status'
+version: 1.0.0
+used_by: ['epic-status']
+---
+
 # Epic Status Dashboard
 
-> Generated: {date} | Sprint coverage: all sprints
+> **Project:** {project_name}
+> **Date:** {date}
+> **Sprint Coverage:** all sprints
 
 ---
 

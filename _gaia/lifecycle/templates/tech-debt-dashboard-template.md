@@ -1,6 +1,14 @@
+---
+template: 'tech-debt-dashboard'
+version: 1.0.0
+used_by: ['tech-debt-review']
+---
+
 # Tech Debt Dashboard
 
-> Generated: {date} | Sprint: {sprint_id}
+> **Project:** {project_name}
+> **Date:** {date}
+> **Sprint:** {sprint_id}
 
 ---
 
