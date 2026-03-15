@@ -67,6 +67,7 @@ execution modes (normal/yolo/planning), checkpoints, and quality gates.
     <action if="agent file resolved">Read the agent persona file — adopt its persona, name, communication style, rules, and domain knowledge for the duration of this workflow</action>
     <action if="agent file resolved">Do NOT execute the agent's activation protocol, greeting, or menu — the workflow engine controls step execution</action>
     <action if="agent file resolved">Do NOT load the agent's memory sidecar — the workflow engine manages its own checkpoints</action>
+    <action if="agent file resolved">Check for {project-root}/_gaia/_config/agents/{agent-id}.customize.yaml. If found, load and merge overrides (persona_overrides, menu_additions, menu_removals, skill_additions, rule_additions, skill_overrides, skill_section_overrides). For dev agents, also check all-dev.customize.yaml and merge (agent-specific takes precedence over all-dev).</action>
   </step>
 
   <step n="4" title="Load Instructions">
@@ -94,6 +95,7 @@ execution modes (normal/yolo/planning), checkpoints, and quality gates.
   <step n="6" title="Process Instructions">
     <action>Execute each step in strict numerical order</action>
     <action>For each step: read any required skills/knowledge JIT</action>
+    <action>Before loading a skill file or skill section, check for overrides in this order: (1) active agent's {agent-id}.customize.yaml skill_overrides — if the skill name matches, load the entire file from the override source path. (2) active agent's skill_section_overrides — if skill name + section ID matches, load that section from the override path. (3) For dev agents, repeat checks against all-dev.customize.yaml. (4) Fall back to default path from skill-registry. When loading a skill from an override path, do NOT use _skill-index.yaml line ranges — scan the override file for &lt;!-- SECTION: xxx --&gt; markers dynamically. Relative source paths (without {project-root} prefix) are resolved against custom_skills_path from dev/config.yaml.</action>
     <action>For each step: drop prior step's skills/knowledge from context</action>
     <action>Handle supported tags: step, action, ask, check, template-output, goto, invoke-workflow, invoke-task</action>
     <action>At optional steps: ask user to include/skip (auto-skip in YOLO mode)</action>

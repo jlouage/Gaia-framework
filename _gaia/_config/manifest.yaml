@@ -3,7 +3,7 @@
 
 modules:
   - name: core
-    version: "1.7.10"
+    version: "1.7.11"
     path: "_gaia/core"
     type: built-in
   - name: lifecycle
@@ -11,7 +11,7 @@ modules:
     path: "_gaia/lifecycle"
     type: built-in
   - name: dev
-    version: "1.0.2"
+    version: "1.0.3"
     path: "_gaia/dev"
     type: built-in
   - name: creative

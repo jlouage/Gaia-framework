@@ -6,7 +6,7 @@ set -euo pipefail
 # Installs, updates, validates, and reports on GAIA installations.
 # ─────────────────────────────────────────────────────────────────────────────
 
-readonly VERSION="1.27.64"
+readonly VERSION="1.27.65"
 readonly GITHUB_REPO="https://github.com/jlouage/Gaia-framework.git"
 readonly MANIFEST_REL="_gaia/_config/manifest.yaml"
 
@@ -362,7 +362,18 @@ cmd_init() {
     fi
   fi
 
-  # Step 8: Append GAIA entries to .gitignore
+  # Step 8: Create custom skills directory
+  step "Creating custom skills directory..."
+  if [[ "$OPT_DRY_RUN" == true ]]; then
+    detail "[dry-run] Would create: custom/skills/"
+  else
+    mkdir -p "$TARGET/custom/skills"
+  fi
+  if [[ -f "$source/custom/skills/README.md" ]]; then
+    copy_if_missing "$source/custom/skills/README.md" "$TARGET/custom/skills/README.md"
+  fi
+
+  # Step 9: Append GAIA entries to .gitignore
   step "Updating .gitignore..."
   local gitignore_block
   gitignore_block="$(cat <<'GITIGNORE'
@@ -486,6 +497,16 @@ cmd_update() {
   done
 
   detail "Processed $updated file(s) across ${#update_targets[@]} targets"
+
+  # Ensure custom skills directory exists (user-owned, never overwritten)
+  if [[ "$OPT_DRY_RUN" == true ]]; then
+    [[ ! -d "$TARGET/custom/skills" ]] && detail "[dry-run] Would create: custom/skills/"
+  else
+    mkdir -p "$TARGET/custom/skills"
+  fi
+  if [[ -f "$source/custom/skills/README.md" ]]; then
+    copy_if_missing "$source/custom/skills/README.md" "$TARGET/custom/skills/README.md"
+  fi
 
   # Update slash commands (add new ones, update existing with backup)
   step "Updating slash commands..."

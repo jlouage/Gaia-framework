@@ -61,6 +61,8 @@ abstract: true
 - All 8 shared skills available via JIT loading
 - Load skill sections only when needed for current step
 - Drop skill from context when step completes
+- Skills can be overridden via customize.yaml (skill_overrides for full file, skill_section_overrides for individual sections)
+- Override resolution: agent-specific customize.yaml → all-dev.customize.yaml → default skill-registry path
 
 ## Checkpoint Writing
 - After each subtask: write checkpoint to `_gaia/_memory/checkpoints/`
