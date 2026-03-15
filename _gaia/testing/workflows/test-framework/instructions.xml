@@ -1,7 +1,7 @@
 <workflow name="test-framework">
 <critical>
   <mandate>Detect project stack before recommending framework</mandate>
-  <mandate>Scaffold complete setup: config, folder structure, sample test</mandate>
+  <mandate>Scaffold complete setup: config files, folder structure, npm scripts (or equivalent). Do NOT implement or run any tests — test implementation happens in Phase 4 workflows (/gaia-dev-story, /gaia-qa-tests, /gaia-atdd).</mandate>
 </critical>
 <step n="1" title="Detect Stack">
   <action>Identify project language, framework, and existing test setup</action>
@@ -11,7 +11,7 @@
   <action>Consider existing project conventions</action>
 </step>
 <step n="3" title="Scaffold">
-  <action>Generate config files, folder structure, and sample test</action>
+  <action>Generate config files, folder structure, and test runner scripts. Do NOT write sample tests or run any test suite — only set up the infrastructure so tests can be added later.</action>
   <action>Load fixture-architecture knowledge fragment</action>
 </step>
 <step n="4" title="Fixture Architecture">
@@ -19,7 +19,7 @@
   <action>Pure functions first, framework fixtures as wrappers</action>
 </step>
 <step n="5" title="Generate Output">
-  <action>Generate test framework setup document with config, folder structure, and sample test</action>
+  <action>Generate test framework setup document with config, folder structure, fixture patterns, and instructions for running tests</action>
   <template-output file="{test_artifacts}/test-framework-setup.md" />
 </step>
 </workflow>

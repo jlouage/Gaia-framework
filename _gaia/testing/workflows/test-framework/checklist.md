@@ -3,5 +3,6 @@
 - [ ] Framework recommendation matches stack
 - [ ] Config files generated
 - [ ] Folder structure scaffolded
-- [ ] Sample test created and runs
+- [ ] Test runner script configured and executable (e.g., npm test)
 - [ ] Fixture architecture designed
+- [ ] No actual test implementations created — tests are written in Phase 4
