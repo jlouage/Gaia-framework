@@ -10,6 +10,45 @@ readonly VERSION="1.30.0"
 readonly GITHUB_REPO="https://github.com/jlouage/Gaia-framework.git"
 readonly MANIFEST_REL="_gaia/_config/manifest.yaml"
 
+# _memory/ directory tree at project root (ADR-013, ADR-014)
+# Single source of truth — used by cmd_init, cmd_update, and cmd_validate
+MEMORY_DIRS=(
+  "checkpoints"
+  "checkpoints/completed"
+  # Tier 1
+  "validator-sidecar"
+  "architect-sidecar"
+  "pm-sidecar"
+  "sm-sidecar"
+  # Tier 2
+  "orchestrator-sidecar"
+  "security-sidecar"
+  "devops-sidecar"
+  "test-architect-sidecar"
+  # Tier 3 — lifecycle
+  "storyteller-sidecar"
+  "tech-writer-sidecar"
+  # Tier 3 — dev agents
+  "angular-dev-sidecar"
+  "typescript-dev-sidecar"
+  "flutter-dev-sidecar"
+  "java-dev-sidecar"
+  "python-dev-sidecar"
+  "mobile-dev-sidecar"
+  # Tier 3 — creative
+  "brainstorming-coach-sidecar"
+  "design-thinking-coach-sidecar"
+  "innovation-strategist-sidecar"
+  "problem-solver-sidecar"
+  "presentation-designer-sidecar"
+  # Tier 3 — analysis/testing
+  "analyst-sidecar"
+  "ux-designer-sidecar"
+  "qa-sidecar"
+  "performance-sidecar"
+  "data-engineer-sidecar"
+)
+
 # Temp dir tracking for cleanup
 TEMP_CLONE_DIR=""
 
@@ -236,27 +275,14 @@ cmd_init() {
       "$source/_gaia/" "$TARGET/_gaia/"
   fi
 
-  # Step 3: Create memory sidecar directories with .gitkeep
-  step "Creating memory sidecar directories..."
-  local sidecar_dirs=(
-    "checkpoints"
-    "checkpoints/completed"
-    "architect-sidecar"
-    "devops-sidecar"
-    "orchestrator-sidecar"
-    "pm-sidecar"
-    "security-sidecar"
-    "sm-sidecar"
-    "storyteller-sidecar"
-    "tech-writer-sidecar"
-    "test-architect-sidecar"
-  )
-  for dir in "${sidecar_dirs[@]}"; do
+  # Step 3: Create _memory/ directory tree at project root (ADR-013)
+  step "Creating memory directories at project root..."
+  for dir in "${MEMORY_DIRS[@]}"; do
     if [[ "$OPT_DRY_RUN" == true ]]; then
-      detail "[dry-run] Would create: _gaia/_memory/$dir/"
+      detail "[dry-run] Would create: _memory/$dir/"
     else
-      mkdir -p "$TARGET/_gaia/_memory/$dir"
-      touch "$TARGET/_gaia/_memory/$dir/.gitkeep"
+      mkdir -p "$TARGET/_memory/$dir"
+      touch "$TARGET/_memory/$dir/.gitkeep"
     fi
   done
 
@@ -379,9 +405,9 @@ cmd_init() {
   gitignore_block="$(cat <<'GITIGNORE'
 
 # GAIA Framework — runtime artifacts
-_gaia/_memory/checkpoints/*.yaml
-_gaia/_memory/*-sidecar/*.md
-_gaia/_memory/*-sidecar/*.yaml
+_memory/checkpoints/*.yaml
+_memory/checkpoints/completed/*.yaml
+_memory/*-sidecar/archive/
 _gaia/**/.resolved/*.yaml
 !_gaia/**/.resolved/.gitkeep
 GITIGNORE
@@ -442,7 +468,7 @@ cmd_update() {
   local backup_dir="$TARGET/_gaia/_backups/$timestamp"
 
   # Update framework structure — these directories get fully refreshed
-  # NEVER touch: global.yaml, _memory/, .resolved/, CLAUDE.md
+  # NEVER touch: global.yaml, .resolved/, CLAUDE.md, project-root _memory/
   local update_targets=(
     "core/engine"
     "core/agents"
@@ -497,6 +523,17 @@ cmd_update() {
   done
 
   detail "Processed $updated file(s) across ${#update_targets[@]} targets"
+
+  # Ensure _memory/ directory tree exists at project root (ADR-013)
+  step "Ensuring memory directories at project root..."
+  for dir in "${MEMORY_DIRS[@]}"; do
+    if [[ "$OPT_DRY_RUN" == true ]]; then
+      [[ ! -d "$TARGET/_memory/$dir" ]] && detail "[dry-run] Would create: _memory/$dir/"
+    else
+      mkdir -p "$TARGET/_memory/$dir"
+      [[ ! -f "$TARGET/_memory/$dir/.gitkeep" ]] && touch "$TARGET/_memory/$dir/.gitkeep"
+    fi
+  done
 
   # Ensure custom skills directory exists (user-owned, never overwritten)
   if [[ "$OPT_DRY_RUN" == true ]]; then
@@ -604,15 +641,10 @@ cmd_validate() {
     check ".resolved: $mod" "[[ -d '$TARGET/_gaia/$mod/.resolved' ]]"
   done
 
-  # Sidecar directories
-  local sidecar_dirs=(
-    "checkpoints" "checkpoints/completed"
-    "architect-sidecar" "devops-sidecar" "orchestrator-sidecar"
-    "pm-sidecar" "security-sidecar" "sm-sidecar"
-    "storyteller-sidecar" "tech-writer-sidecar" "test-architect-sidecar"
-  )
-  for dir in "${sidecar_dirs[@]}"; do
-    check "Sidecar: $dir" "[[ -d '$TARGET/_gaia/_memory/$dir' ]]"
+  # Memory directory at project root (ADR-013)
+  check "_memory/ directory" "[[ -d '$TARGET/_memory' ]]"
+  for dir in "${MEMORY_DIRS[@]}"; do
+    check "Memory: $dir" "[[ -d '$TARGET/_memory/$dir' ]]"
   done
 
   # CLAUDE.md
@@ -680,10 +712,10 @@ cmd_status() {
   fi
   printf "  ${BOLD}Commands:${RESET}     %s slash commands\n" "$cmd_count"
 
-  # Sidecar status
+  # Sidecar status (project root _memory/)
   local sidecar_count=0
   local sidecar_populated=0
-  for dir in "$TARGET/_gaia/_memory"/*-sidecar; do
+  for dir in "$TARGET/_memory"/*-sidecar; do
     [[ -d "$dir" ]] || continue
     ((sidecar_count++))
     local file_count
@@ -705,10 +737,10 @@ cmd_status() {
   done
   printf "  ${BOLD}.resolved:${RESET}    %s directories (%s populated)\n" "$resolved_count" "$resolved_populated"
 
-  # Checkpoints
+  # Checkpoints (project root _memory/)
   local checkpoint_count=0
-  if [[ -d "$TARGET/_gaia/_memory/checkpoints" ]]; then
-    checkpoint_count="$(find "$TARGET/_gaia/_memory/checkpoints" -name '*.yaml' -type f 2>/dev/null | wc -l | tr -d ' ')"
+  if [[ -d "$TARGET/_memory/checkpoints" ]]; then
+    checkpoint_count="$(find "$TARGET/_memory/checkpoints" -name '*.yaml' -type f 2>/dev/null | wc -l | tr -d ' ')"
   fi
   printf "  ${BOLD}Checkpoints:${RESET}  %s\n" "$checkpoint_count"
 
