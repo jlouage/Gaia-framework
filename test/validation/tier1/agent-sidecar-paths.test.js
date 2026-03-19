@@ -15,7 +15,7 @@ const AGENT_DIRS = {
 };
 
 // ADR-014 tier assignments
-const TIER_1_AGENTS = ["architect", "pm", "sm"]; // 3 files: ground-truth, decision-log, conversation-context
+const TIER_1_AGENTS = ["architect", "pm", "sm", "validator"]; // 3 files: ground-truth, decision-log, conversation-context
 const TIER_2_AGENTS = ["orchestrator", "devops", "security", "test-architect"]; // 2 files: decision-log, conversation-context
 // Tier 3: all others — 1 file: decision-log
 
@@ -128,7 +128,7 @@ describe("E8-S2: Agent Persona Sidecar Path Updates", () => {
 
     for (const agentId of TIER_1_AGENTS) {
       it(`should have 3 sidecar files for Tier 1 agent: ${agentId}`, () => {
-        const dir = agentId === "architect" || agentId === "pm" || agentId === "sm"
+        const dir = agentId === "architect" || agentId === "pm" || agentId === "sm" || agentId === "validator"
           ? AGENT_DIRS.lifecycle
           : AGENT_DIRS.core;
         const filePath = join(dir, `${agentId}.md`);

@@ -25,3 +25,4 @@ name,displayName,title,icon,module,path
 "devops","Soren","DevOps/SRE Engineer","🚀","lifecycle","_gaia/lifecycle/agents/devops.md"
 "data-engineer","Milo","Data Pipeline Architect","📊","lifecycle","_gaia/lifecycle/agents/data-engineer.md"
 "performance","Juno","Performance Specialist","⚡","lifecycle","_gaia/lifecycle/agents/performance.md"
+"validator","Val","Artifact Validator","🔍","lifecycle","_gaia/lifecycle/agents/validator.md"

@@ -3,22 +3,22 @@
 # After modifying this file, run /gaia-build-configs to regenerate resolved configs.
 
 framework_name: "GAIA"
-framework_version: "1.30.2"
+framework_version: "1.31.0"
 
 # User settings
-user_name: "Jlouage"
+user_name: "jlouage"
 communication_language: "English"
 document_output_language: "English"
 user_skill_level: "intermediate"  # beginner | intermediate | expert
 
 # Project settings
-project_name: "GT-AI-Workflows"
+project_name: "GAIA-Framework"
 project_root: "{project-root}"
 # Project path — relative directory within the root where application source code lives.
 # Use "." (default) if the project code lives at the root alongside _gaia/.
 # Use a folder name (e.g., "app", "project", "my-app") if the code lives in a subdirectory.
 # The resolved {project-path} variable expands to the full absolute path.
-project_path: "."
+project_path: "Gaia-framework"
 
 # Output paths
 output_folder: "{project-root}/docs"
