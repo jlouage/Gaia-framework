@@ -79,5 +79,4 @@ module,phase,name,code,command,required,agent-name,description,output-location
 "lifecycle","4-implementation","agent-validator","agent-validator","gaia-agent-validator","false","Val","Val — Validator Agent for artifact verification","n/a"
 "lifecycle","4-implementation","val-validate","val-validate","gaia-val-validate","false","Val","Validate artifact against codebase and ground truth","docs/implementation-artifacts"
 "lifecycle","4-implementation","val-validate-plan","val-validate-plan","gaia-val-validate-plan","false","Val","Validate implementation plan before execution","docs/implementation-artifacts"
-"lifecycle","4-implementation","val-save","val-save","gaia-val-save","false","Val","Persist Val session decisions and findings","_memory/validator-sidecar"
 "lifecycle","4-implementation","refresh-ground-truth","refresh-ground-truth","gaia-refresh-ground-truth","false","Val","Rescan filesystem and update verified ground truth","_memory/validator-sidecar"

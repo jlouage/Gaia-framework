@@ -134,7 +134,9 @@
      Date: {YYYY-MM-DD}. Claims: {total_claims}. Findings: {total_findings}.
      Approved: {approved_count}. Disputed: {disputed_count}.
 
-  If _memory/validator-sidecar/ directory or files don't exist, create them with standard headers (see val-save-session workflow for templates).
+  If _memory/validator-sidecar/ directory or files don't exist, create them with standard headers:
+  decision-log.md: "# Val Validator — Decision Log\n\n> Chronological record of validation decisions.\n\n---"
+  conversation-context.md: "# Val Validator — Conversation Context\n\n> Rolling summary of the most recent validation session.\n\n---\n\nNo sessions recorded yet."
   If writing fails, log warning and continue — memory save is non-blocking.</action>
 </step>
 <next-step>

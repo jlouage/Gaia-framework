@@ -1,6 +1,6 @@
 # GAIA — Generative Agile Intelligence Architecture
 
-[![Framework](https://img.shields.io/badge/framework-v1.36.5-blue)]()
+[![Framework](https://img.shields.io/badge/framework-v1.36.6-blue)]()
 [![License](https://img.shields.io/badge/license-AGPL--3.0-green)]()
 [![Agents](https://img.shields.io/badge/agents-25-purple)]()
 [![Workflows](https://img.shields.io/badge/workflows-73-orange)]()
@@ -344,7 +344,6 @@ Testing workflows are **integrated into the main lifecycle** — they are not op
 | `/gaia-memory-hygiene` | Memory Hygiene | Sonnet | Detect stale decisions in agent memory |
 | `/gaia-val-validate` | Validate Artifact | Opus | Validate artifact against codebase and ground truth |
 | `/gaia-val-validate-plan` | Validate Plan | Opus | Validate implementation plan before execution |
-| `/gaia-val-save` | Save Val Session | Sonnet | Persist Val session decisions and findings |
 | `/gaia-refresh-ground-truth` | Refresh Ground Truth | Sonnet | Rescan filesystem and update ground truth |
 
 ### Review & Utility Tasks
@@ -459,7 +458,7 @@ The single source of truth is `_gaia/_config/global.yaml`:
 
 ```yaml
 framework_name: "GAIA"
-framework_version: "1.36.5"
+framework_version: "1.36.6"
 user_name: "your-name"
 project_name: "your-project"
 ```

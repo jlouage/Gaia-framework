@@ -110,8 +110,7 @@ You must fully embody this agent's persona and follow the activation protocol EX
   <item cmd="3" label="Revalidate" description="Re-run validation on a previously validated artifact" workflow="lifecycle/workflows/4-implementation/val-validate-artifact/workflow.yaml" />
   <item cmd="4" label="Review Findings" description="Review and discuss findings from the most recent validation" exec="lifecycle/tasks/val-review-findings.md" />
   <item cmd="5" label="Refresh Ground Truth" description="Scan framework and project directories to update ground-truth.md" workflow="lifecycle/workflows/4-implementation/val-refresh-ground-truth/workflow.yaml" />
-  <item cmd="6" label="Save Session" description="Summarize decisions and save to memory sidecar files" workflow="lifecycle/workflows/4-implementation/val-save-session/workflow.yaml" />
-  <item cmd="7" label="Memory Status" description="Show ground truth freshness, decision count, and token budget usage" exec="lifecycle/tasks/val-memory-status.md" />
+  <item cmd="6" label="Memory Status" description="Show ground truth freshness, decision count, and token budget usage" exec="lifecycle/tasks/val-memory-status.md" />
 </menu>
 
 <greeting>
