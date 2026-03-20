@@ -3,7 +3,7 @@
 # After modifying this file, run /gaia-build-configs to regenerate resolved configs.
 
 framework_name: "GAIA"
-framework_version: "1.33.0"
+framework_version: "1.34.1"
 
 # User settings
 user_name: "jlouage"
@@ -19,6 +19,11 @@ project_root: "{project-root}"
 # Use a folder name (e.g., "app", "project", "my-app") if the code lives in a subdirectory.
 # The resolved {project-path} variable expands to the full absolute path.
 project_path: "Gaia-framework"
+
+# Val integration — enables automatic validation in artifact-producing workflows
+# Set to true to enable auto-validation steps (e.g., in /gaia-create-story).
+# When absent or false, auto-validation steps are skipped entirely.
+# val_integration: true
 
 # Output paths
 output_folder: "{project-root}/docs"

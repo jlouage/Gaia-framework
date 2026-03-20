@@ -64,6 +64,32 @@
     Generate story file following the story-template.md structure. The filename must use the story key and slugified title (e.g., E1-S1-user-login.md). Include complete YAML frontmatter with ALL 14 fields populated. Fill all template sections: User Story, Acceptance Criteria, Tasks/Subtasks (linked to AC numbers), Dev Notes, Technical Notes, Dependencies, Test Scenarios, Project Structure Notes, References, Dev Agent Record, and Estimate.
   </template-output>
 </step>
+<step n="7" title="Auto-Validate Story with Val">
+  <action>Read {project-root}/_gaia/_config/global.yaml and check for val_integration field</action>
+  <check if="val_integration is false OR val_integration field is absent">Skip auto-validation — val_integration is disabled or not configured. Proceed to next-step.</check>
+
+  <action>Read the risk field from the newly created story file's YAML frontmatter</action>
+  <check if="risk == 'low'">Skip auto-validation — low-risk stories bypass validation to avoid noise during batch creation. Proceed to next-step.</check>
+
+  <action>Invoke Val validation as a subagent. Wrap the invocation in an error guard — if the subagent fails or crashes, log a warning and continue. The story file is already saved; auto-validation is an enhancement, not a gate.
+
+  On success: check finding count from Val's response.
+    — If zero findings AND YOLO mode: complete silently — no output, no pause, proceed to next-step.
+    — If zero findings AND normal mode: report "Auto-validation complete — no findings." and proceed.
+    — If non-zero findings (any mode): pause and present findings using the discussion → selective sharing loop:
+      1. Display findings table (severity, section, claim, finding, evidence)
+      2. For each finding, ask user: APPROVE (include in story), DISPUTE (exclude), or EDIT (modify before approving)
+      3. Write approved findings to the story file under "## Validation Findings"
+      4. If all findings disputed: report "All findings disputed — no changes written." and proceed.
+
+  On failure: log warning "Auto-validation could not complete: {error_reason}" and proceed to next-step. Do NOT halt the workflow.</action>
+
+  <invoke-workflow
+    target="{project-root}/_gaia/lifecycle/workflows/4-implementation/val-validate-artifact/workflow.yaml"
+    input_artifact="{implementation_artifacts}/{story_key}-{story_title_slug}.md"
+    on_error="warn_and_continue"
+    model_override="opus" />
+</step>
 <next-step source="lifecycle-sequence.yaml">
   <primary command="/gaia-validate-story">Validate the story file for completeness and quality</primary>
   <alternative command="/gaia-create-story" context="To create another story before validating"/>
