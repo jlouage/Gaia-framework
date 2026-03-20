@@ -21,13 +21,17 @@ validation-target: 'Story file'
 - [ ] Consolidated agent responses presented for user review before proceeding
 ## Pre-Save Validation
 - [ ] Pre-save validation step (Step 6) runs before Generate Output (Step 7)
-- [ ] Low-risk stories skip validation silently
+- [ ] Val validates ALL stories (no low-risk skip) — only skip is val_integration disabled
 - [ ] val_integration config flag respected (absent/false = skip)
 - [ ] Draft written to temporary file (.draft-{story_key}.md) for Val to validate
 - [ ] Val invoked via invoke-workflow to val-validate-artifact on draft
 - [ ] Error handling: Val failure logs warning and continues (does not block story creation)
 - [ ] Approved findings applied to story content before final save
 - [ ] Draft file deleted after validation (whether passed, failed, or skipped)
+- [ ] Validation results auto-saved to Val memory sidecar (no user prompt)
+- [ ] Decision-log entry appended with standardized header format
+- [ ] Conversation-context updated with session summary (replace semantics)
+- [ ] Memory save is non-blocking — failure logs warning and continues
 ## Output Verification
 - [ ] Story file exists at {implementation_artifacts}/{story_key}-{story_title_slug}.md
 - [ ] Filename starts with story key (e.g., 1.2-user-login.md)

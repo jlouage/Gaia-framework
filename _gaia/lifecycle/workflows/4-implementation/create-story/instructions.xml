@@ -85,9 +85,6 @@
   <action>Read {project-root}/_gaia/_config/global.yaml and check for val_integration field</action>
   <check if="val_integration is false OR val_integration field is absent">Skip pre-save validation — val_integration is disabled or not configured. Proceed to Generate Output.</check>
 
-  <action>Read the risk level for this story from epics-and-stories.md</action>
-  <check if="risk == 'low'">Skip pre-save validation — low-risk stories bypass validation to avoid noise. Proceed to Generate Output.</check>
-
   <action>Read the story template from {project-root}/_gaia/lifecycle/templates/story-template.md</action>
   <action>Read sizing_map from {project-root}/_gaia/_config/global.yaml to resolve T-shirt size to story points (S→2, M→5, L→8, XL→13).</action>
   <action>Build the complete draft story content in memory using the template and all elaboration data. Write it to a temporary draft file: {implementation_artifacts}/.draft-{story_key}.md</action>
@@ -108,9 +105,31 @@
     input_artifact="{implementation_artifacts}/.draft-{story_key}.md"
     on_error="warn_and_continue"
     model_override="opus" />
+
+  <action>Auto-save validation results to Val's memory sidecar (no user prompt required):
+
+  1. Append to {project-root}/_memory/validator-sidecar/decision-log.md using standardized format:
+     ### [YYYY-MM-DD] Pre-Save Validation: {story_key}
+
+     - **Agent:** validator
+     - **Workflow:** create-story (pre-save validation)
+     - **Sprint:** {sprint_id or "N/A"}
+     - **Status:** recorded
+     - **Related:** {story_key}
+
+     Validated draft story {story_key} ({story_title}).
+     Findings: {count} ({approved_count} approved, {disputed_count} disputed).
+     {Brief summary of key findings if any}
+
+  2. Replace body of {project-root}/_memory/validator-sidecar/conversation-context.md (preserve header above first ---):
+     Last session: Pre-save validation of {story_key} ({story_title}).
+     Date: {YYYY-MM-DD}. Findings: {count}. Outcome: {summary}.
+
+  If _memory/validator-sidecar/ directory or files don't exist, create them with standard headers (see val-save-session workflow for templates).
+  If writing fails, log warning and continue — memory save is non-blocking.</action>
 </step>
 <step n="7" title="Generate Output">
-  <action>If Step 6 was skipped (val_integration disabled or low-risk): read the story template from {project-root}/_gaia/lifecycle/templates/story-template.md and read sizing_map from {project-root}/_gaia/_config/global.yaml now.</action>
+  <action>If Step 6 was skipped (val_integration disabled): read the story template from {project-root}/_gaia/lifecycle/templates/story-template.md and read sizing_map from {project-root}/_gaia/_config/global.yaml now.</action>
   <action>Populate ALL YAML frontmatter fields from epics-and-stories.md data:
     - key: story key from epics (e.g., E1-S1)
     - title: story title
