@@ -20,10 +20,9 @@ project_root: "{project-root}"
 # The resolved {project-path} variable expands to the full absolute path.
 project_path: "Gaia-framework"
 
-# Val integration — enables automatic validation in artifact-producing workflows
-# Set to true to enable auto-validation steps (e.g., in /gaia-create-story).
-# When absent or false, auto-validation steps are skipped entirely.
-# val_integration: true
+# Val integration — feature gates for inline validation
+val_integration:
+  template_output_review: true   # Show [v] Review with Val at template-output prompts
 
 # Output paths
 output_folder: "{project-root}/docs"

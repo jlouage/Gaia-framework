@@ -448,7 +448,7 @@ The single source of truth is `_gaia/_config/global.yaml`:
 
 ```yaml
 framework_name: "GAIA"
-framework_version: "1.32.0"
+framework_version: "1.34.1"
 user_name: "your-name"
 project_name: "your-project"
 ```
