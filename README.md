@@ -1,6 +1,6 @@
 # GAIA — Generative Agile Intelligence Architecture
 
-[![Framework](https://img.shields.io/badge/framework-v1.36.1-blue)]()
+[![Framework](https://img.shields.io/badge/framework-v1.36.2-blue)]()
 [![License](https://img.shields.io/badge/license-AGPL--3.0-green)]()
 [![Agents](https://img.shields.io/badge/agents-25-purple)]()
 [![Workflows](https://img.shields.io/badge/workflows-73-orange)]()
@@ -459,7 +459,7 @@ The single source of truth is `_gaia/_config/global.yaml`:
 
 ```yaml
 framework_name: "GAIA"
-framework_version: "1.36.1"
+framework_version: "1.36.2"
 user_name: "your-name"
 project_name: "your-project"
 ```

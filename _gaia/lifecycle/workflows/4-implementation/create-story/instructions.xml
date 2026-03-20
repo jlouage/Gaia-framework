@@ -83,7 +83,7 @@
 </step>
 <step n="6" title="Pre-Save Validation">
   <action>Read {project-root}/_gaia/_config/global.yaml and check for val_integration field</action>
-  <check if="val_integration is false OR val_integration field is absent">Skip pre-save validation — val_integration is disabled or not configured. Proceed to Generate Output.</check>
+  <check if="val_integration is explicitly set to false">Skip pre-save validation — val_integration is explicitly disabled. Proceed to Generate Output.</check>
 
   <action>Read the story template from {project-root}/_gaia/lifecycle/templates/story-template.md</action>
   <action>Read sizing_map from {project-root}/_gaia/_config/global.yaml to resolve T-shirt size to story points (S→2, M→5, L→8, XL→13).</action>
