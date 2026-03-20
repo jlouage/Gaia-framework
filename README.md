@@ -1,11 +1,11 @@
 # GAIA — Generative Agile Intelligence Architecture
 
-[![Framework](https://img.shields.io/badge/framework-v1.35.1-blue)]()
+[![Framework](https://img.shields.io/badge/framework-v1.35.2-blue)]()
 [![License](https://img.shields.io/badge/license-AGPL--3.0-green)]()
-[![Agents](https://img.shields.io/badge/agents-27-purple)]()
-[![Workflows](https://img.shields.io/badge/workflows-65-orange)]()
+[![Agents](https://img.shields.io/badge/agents-25-purple)]()
+[![Workflows](https://img.shields.io/badge/workflows-73-orange)]()
 
-AI agent framework for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) that orchestrates software product development through **27 specialized agents**, **64 workflows**, and **8 shared skills** — from initial research all the way to deployment.
+AI agent framework for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) that orchestrates software product development through **25 specialized agents**, **73 workflows**, and **11 shared skills** — from initial research all the way to deployment.
 
 ![GAIA Lifecycle Activity Diagram](GAIA_Lifecycle_Activity_Diagram.png)
 
@@ -20,7 +20,7 @@ Without guardrails, every AI session starts from zero. There's no traceability f
 **What this gives you:**
 
 - **A structured lifecycle, not ad-hoc prompting** — 5 phases from analysis to deployment, with quality gates that enforce standards at every transition
-- **27 specialized agents** — each with a persona, domain expertise, and persistent memory that improves over time
+- **25 specialized agents** — each with a persona, domain expertise, and persistent memory that improves over time
 - **Enforced quality gates** — 17 gates that HALT workflows when standards aren't met (not advisory — hard stops)
 - **6-gate review process** — every story passes code review, QA, security, test automation, test review, and performance review before completion
 - **Full traceability** — every line of code traces back through stories, epics, architecture decisions, and requirements to the original product brief
@@ -118,7 +118,7 @@ bash Gaia-framework/gaia-install.sh init ~/my-project
 3. Creates memory sidecar directories
 4. Prompts for project name and user name → writes to `global.yaml`
 5. Copies `CLAUDE.md` to your project root
-6. Installs 104 slash commands to `.claude/commands/`
+6. Installs 117 slash commands to `.claude/commands/`
 7. Appends GAIA entries to `.gitignore`
 
 ### Updating
@@ -162,7 +162,7 @@ Every phase has **quality gates** — enforced checks that halt the workflow if 
 
 ### Model assignment
 
-Each command declares which Claude model to use. **Opus** handles deep reasoning, architectural decisions, and complex analysis (27 commands). **Sonnet** handles structured generation, template-following, and status reporting (77 commands). Claude Code auto-selects the model per workflow.
+Each command declares which Claude model to use. **Opus** handles deep reasoning, architectural decisions, and complex analysis (37 commands). **Sonnet** handles structured generation, template-following, and status reporting (80 commands). Claude Code auto-selects the model per workflow.
 
 ### Execution modes
 
@@ -190,6 +190,7 @@ Every agent has a name, persona, and specialization. Activate any agent directly
 | DevOps Engineer | Soren | Infrastructure, deployment, rollback planning | `/gaia-agent-devops` |
 | Data Engineer | Milo | Schema design, ETL guidance, data quality | `/gaia-agent-data-engineer` |
 | Performance Specialist | Juno | Load testing, profiling, Core Web Vitals | `/gaia-agent-performance` |
+| Validator | Val | Artifact validation, ground truth management | `/gaia-agent-validator` |
 
 ### Developer Agents
 
@@ -252,6 +253,7 @@ Workflows are structured multi-step processes. Each has a `workflow.yaml` config
 |---------|----------|-------|-------|--------|
 | `/gaia-create-arch` | Create Architecture | Theo | Opus | `docs/planning-artifacts/` |
 | `/gaia-create-epics` | Create Epics & Stories | Derek | Opus | `docs/planning-artifacts/` |
+| `/gaia-edit-arch` | Edit Architecture | Theo | Opus | `docs/planning-artifacts/` |
 | `/gaia-readiness-check` | Implementation Readiness | Theo | Opus | `docs/planning-artifacts/` |
 | `/gaia-threat-model` | Security Threat Model | Zara | Opus | `docs/planning-artifacts/` |
 | `/gaia-infra-design` | Infrastructure Design | Soren | Opus | `docs/planning-artifacts/` |
@@ -276,6 +278,9 @@ Workflows are structured multi-step processes. Each has a `workflow.yaml` config
 | `/gaia-add-stories` | Add Stories | Derek | Sonnet | `docs/planning-artifacts/` |
 | `/gaia-correct-course` | Correct Course | Nate | Sonnet | `docs/implementation-artifacts/` |
 | `/gaia-retro` | Retrospective | Nate | Sonnet | `docs/implementation-artifacts/` |
+| `/gaia-add-feature` | Add Feature | Derek | Opus | `docs/planning-artifacts/` |
+| `/gaia-check-dod` | Check Definition of Done | Nate | Sonnet | `docs/implementation-artifacts/` |
+| `/gaia-check-review-gate` | Check Review Gate | Nate | Sonnet | `docs/implementation-artifacts/` |
 
 ### Phase 5: Deployment
 
@@ -323,6 +328,7 @@ Testing workflows are **integrated into the main lifecycle** — they are not op
 | `/gaia-perf-testing` | Performance Testing | Sable | Sonnet | `docs/test-artifacts/` |
 | `/gaia-mobile-testing` | Mobile Testing | Sable | Sonnet | `docs/test-artifacts/` |
 | `/gaia-teach-testing` | Teach Me Testing | Sable | Sonnet | `docs/test-artifacts/` |
+| `/gaia-edit-test-plan` | Edit Test Plan | Sable | Sonnet | `docs/test-artifacts/` |
 
 ### Anytime Workflows
 
@@ -336,6 +342,10 @@ Testing workflows are **integrated into the main lifecycle** — they are not op
 | `/gaia-party` | Party Mode | Sonnet | Multi-agent group discussion |
 | `/gaia-advanced-elicitation` | Advanced Elicitation | Opus | Deep requirements elicitation |
 | `/gaia-memory-hygiene` | Memory Hygiene | Sonnet | Detect stale decisions in agent memory |
+| `/gaia-val-validate` | Validate Artifact | Opus | Validate artifact against codebase and ground truth |
+| `/gaia-val-validate-plan` | Validate Plan | Opus | Validate implementation plan before execution |
+| `/gaia-val-save` | Save Val Session | Sonnet | Persist Val session decisions and findings |
+| `/gaia-refresh-ground-truth` | Refresh Ground Truth | Sonnet | Rescan filesystem and update ground truth |
 
 ### Review & Utility Tasks
 
@@ -410,34 +420,35 @@ _gaia/
 ├── _config/              # Global config, manifests
 │   ├── global.yaml       # Project settings — single source of truth
 │   └── manifest.yaml     # Module versions
-├── _memory/              # Persistent agent memory + checkpoints
-│   ├── checkpoints/      # Workflow progress snapshots (sha256-verified)
-│   └── *-sidecar/        # Per-agent persistent memory (9 sidecars)
 ├── core/                 # Execution engine, protocols, shared tasks
 │   └── engine/           # workflow.xml (7-step flow), task-runner.xml
 ├── lifecycle/            # 5 phases: analysis → deployment
-│   ├── agents/           # 11 lifecycle agents
-│   ├── workflows/        # 36 workflows across 5 phases
+│   ├── agents/           # 12 lifecycle agents
+│   ├── workflows/        # 51 workflows across 5 phases
 │   └── templates/        # 18 document templates
 ├── dev/                  # Developer tooling
 │   ├── agents/           # 6 stack-specific developers
 │   ├── skills/           # 8 shared skills (sectioned loading)
 │   └── knowledge/        # Stack-specific patterns
 ├── creative/             # 6 creative agents + 7 workflows
-└── testing/              # Test Architect + 12 testing workflows
+└── testing/              # Test Architect + 13 testing workflows
+
+_memory/                  # Persistent agent memory (project root)
+├── checkpoints/          # Workflow progress snapshots (sha256-verified)
+└── *-sidecar/            # Per-agent persistent memory (26 sidecars)
 ```
 
 ### At a glance
 
 | Component | Count |
 |-----------|-------|
-| Agents | 27 with distinct personas |
-| Workflows | 64 across 5 lifecycle phases |
+| Agents | 25 with distinct personas |
+| Workflows | 73 across 5 lifecycle phases |
 | Standalone tasks | 15 (reviews, audits, utilities) |
-| Slash commands | 104 |
-| Shared skills | 8 with 47 loadable sections |
+| Slash commands | 117 |
+| Shared skills | 11 with 49 loadable sections |
 | Knowledge fragments | 45 |
-| Document templates | 18 |
+| Document templates | 19 |
 | Quality gates | 17 (enforced, not advisory) |
 
 ---
@@ -459,13 +470,13 @@ After changing `global.yaml`, run `/gaia-build-configs` to regenerate pre-resolv
 
 ## Checkpoint & Resume
 
-Long-running workflows save checkpoints to `_gaia/_memory/checkpoints/` with sha256 checksums of all files touched. If your session is interrupted, run `/gaia-resume` — it validates file integrity before resuming from the last completed step.
+Long-running workflows save checkpoints to `_memory/checkpoints/` with sha256 checksums of all files touched. If your session is interrupted, run `/gaia-resume` — it validates file integrity before resuming from the last completed step.
 
 ---
 
 ## Agent Memory
 
-Each agent has a persistent memory sidecar (`_gaia/_memory/*-sidecar/`) that stores decisions, patterns, and context across sessions. Agents become more effective the more you use them. Run `/gaia-memory-hygiene` periodically to detect stale or contradicted decisions.
+Each agent has a persistent memory sidecar (`_memory/*-sidecar/`) that stores decisions, patterns, and context across sessions. Agents become more effective the more you use them. Run `/gaia-memory-hygiene` periodically to detect stale or contradicted decisions.
 
 ---
 
@@ -489,4 +500,5 @@ By contributing, you agree that your contributions will be licensed under the sa
 
 [AGPL-3.0](LICENSE)
 
-The open-source framework is licensed under the GNU Affero General Public License v3.0. 
+The open-source framework is licensed under the GNU Affero General Public License v3.0.
+
