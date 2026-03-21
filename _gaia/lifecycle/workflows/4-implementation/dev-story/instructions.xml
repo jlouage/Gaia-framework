@@ -4,7 +4,7 @@
   <mandate>Follow TDD cycle: red, green, refactor</mandate>
   <mandate>TDD phases MUST be executed as separate, sequential steps — NEVER combine them. Do NOT write implementation code during the Red phase. Do NOT skip the Refactor phase. Each phase must produce its own checkpoint and wait for user confirmation before the next phase begins.</mandate>
   <mandate>Write an intermediate checkpoint to _gaia/_memory/checkpoints/dev-story-{story_key}.yaml after EACH TDD phase completes (Steps 6, 7, 8). Each checkpoint must include: workflow name, current step number, phase status (red_complete/green_complete/refactor_complete), key variables (story_key, epic_key, risk_level), output file path, and files_touched with sha256 checksums (shasum -a 256) for every file created or modified in that phase.</mandate>
-  <mandate>Definition of Done checklist MUST be written to the story file and every item verified before marking complete. The DoD gate (Step 10) is enforced — workflow HALTS if any item fails.</mandate>
+  <mandate>Definition of Done checklist MUST be written to the story file and every item verified before marking complete. The DoD gate (Step 10) auto-fixes failing items up to 3 iterations before halting.</mandate>
   <mandate>All tests must pass before marking complete</mandate>
   <mandate>When reading or running application source code, use {project-path} as the base directory — NOT {project-root}. {project-path} is resolved by the engine from global.yaml.</mandate>
 </critical>
@@ -89,9 +89,24 @@
   <action>Run the test suite — verify all new tests FAIL</action>
   <check if="any_new_test_passes">Tests should NOT pass yet — no implementation exists. If a test passes without implementation, it is vacuous and must be rewritten to actually test behavior.</check>
   <action>Write intermediate checkpoint to _gaia/_memory/checkpoints/dev-story-{story_key}.yaml with: workflow: dev-story, step: 6, phase: red_complete, story_key, epic_key, risk_level, output_file: {story_key}-tdd-progress.md, files_touched (list every test file created with its sha256 checksum via shasum -a 256)</action>
+  <action>Print a formatted summary directly in the conversation so the user can review without opening the file:
+
+  ## RED Phase Complete
+
+  **Tests created:**
+  {bulleted list of each test file: file path, test name, what acceptance criterion or behavior it validates}
+
+  **Test runner output:**
+  ```
+  {paste the actual terminal output from the test runner showing all failures}
+  ```
+
+  **Status:** All {count} new tests FAILING as expected
+  </action>
   <template-output file="{implementation_artifacts}/{story_key}-tdd-progress.md">
     RED phase complete. Summary: test files created, test names, what each validates, confirmation all new tests fail. Include test runner output showing failures.
   </template-output>
+  <action if="yolo_mode">Val auto-validates this TDD output (per val_auto_in_yolo). If Val returns CRITICAL/WARNING findings: auto-fix them, re-invoke Val, repeat up to 3 times. HALT if unresolved. Save all findings and fixes to validator-sidecar memory.</action>
   <ask>Red phase complete — tests written and all failing as expected. Review test output above. [proceed to Green phase / revise tests]</ask>
 </step>
 <step n="7" title="TDD Green Phase — Implement to Pass">
@@ -108,9 +123,27 @@
     — If database schema changes: create reversible migration script (UP + DOWN)
     — If gradual rollout needed: implement feature flag wrapping new code path</action>
   <action>Write intermediate checkpoint to _gaia/_memory/checkpoints/dev-story-{story_key}.yaml with: workflow: dev-story, step: 7, phase: green_complete, story_key, epic_key, risk_level, output_file: {story_key}-tdd-progress.md, files_touched (list every implementation file created/modified with its sha256 checksum via shasum -a 256)</action>
+  <action>Print a formatted summary directly in the conversation so the user can review without opening the file:
+
+  ## GREEN Phase Complete
+
+  **Files created/modified:**
+  {bulleted list: file path + what was added/changed in each}
+
+  **Contract tests / migrations (if applicable):**
+  {list any contract tests or DB migration scripts created, or "N/A"}
+
+  **Test runner output:**
+  ```
+  {paste the actual terminal output from the test runner showing all tests passing}
+  ```
+
+  **Status:** All {count} tests PASSING with minimal implementation
+  </action>
   <template-output file="{implementation_artifacts}/{story_key}-tdd-progress.md">
     GREEN phase complete. Summary: files created/modified, all tests passing, any contract tests or migrations created. Include test runner output showing all green.
   </template-output>
+  <action if="yolo_mode">Val auto-validates this TDD output (per val_auto_in_yolo). If Val returns CRITICAL/WARNING findings: auto-fix them, re-invoke Val, repeat up to 3 times. HALT if unresolved. Save all findings and fixes to validator-sidecar memory.</action>
   <ask>Green phase complete — all tests passing with minimal implementation. Review implementation above. [proceed to Refactor phase / revise implementation]</ask>
 </step>
 <step n="8" title="TDD Refactor Phase">
@@ -122,9 +155,24 @@
   <action>Run the test suite — verify all tests still PASS after refactoring</action>
   <check if="any_test_fails">HALT: Refactoring broke tests. Revert or fix before proceeding.</check>
   <action>Write intermediate checkpoint to _gaia/_memory/checkpoints/dev-story-{story_key}.yaml with: workflow: dev-story, step: 8, phase: refactor_complete, story_key, epic_key, risk_level, output_file: {story_key}-tdd-progress.md, files_touched (list ALL files created/modified across all 3 phases with sha256 checksums via shasum -a 256)</action>
+  <action>Print a formatted summary directly in the conversation so the user can review without opening the file:
+
+  ## REFACTOR Phase Complete
+
+  **What was refactored:**
+  {bulleted list: what changed and why — extracted utilities, decomposed functions, improved naming, removed duplication}
+
+  **Test runner output:**
+  ```
+  {paste the actual terminal output from the test runner confirming all tests still pass}
+  ```
+
+  **Status:** All {count} tests STILL PASSING after refactor
+  </action>
   <template-output file="{implementation_artifacts}/{story_key}-tdd-progress.md">
     REFACTOR phase complete. Summary: what was refactored, why, confirmation all tests still pass. Include test runner output.
   </template-output>
+  <action if="yolo_mode">Val auto-validates this TDD output (per val_auto_in_yolo). If Val returns CRITICAL/WARNING findings: auto-fix them, re-invoke Val, repeat up to 3 times. HALT if unresolved. Save all findings and fixes to validator-sidecar memory.</action>
   <ask>Refactor phase complete — all tests still passing. Review refactored code. [proceed / continue refactoring]</ask>
 </step>
 <step n="9" title="Capture Findings">
@@ -142,8 +190,14 @@
   <action>- [ ] **No hardcoded secrets or credentials** — scan new/modified files for API keys, passwords, tokens, connection strings. Mark [x] if clean.</action>
   <action>- [ ] **All subtasks marked complete** — verify every subtask in the story file is checked off. Mark [x] if all done.</action>
   <action>- [ ] **Documentation updated** — if the change affects APIs, configs, or user-facing behavior, verify that relevant docs are updated. Mark [x] if not applicable or if docs are updated.</action>
-  <check if="any_dod_item_fails">HALT: Definition of Done has unchecked items. List each failing item with the reason. Fix the issues before proceeding.</check>
-  <ask>Definition of Done checklist complete. Review the results above. All items must pass to proceed. [proceed / fix issues]</ask>
+  <action>AUTO-FIX LOOP: After running all checks, if any item is marked [ ] (failing):
+    1. Identify each failing item and the specific issue causing it to fail
+    2. Auto-fix the issue (fix lint errors, fix failing tests, update docs, complete missed subtasks, remove hardcoded secrets, etc.)
+    3. Re-run ALL 8 DoD checks from the top and update the checklist in the story file
+    4. Repeat steps 1-3 up to a maximum of 3 fix iterations
+    5. If all 8 items pass (all marked [x]) at any point: auto-proceed to Step 11 — no user prompt needed
+    6. If items still fail after 3 iterations: HALT with a clear list of unresolved items</action>
+  <check if="dod_unresolved_after_3_attempts">HALT: Could not resolve all Definition of Done items after 3 auto-fix attempts. Unresolved: {list of failing items with reasons}. Manual intervention required.</check>
 </step>
 <step n="11" title="Load Skills JIT">
   <action>Load git-workflow:commits section for commit conventions</action>
@@ -169,5 +223,15 @@
   <template-output file="{implementation_artifacts}/{story_key}-*.md">
     Update story file with status change to 'review', list of files changed, and initialized Review Gate table (all 6 rows PENDING).
   </template-output>
+</step>
+<step n="15" title="Auto-Run Reviews (YOLO only)">
+  <action if="not yolo_mode">Skip this step — in normal mode, user runs /gaia-run-all-reviews manually when ready.</action>
+  <action if="yolo_mode">Spawn a subagent using the Agent tool with this prompt:
+    "Load {project-root}/_gaia/core/engine/workflow.xml, then process {project-root}/_gaia/lifecycle/workflows/4-implementation/run-all-reviews/workflow.yaml as workflow-config. The story key is {story_key}. Run in YOLO mode — auto-proceed past all template-outputs. Follow the workflow engine instructions EXACTLY."
+  </action>
+  <action if="yolo_mode">When subagent returns: read the story file, parse the Review Gate table.
+    - If ALL 6 reviews PASSED: report "All reviews passed. Story {story_key} is ready for done status."
+    - If any review FAILED: report "{N} review(s) failed: {list of failed reviews}. Story moved to in-progress. Fix issues and re-run /gaia-run-all-reviews."
+  </action>
 </step>
 </workflow>
