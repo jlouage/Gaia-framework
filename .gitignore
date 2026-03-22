@@ -8,3 +8,6 @@ docs/phases/
 # Node
 node_modules/
 coverage/
+
+# BATS test helpers (downloaded by test/shell/setup-bats.sh)
+test/shell/test_helper/

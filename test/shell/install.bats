@@ -432,3 +432,232 @@ YAML
   run bash "$SCRIPT" validate "$TEST_DIR"
   [ "$status" -ne 0 ]
 }
+
+# ─── E3-S4: cmd_init flow tests (AC2) ────────────────────────────────────────
+
+@test "init copies framework files with correct permissions (AC2)" {
+  local SRC_DIR="$(mktemp -d)"
+  create_mock_source "$SRC_DIR"
+
+  run bash "$SCRIPT" init --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  # Framework files should be present
+  [ -d "$TEST_DIR/_gaia" ]
+  [ -d "$TEST_DIR/_gaia/_config" ]
+  [ -f "$TEST_DIR/_gaia/_config/manifest.yaml" ]
+  [ -f "$TEST_DIR/_gaia/_config/global.yaml" ]
+
+  # CLAUDE.md should be copied
+  [ -f "$TEST_DIR/CLAUDE.md" ]
+
+  # .claude/commands/ should be populated
+  [ -d "$TEST_DIR/.claude/commands" ]
+
+  # Docs directories should exist
+  [ -d "$TEST_DIR/docs/planning-artifacts" ]
+  [ -d "$TEST_DIR/docs/implementation-artifacts" ]
+  [ -d "$TEST_DIR/docs/test-artifacts" ]
+  [ -d "$TEST_DIR/docs/creative-artifacts" ]
+
+  rm -rf "$SRC_DIR"
+}
+
+@test "init idempotent re-run does not clobber user data (AC2)" {
+  local SRC_DIR="$(mktemp -d)"
+  create_mock_source "$SRC_DIR"
+
+  # First init
+  run bash "$SCRIPT" init --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  # Place user data in various locations
+  echo "user-checkpoint" > "$TEST_DIR/_memory/checkpoints/my-work.yaml"
+  echo "user-claude" > "$TEST_DIR/CLAUDE.md"
+  mkdir -p "$TEST_DIR/docs/planning-artifacts"
+  echo "user-prd" > "$TEST_DIR/docs/planning-artifacts/prd.md"
+
+  # Second init (should warn but not clobber)
+  run bash "$SCRIPT" init --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  # User data should be preserved
+  [ "$(cat "$TEST_DIR/_memory/checkpoints/my-work.yaml")" = "user-checkpoint" ]
+  [ "$(cat "$TEST_DIR/CLAUDE.md")" = "user-claude" ]
+  [ "$(cat "$TEST_DIR/docs/planning-artifacts/prd.md")" = "user-prd" ]
+
+  rm -rf "$SRC_DIR"
+}
+
+@test "init fails when source is invalid (missing manifest)" {
+  local BAD_SRC="$(mktemp -d)"
+  # No manifest.yaml
+
+  run bash "$SCRIPT" init --source "$BAD_SRC" --yes "$TEST_DIR"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"Invalid GAIA source"* ]] || [[ "$output" == *"manifest"* ]]
+
+  rm -rf "$BAD_SRC"
+}
+
+@test "init creates .resolved directories with .gitkeep files" {
+  local SRC_DIR="$(mktemp -d)"
+  create_mock_source "$SRC_DIR"
+
+  run bash "$SCRIPT" init --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  # .resolved directories should exist with .gitkeep
+  for mod in core lifecycle creative testing; do
+    [ -d "$TEST_DIR/_gaia/$mod/.resolved" ]
+    [ -f "$TEST_DIR/_gaia/$mod/.resolved/.gitkeep" ]
+  done
+
+  rm -rf "$SRC_DIR"
+}
+
+@test "init sets global.yaml values correctly" {
+  local SRC_DIR="$(mktemp -d)"
+  create_mock_source "$SRC_DIR"
+
+  run bash "$SCRIPT" init --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  # global.yaml should have been customized with defaults
+  [ -f "$TEST_DIR/_gaia/_config/global.yaml" ]
+  local project_name
+  project_name="$(grep "^project_name:" "$TEST_DIR/_gaia/_config/global.yaml" | sed 's/^project_name:[[:space:]]*//' | sed 's/^"//;s/"$//')"
+  # Should be set (either to dir basename or default)
+  [ -n "$project_name" ]
+
+  rm -rf "$SRC_DIR"
+}
+
+@test "init creates custom/skills directory" {
+  local SRC_DIR="$(mktemp -d)"
+  create_mock_source "$SRC_DIR"
+
+  run bash "$SCRIPT" init --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  [ -d "$TEST_DIR/custom/skills" ]
+
+  rm -rf "$SRC_DIR"
+}
+
+@test "init appends GAIA entries to .gitignore" {
+  local SRC_DIR="$(mktemp -d)"
+  create_mock_source "$SRC_DIR"
+
+  run bash "$SCRIPT" init --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  [ -f "$TEST_DIR/.gitignore" ]
+  grep -q "GAIA Framework" "$TEST_DIR/.gitignore"
+
+  rm -rf "$SRC_DIR"
+}
+
+# ─── E3-S4: cmd_update flow tests (AC3) ──────────────────────────────────────
+
+@test "update creates backup of changed files (AC3)" {
+  local SRC_DIR="$(mktemp -d)"
+  create_mock_source "$SRC_DIR"
+
+  # Do initial init
+  run bash "$SCRIPT" init --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  # Modify source manifest.yaml (which is in update_targets) to force a diff
+  cat > "$SRC_DIR/_gaia/_config/manifest.yaml" <<'YAML'
+name: gaia-framework
+version: "2.0.0"
+updated: true
+YAML
+
+  # Also update global.yaml version
+  cat > "$SRC_DIR/_gaia/_config/global.yaml" <<'YAML'
+framework_name: "GAIA"
+framework_version: "2.0.0"
+project_name: "test-project"
+user_name: "tester"
+project_path: "."
+YAML
+
+  # Run update
+  run bash "$SCRIPT" update --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  # Backup directory should exist because manifest.yaml was different
+  local backup_dirs
+  backup_dirs="$(ls -d "$TEST_DIR/_gaia/_backups"/*/ 2>/dev/null | head -1)"
+  [ -n "$backup_dirs" ]
+
+  rm -rf "$SRC_DIR"
+}
+
+@test "update preserves user-modified files in _memory (AC3)" {
+  local SRC_DIR="$(mktemp -d)"
+  create_mock_source "$SRC_DIR"
+
+  # Do initial init
+  run bash "$SCRIPT" init --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  # Add user data to _memory
+  echo "my-decisions" > "$TEST_DIR/_memory/architect-sidecar/decisions.md"
+  echo "checkpoint-data" > "$TEST_DIR/_memory/checkpoints/my-checkpoint.yaml"
+
+  # Run update
+  run bash "$SCRIPT" update --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  # User data must be preserved
+  [ -f "$TEST_DIR/_memory/architect-sidecar/decisions.md" ]
+  [ "$(cat "$TEST_DIR/_memory/architect-sidecar/decisions.md")" = "my-decisions" ]
+  [ -f "$TEST_DIR/_memory/checkpoints/my-checkpoint.yaml" ]
+  [ "$(cat "$TEST_DIR/_memory/checkpoints/my-checkpoint.yaml")" = "checkpoint-data" ]
+
+  rm -rf "$SRC_DIR"
+}
+
+@test "update fails when no existing installation found" {
+  local SRC_DIR="$(mktemp -d)"
+  create_mock_source "$SRC_DIR"
+
+  # Empty target — no _gaia/
+  run bash "$SCRIPT" update --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"No GAIA installation found"* ]]
+
+  rm -rf "$SRC_DIR"
+}
+
+@test "update updates framework version in global.yaml" {
+  local SRC_DIR="$(mktemp -d)"
+  create_mock_source "$SRC_DIR"
+
+  # Do initial init
+  run bash "$SCRIPT" init --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  # Bump source version
+  cat > "$SRC_DIR/_gaia/_config/global.yaml" <<'YAML'
+framework_name: "GAIA"
+framework_version: "2.0.0"
+project_name: "test-project"
+user_name: "tester"
+project_path: "."
+YAML
+
+  # Run update
+  run bash "$SCRIPT" update --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  # Version should be updated
+  local version
+  version="$(grep "^framework_version:" "$TEST_DIR/_gaia/_config/global.yaml" | sed 's/^framework_version:[[:space:]]*//' | sed 's/^"//;s/"$//')"
+  [ "$version" = "2.0.0" ]
+
+  rm -rf "$SRC_DIR"
+}
