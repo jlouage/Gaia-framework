@@ -7,7 +7,7 @@ set -uo pipefail
 PROJECT_ROOT="/Users/jlouage/Dev/GAIA-Framework"
 PROJECT_PATH="$PROJECT_ROOT/Gaia-framework"
 SKILL_FILE="$PROJECT_PATH/_gaia/lifecycle/skills/memory-management.md"
-MEMORY_PATH="$PROJECT_ROOT/_memory"
+MEMORY_PATH="$PROJECT_PATH/_memory"
 ARCH_FILE="$PROJECT_ROOT/docs/planning-artifacts/architecture.md"
 
 PASS=0
@@ -158,38 +158,38 @@ else
   assert "architecture-decisions.md file exists" "false"
 fi
 
-# Check security-sidecar/threat-model-decisions.md — no D-01: format
-SEC_DL="$MEMORY_PATH/security-sidecar/threat-model-decisions.md"
+# Check security-sidecar/decision-log.md — no D-01: format
+SEC_DL="$MEMORY_PATH/security-sidecar/decision-log.md"
 if [ -f "$SEC_DL" ]; then
   if grep -q '^### D-[0-9]\{2\}:' "$SEC_DL"; then
-    assert "threat-model-decisions: no D-XX: format entries remain" "false"
+    assert "security decision-log: no D-XX: format entries remain" "false"
   else
-    assert "threat-model-decisions: no D-XX: format entries remain" "true"
+    assert "security decision-log: no D-XX: format entries remain" "true"
   fi
   if grep -q '^### \[' "$SEC_DL"; then
-    assert "threat-model-decisions: has standardized ### [date] headers" "true"
+    assert "security decision-log: has standardized ### [date] headers" "true"
   else
-    assert "threat-model-decisions: has standardized ### [date] headers" "false"
+    assert "security decision-log: has standardized ### [date] headers" "false"
   fi
 else
-  assert "threat-model-decisions file exists" "false"
+  assert "security decision-log file exists" "false"
 fi
 
-# Check devops-sidecar/infrastructure-decisions.md — no D-01: format
-DEVOPS_DL="$MEMORY_PATH/devops-sidecar/infrastructure-decisions.md"
+# Check devops-sidecar/decision-log.md — no D-01: format
+DEVOPS_DL="$MEMORY_PATH/devops-sidecar/decision-log.md"
 if [ -f "$DEVOPS_DL" ]; then
   if grep -q '^### D-[0-9]\{2\}:' "$DEVOPS_DL"; then
-    assert "infrastructure-decisions: no D-XX: format entries remain" "false"
+    assert "devops decision-log: no D-XX: format entries remain" "false"
   else
-    assert "infrastructure-decisions: no D-XX: format entries remain" "true"
+    assert "devops decision-log: no D-XX: format entries remain" "true"
   fi
   if grep -q '^### \[' "$DEVOPS_DL"; then
-    assert "infrastructure-decisions: has standardized ### [date] headers" "true"
+    assert "devops decision-log: has standardized ### [date] headers" "true"
   else
-    assert "infrastructure-decisions: has standardized ### [date] headers" "false"
+    assert "devops decision-log: has standardized ### [date] headers" "false"
   fi
 else
-  assert "infrastructure-decisions file exists" "false"
+  assert "devops decision-log file exists" "false"
 fi
 
 echo ""
