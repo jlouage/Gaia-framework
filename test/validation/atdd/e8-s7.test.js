@@ -93,6 +93,43 @@ describe("E8-S7: val-validate-plan Workflow", () => {
     });
   });
 
+  // AC5: ADR cross-reference in instructions
+  describe("AC5: instructions reference ADR cross-reference verification", () => {
+    it("instructions.xml contains ADR cross-reference logic", () => {
+      const instrPath = join(WORKFLOW_DIR, "instructions.xml");
+      const content = readFileSync(instrPath, "utf-8");
+      expect(content).toMatch(/ADR/i);
+      expect(content).toMatch(/architecture/i);
+    });
+  });
+
+  // AC6: Discussion loop for findings review
+  describe("AC6: instructions contain discussion loop for findings", () => {
+    it("instructions.xml contains approve/dismiss/edit discussion loop", () => {
+      const instrPath = join(WORKFLOW_DIR, "instructions.xml");
+      const content = readFileSync(instrPath, "utf-8").toLowerCase();
+      expect(content).toContain("approve");
+      expect(content).toContain("dismiss");
+      expect(content).toContain("edit");
+    });
+  });
+
+  // AC7: Slash command file exists
+  describe("AC7: slash command file exists", () => {
+    it(".claude/commands/gaia-val-validate-plan.md exists", () => {
+      const cmdPath = join(
+        PROJECT_ROOT,
+        ".claude",
+        "commands",
+        "gaia-val-validate-plan.md",
+      );
+      expect(
+        existsSync(cmdPath),
+        "Slash command file must exist at .claude/commands/gaia-val-validate-plan.md",
+      ).toBe(true);
+    });
+  });
+
   // AC8: model_override: opus in workflow.yaml
   describe("AC8: model_override opus enforcement", () => {
     it("workflow.yaml contains model_override: opus", () => {
@@ -101,6 +138,121 @@ describe("E8-S7: val-validate-plan Workflow", () => {
 
       const content = readFileSync(workflowPath, "utf-8");
       expect(content).toMatch(/model_override:\s*opus/);
+    });
+  });
+
+  // Structural: workflow.yaml field completeness
+  describe("workflow.yaml field completeness", () => {
+    it("workflow.yaml contains required fields: name, module, agent, instructions, validation", () => {
+      const workflowPath = join(WORKFLOW_DIR, "workflow.yaml");
+      const content = readFileSync(workflowPath, "utf-8");
+
+      const requiredFields = [
+        "name:",
+        "module:",
+        "agent:",
+        "instructions:",
+        "validation:",
+      ];
+      for (const field of requiredFields) {
+        expect(content, `Missing field: ${field}`).toContain(field);
+      }
+    });
+
+    it("workflow.yaml declares agent as validator", () => {
+      const workflowPath = join(WORKFLOW_DIR, "workflow.yaml");
+      const content = readFileSync(workflowPath, "utf-8");
+      expect(content).toMatch(/agent:\s*validator/);
+    });
+
+    it("workflow.yaml declares module as lifecycle", () => {
+      const workflowPath = join(WORKFLOW_DIR, "workflow.yaml");
+      const content = readFileSync(workflowPath, "utf-8");
+      expect(content).toMatch(/module:\s*lifecycle/);
+    });
+
+    it("workflow.yaml declares quality_gates", () => {
+      const workflowPath = join(WORKFLOW_DIR, "workflow.yaml");
+      const content = readFileSync(workflowPath, "utf-8");
+      expect(content).toContain("quality_gates:");
+    });
+  });
+
+  // Structural: instructions.xml step count and ordering
+  describe("instructions.xml step structure", () => {
+    it("instructions.xml contains 7 numbered steps", () => {
+      const instrPath = join(WORKFLOW_DIR, "instructions.xml");
+      const content = readFileSync(instrPath, "utf-8");
+      const stepMatches = content.match(/<step\s+n="(\d+)"/g);
+      expect(stepMatches).not.toBeNull();
+      expect(stepMatches.length).toBe(7);
+    });
+
+    it("steps are numbered sequentially 1 through 7", () => {
+      const instrPath = join(WORKFLOW_DIR, "instructions.xml");
+      const content = readFileSync(instrPath, "utf-8");
+      for (let i = 1; i <= 7; i++) {
+        expect(content).toContain(`<step n="${i}"`);
+      }
+    });
+  });
+
+  // Structural: JIT skill section references
+  describe("JIT skill section loading", () => {
+    it("instructions.xml references validation-patterns skill sections", () => {
+      const instrPath = join(WORKFLOW_DIR, "instructions.xml");
+      const content = readFileSync(instrPath, "utf-8").toLowerCase();
+
+      const requiredSections = [
+        "claim-extraction",
+        "filesystem-verification",
+        "severity-classification",
+        "findings-formatting",
+      ];
+      for (const section of requiredSections) {
+        expect(
+          content,
+          `Missing skill section reference: ${section}`,
+        ).toContain(section);
+      }
+    });
+  });
+
+  // Structural: severity classification keywords
+  describe("severity classification in instructions", () => {
+    it("instructions.xml uses CRITICAL, WARNING, INFO severity levels", () => {
+      const instrPath = join(WORKFLOW_DIR, "instructions.xml");
+      const content = readFileSync(instrPath, "utf-8");
+      expect(content).toContain("CRITICAL");
+      expect(content).toContain("WARNING");
+      expect(content).toContain("INFO");
+    });
+  });
+
+  // Structural: action verb classification
+  describe("action verb classification in instructions", () => {
+    it("instructions.xml classifies Create/Add vs Modify/Update vs Delete/Remove", () => {
+      const instrPath = join(WORKFLOW_DIR, "instructions.xml");
+      const content = readFileSync(instrPath, "utf-8");
+
+      // Create/Add group
+      expect(content).toMatch(/Create\s*\/\s*Add/i);
+      // Modify/Update group
+      expect(content).toMatch(/Modify\s*\/\s*Update/i);
+      // Delete/Remove group
+      expect(content).toMatch(/Delete\s*\/\s*Remove/i);
+    });
+  });
+
+  // Structural: checklist completeness
+  describe("checklist.md completeness", () => {
+    it("checklist.md contains structure, protocol, quality, and integration sections", () => {
+      const checklistPath = join(WORKFLOW_DIR, "checklist.md");
+      const content = readFileSync(checklistPath, "utf-8");
+      expect(content).toContain("## Structure");
+      expect(content).toContain("## Protocol Completeness");
+      expect(content).toContain("## Quality");
+      expect(content).toContain("## Integration");
     });
   });
 });

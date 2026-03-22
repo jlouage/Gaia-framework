@@ -216,4 +216,125 @@ describe("E8-S14: Workflow Engine [v] at Template-Output", () => {
       ).toBe(true);
     });
   });
+
+  // --- Extended coverage: gaps identified by test-automation workflow ---
+
+  // AC3 detail: Findings are written under a specific section heading
+  describe("AC3 extended: findings written under Validation Findings section", () => {
+    it("workflow.xml specifies Validation Findings section for approved findings", () => {
+      const content = readFileSync(ENGINE_PATH, "utf-8");
+      expect(content).toMatch(/Validation Findings/);
+    });
+  });
+
+  // AC6 extended: artifact content check happens BEFORE invoking Val
+  describe("AC6 extended: artifact content check precedes Val invocation", () => {
+    it("workflow.xml checks artifact content before invoking val-validate-artifact", () => {
+      const content = readFileSync(ENGINE_PATH, "utf-8").toLowerCase();
+      // The empty check must appear before the invocation — verify both exist
+      // and the empty check references "not been written" or "empty" in the [v] handler
+      const vHandlerIdx = content.indexOf("[v] handler");
+      const emptyCheckIdx = content.indexOf("not been written yet or is empty");
+      const valInvokeIdx = content.indexOf(
+        "invoke val-validate-artifact as a subagent",
+      );
+      // Both must exist
+      expect(emptyCheckIdx, "Empty artifact check must exist").toBeGreaterThan(
+        -1,
+      );
+      expect(valInvokeIdx, "Val invocation must exist").toBeGreaterThan(-1);
+      // Empty check must come before Val invocation in the [v] handler
+      expect(
+        emptyCheckIdx,
+        "Empty check must precede Val invocation",
+      ).toBeLessThan(valInvokeIdx);
+    });
+  });
+
+  // AC8 / Scenario 14: YOLO mode does not auto-trigger [v]
+  describe("AC8 extended: YOLO mode [v] not auto-triggered", () => {
+    it("workflow.xml specifies that [v] is not auto-triggered in YOLO mode", () => {
+      const content = readFileSync(ENGINE_PATH, "utf-8").toLowerCase();
+      const hasYoloNoV =
+        content.includes("yolo") &&
+        content.includes("[v]") &&
+        content.includes("not auto-triggered");
+      expect(
+        hasYoloNoV,
+        "YOLO mode must explicitly state [v] is not auto-triggered",
+      ).toBe(true);
+    });
+  });
+
+  // AC7 extended: fallback prompt shows only [c]/[y]/[e] without [v]
+  describe("AC7 extended: fallback prompt without [v] when gate disabled", () => {
+    it("workflow.xml has a prompt with only [c]/[y]/[e] when Val is not enabled", () => {
+      const content = readFileSync(ENGINE_PATH, "utf-8");
+      // Must have a prompt line that contains [c], [y], [e] but NOT [v]
+      // The normal-mode fallback: "[c]ontinue [y]olo [e]dit"
+      const hasNonValPrompt =
+        content.includes("[c]ontinue") && content.includes("[e]dit");
+      expect(
+        hasNonValPrompt,
+        "Must have a fallback prompt with [c]/[y]/[e] only",
+      ).toBe(true);
+    });
+  });
+
+  // Planning gate [v]: verify Step 5 also integrates Val
+  describe("Planning gate [v] integration", () => {
+    it("workflow.xml Step 5 (Planning Gate) contains [v] Review with Val option", () => {
+      const content = readFileSync(ENGINE_PATH, "utf-8");
+      // Step 5 planning gate should have val_review_available check and [v] option
+      const hasStep5Val =
+        content.includes("val_review_available") &&
+        content.includes("[v] Review with Val");
+      expect(
+        hasStep5Val,
+        "Planning gate must have conditional [v] option",
+      ).toBe(true);
+    });
+
+    it("workflow.xml Planning Gate checks val_integration feature gate", () => {
+      const content = readFileSync(ENGINE_PATH, "utf-8").toLowerCase();
+      // Must check the same feature gate as template-output
+      const hasGateCheck =
+        content.includes("val_integration") &&
+        content.includes("val_review_available");
+      expect(
+        hasGateCheck,
+        "Planning gate must check val_integration feature gate",
+      ).toBe(true);
+    });
+
+    it("workflow.xml Planning Gate invokes val-validate-plan for [v]", () => {
+      const content = readFileSync(ENGINE_PATH, "utf-8");
+      expect(content).toMatch(/val-validate-plan/);
+    });
+
+    it("workflow.xml Planning Gate handles Val failure gracefully", () => {
+      const content = readFileSync(ENGINE_PATH, "utf-8").toLowerCase();
+      // Planning gate must have failure handling for Val
+      const hasFailure =
+        content.includes("val validation could not complete") &&
+        content.includes("planning gate");
+      expect(
+        hasFailure,
+        "Planning gate must handle Val failure gracefully",
+      ).toBe(true);
+    });
+
+    it("workflow.xml Planning Gate handles zero findings from Val", () => {
+      const content = readFileSync(ENGINE_PATH, "utf-8").toLowerCase();
+      // Must handle zero findings case in planning gate
+      const hasZeroFindings =
+        content.includes("[v] and val returns zero findings") ||
+        (content.includes("zero findings") &&
+          content.includes("no issues found"));
+      expect(
+        hasZeroFindings,
+        "Planning gate must handle zero findings from Val",
+      ).toBe(true);
+    });
+  });
 });

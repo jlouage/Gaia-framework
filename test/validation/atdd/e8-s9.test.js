@@ -214,4 +214,112 @@ describe("E8-S9: val-refresh-ground-truth Workflow", () => {
       expect(content).not.toMatch(/if.*invoked.*as.*sub-step/);
     });
   });
+
+  // Coverage gap: workflow.yaml structural correctness
+  describe("Structural: workflow.yaml configuration fields", () => {
+    it("workflow.yaml declares agent as validator", () => {
+      const workflowPath = join(WORKFLOW_DIR, "workflow.yaml");
+      const content = readFileSync(workflowPath, "utf-8");
+      expect(content).toMatch(/agent:\s*validator/);
+    });
+
+    it("workflow.yaml declares config_source referencing lifecycle config", () => {
+      const workflowPath = join(WORKFLOW_DIR, "workflow.yaml");
+      const content = readFileSync(workflowPath, "utf-8");
+      expect(content).toMatch(/config_source:.*lifecycle\/config\.yaml/);
+    });
+
+    it("workflow.yaml declares output pointing to ground-truth.md", () => {
+      const workflowPath = join(WORKFLOW_DIR, "workflow.yaml");
+      const content = readFileSync(workflowPath, "utf-8");
+      expect(content).toMatch(/ground-truth\.md/);
+    });
+
+    it("workflow.yaml declares required_skill_sections for all 5 sections", () => {
+      const workflowPath = join(WORKFLOW_DIR, "workflow.yaml");
+      const content = readFileSync(workflowPath, "utf-8");
+      const sections = [
+        "full-refresh",
+        "incremental-refresh",
+        "entry-structure",
+        "conflict-resolution",
+        "token-budget",
+      ];
+      for (const section of sections) {
+        expect(
+          content,
+          `Missing required_skill_section: ${section}`,
+        ).toContain(section);
+      }
+    });
+  });
+
+  // Coverage gap: instructions.xml structural completeness
+  describe("Structural: instructions.xml step completeness", () => {
+    it("instructions.xml contains all 11 steps", () => {
+      const instrPath = join(WORKFLOW_DIR, "instructions.xml");
+      const content = readFileSync(instrPath, "utf-8");
+      // Count step tags with n attributes
+      const stepMatches = content.match(/<step\s+n="/g);
+      expect(stepMatches).not.toBeNull();
+      expect(stepMatches.length).toBe(11);
+    });
+
+    it("instructions.xml has critical mandates section", () => {
+      const instrPath = join(WORKFLOW_DIR, "instructions.xml");
+      const content = readFileSync(instrPath, "utf-8");
+      expect(content).toMatch(/<critical>/);
+      expect(content).toMatch(/<mandate>/);
+    });
+
+    it("instructions.xml has template-output referencing ground-truth.md", () => {
+      const instrPath = join(WORKFLOW_DIR, "instructions.xml");
+      const content = readFileSync(instrPath, "utf-8");
+      expect(content).toMatch(/<template-output.*ground-truth\.md/);
+    });
+
+    it("instructions.xml has a token budget step", () => {
+      const instrPath = join(WORKFLOW_DIR, "instructions.xml");
+      const content = readFileSync(instrPath, "utf-8").toLowerCase();
+      expect(content).toMatch(/token.budget/i);
+    });
+
+    it("instructions.xml has a compare/detect changes step with conflict resolution", () => {
+      const instrPath = join(WORKFLOW_DIR, "instructions.xml");
+      const content = readFileSync(instrPath, "utf-8").toLowerCase();
+      expect(content).toContain("compare");
+      expect(content).toContain("conflict-resolution");
+    });
+  });
+
+  // Coverage gap: checklist.md structure validation
+  describe("Structural: checklist.md completeness", () => {
+    it("checklist.md covers all major workflow areas", () => {
+      const checklistPath = join(WORKFLOW_DIR, "checklist.md");
+      const content = readFileSync(checklistPath, "utf-8").toLowerCase();
+
+      const areas = [
+        "scan",
+        "ground truth",
+        "diff",
+        "first-run",
+        "skill",
+        "manifest",
+      ];
+      for (const area of areas) {
+        expect(
+          content,
+          `Checklist missing area: ${area}`,
+        ).toContain(area);
+      }
+    });
+
+    it("checklist.md uses checkbox format", () => {
+      const checklistPath = join(WORKFLOW_DIR, "checklist.md");
+      const content = readFileSync(checklistPath, "utf-8");
+      const checkboxes = content.match(/- \[ \]/g);
+      expect(checkboxes).not.toBeNull();
+      expect(checkboxes.length).toBeGreaterThanOrEqual(5);
+    });
+  });
 });

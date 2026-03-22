@@ -55,17 +55,6 @@ GAIA supports separating the framework from the application source code. The `pr
 - `{project-root}` — always the root directory where `_gaia/` lives. Used for framework paths, docs, and artifacts.
 - `{project-path}` — where application source code lives. Equals `{project-root}` if project_path is `"."`, otherwise `{project-root}/{project_path}`.
 
-**CRITICAL — Directory Identity (do NOT confuse these):**
-
-In this project, `{project-path}` is `Gaia-framework/` (set in `global.yaml`). This creates two directories that look similar but serve completely different purposes:
-
-- **`{project-root}/Gaia-framework/`** (`{project-path}`) — the **product being built**. This is the npm package source code (with `bin/`, `gaia-install.sh`, tests, `package.json`). This is the **git repository**. The `_gaia/`, `_memory/`, and `.claude/` directories inside it are the product's **distributable source files** — they get published to npm and installed by users.
-- **`{project-root}/_gaia/`** and **`{project-root}/_memory/`** — the **running GAIA framework instance** that orchestrates development. These live **outside** the git repo. The workflow engine, agents, and checkpoints use these at runtime.
-
-**These are NOT duplicates.** They are intentionally separate:
-- `Gaia-framework/_gaia/` = product source code (committed to git, published to npm)
-- `{project-root}/_gaia/` = local running framework (not in git, used by Claude Code)
-
 **Rules:**
 - NEVER replace `{project-path}/_gaia/` with symlinks to `{project-root}/_gaia/` — they are different things
 - NEVER delete files from `{project-path}/_gaia/` thinking they are "stale copies" — they are the product

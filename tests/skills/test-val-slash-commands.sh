@@ -117,6 +117,61 @@ for cmd in gaia-agent-validator gaia-val-validate gaia-val-validate-plan gaia-va
 done
 echo ""
 
+# --- Frontmatter structure validation ---
+echo "Frontmatter: YAML delimiters and required fields"
+for cmd in gaia-agent-validator gaia-val-validate gaia-val-validate-plan gaia-val-save gaia-refresh-ground-truth; do
+  FILE="$COMMANDS_DIR/$cmd.md"
+  assert "$cmd has opening --- delimiter" "$(head -1 "$FILE" 2>/dev/null | grep -q '^---$' && echo true || echo false)"
+  assert "$cmd has name field" "$(grep -q '^name:' "$FILE" 2>/dev/null && echo true || echo false)"
+  assert "$cmd has description field" "$(grep -q '^description:' "$FILE" 2>/dev/null && echo true || echo false)"
+done
+echo ""
+
+# --- Agent vs workflow command differentiation ---
+echo "Agent/workflow command differentiation"
+FILE="$COMMANDS_DIR/gaia-agent-validator.md"
+assert "Agent command does NOT reference workflow.xml" "$(grep -q 'workflow.xml' "$FILE" 2>/dev/null && echo false || echo true)"
+assert "Agent command does NOT include \$ARGUMENTS" "$(grep -q '\$ARGUMENTS' "$FILE" 2>/dev/null && echo false || echo true)"
+assert "Agent command has WAIT for user input step" "$(grep -q 'WAIT for user input' "$FILE" 2>/dev/null && echo true || echo false)"
+echo ""
+
+# --- Workflow command body structure ---
+echo "Workflow command body: CRITICAL steps block and CORE OS reference"
+for cmd in gaia-val-validate gaia-val-validate-plan gaia-val-save gaia-refresh-ground-truth; do
+  FILE="$COMMANDS_DIR/$cmd.md"
+  assert "$cmd has CRITICAL steps block" "$(grep -q 'CRITICAL' "$FILE" 2>/dev/null && echo true || echo false)"
+  assert "$cmd references CORE OS" "$(grep -q 'CORE OS' "$FILE" 2>/dev/null && echo true || echo false)"
+  assert "$cmd has Save outputs step" "$(grep -q 'Save outputs' "$FILE" 2>/dev/null && echo true || echo false)"
+done
+echo ""
+
+# --- Manifest field completeness ---
+echo "Manifest field completeness: module, phase, path verification"
+assert "val-validate-artifact has lifecycle module" "$(grep '"val-validate-artifact"' "$MANIFEST" 2>/dev/null | grep -q '"lifecycle"' && echo true || echo false)"
+assert "val-validate-artifact has 4-implementation phase" "$(grep '"val-validate-artifact"' "$MANIFEST" 2>/dev/null | grep -q '"4-implementation"' && echo true || echo false)"
+assert "val-validate-artifact has correct workflow path" "$(grep '"val-validate-artifact"' "$MANIFEST" 2>/dev/null | grep -q 'val-validate-artifact/workflow.yaml' && echo true || echo false)"
+assert "val-save-session has lifecycle module" "$(grep '"val-save-session"' "$MANIFEST" 2>/dev/null | grep -q '"lifecycle"' && echo true || echo false)"
+assert "val-refresh-ground-truth has lifecycle module" "$(grep '"val-refresh-ground-truth"' "$MANIFEST" 2>/dev/null | grep -q '"lifecycle"' && echo true || echo false)"
+echo ""
+
+# --- Help CSV field validation ---
+echo "Help CSV: module, phase, and command field per row"
+assert "agent-validator has lifecycle module" "$(grep '"agent-validator","agent-validator"' "$HELP_CSV" 2>/dev/null | grep -q '"lifecycle"' && echo true || echo false)"
+assert "agent-validator has 4-implementation phase" "$(grep '"agent-validator","agent-validator"' "$HELP_CSV" 2>/dev/null | grep -q '"4-implementation"' && echo true || echo false)"
+assert "agent-validator has gaia-agent-validator command" "$(grep '"agent-validator","agent-validator"' "$HELP_CSV" 2>/dev/null | grep -q '"gaia-agent-validator"' && echo true || echo false)"
+assert "val-validate has gaia-val-validate command" "$(grep '"val-validate","val-validate"' "$HELP_CSV" 2>/dev/null | grep -q '"gaia-val-validate"' && echo true || echo false)"
+assert "val-save has gaia-val-save command" "$(grep '"val-save","val-save"' "$HELP_CSV" 2>/dev/null | grep -q '"gaia-val-save"' && echo true || echo false)"
+assert "refresh-ground-truth has gaia-refresh-ground-truth command" "$(grep '"refresh-ground-truth","refresh-ground-truth"' "$HELP_CSV" 2>/dev/null | grep -q '"gaia-refresh-ground-truth"' && echo true || echo false)"
+echo ""
+
+# --- Negative tests: no cross-contamination ---
+echo "Negative tests: no cross-contamination between commands"
+assert "val-validate does NOT reference val-save-session" "$(grep -q 'val-save-session' "$COMMANDS_DIR/gaia-val-validate.md" 2>/dev/null && echo false || echo true)"
+assert "val-save does NOT reference val-validate-artifact" "$(grep -q 'val-validate-artifact' "$COMMANDS_DIR/gaia-val-save.md" 2>/dev/null && echo false || echo true)"
+assert "refresh-ground-truth does NOT reference val-validate" "$(grep -q 'val-validate-artifact' "$COMMANDS_DIR/gaia-refresh-ground-truth.md" 2>/dev/null && echo false || echo true)"
+assert "Agent command does NOT reference any workflow.yaml" "$(grep -q 'workflow.yaml' "$COMMANDS_DIR/gaia-agent-validator.md" 2>/dev/null && echo false || echo true)"
+echo ""
+
 # --- Summary ---
 echo "================================"
 echo "TOTAL: $((PASS + FAIL)) | PASS: $PASS | FAIL: $FAIL"

@@ -7,3 +7,4 @@ docs/phases/
 
 # Node
 node_modules/
+coverage/

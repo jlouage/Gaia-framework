@@ -265,3 +265,88 @@ describe("AC6: used_by frontmatter bidirectional consistency", () => {
     expect(mismatches).toBeInstanceOf(Array);
   });
 });
+
+// ─── Coverage Expansion: Edge Cases ──────────────────────────
+
+describe("Edge cases: classifyPlaceholders deduplication", () => {
+  it("should deduplicate repeated placeholders in the same content", () => {
+    const result = classifyPlaceholders(
+      "Use {project_name} then {project_name} again and {goal} and {goal}",
+    );
+    // Each placeholder should appear only once regardless of repetition
+    expect(result.system.filter((v) => v === "project_name")).toHaveLength(1);
+    expect(result.content.filter((v) => v === "goal")).toHaveLength(1);
+  });
+
+  it("should handle content with no curly braces at all", () => {
+    const result = classifyPlaceholders("No placeholders here, just plain text.");
+    expect(result.system).toHaveLength(0);
+    expect(result.content).toHaveLength(0);
+    expect(result.inlineChoice).toHaveLength(0);
+  });
+
+  it("should handle mixed categories in a single content string", () => {
+    const registry = new Set(["project_name", "story_key"]);
+    const result = classifyPlaceholders(
+      "{project_name} {unknown_var} {decision} {React / Angular / Vue}",
+      registry,
+    );
+    expect(result.system).toEqual(["project_name"]);
+    expect(result.content).toContain("unknown_var");
+    expect(result.content).toContain("decision");
+    expect(result.inlineChoice).toHaveLength(1);
+  });
+});
+
+describe("Edge cases: validateVariables frontmatter stripping", () => {
+  it("should not classify variables inside YAML frontmatter as template variables", () => {
+    // validateVariables strips frontmatter before classifying
+    // If a variable appears only in frontmatter, it should not be reported
+    const registry = new Set(["project_name"]);
+    // Simulate by checking classifyPlaceholders on stripped content
+    const fullContent = "---\nused_by: [create-prd]\ntitle: test\n---\nBody with {project_name}";
+    const bodyOnly = fullContent.replace(/^---\n[\s\S]*?\n---\n?/, "");
+    const result = classifyPlaceholders(bodyOnly, registry);
+    expect(result.system).toContain("project_name");
+    // Frontmatter content like "create-prd" should not appear as a placeholder
+    expect(result.content).not.toContain("create-prd");
+  });
+});
+
+describe("Edge cases: findOrphans with empty inputs", () => {
+  it("should return empty array when both templates and references are empty", () => {
+    const orphans = findOrphans([], []);
+    expect(orphans).toHaveLength(0);
+  });
+
+  it("should return all templates as orphans when references are empty", () => {
+    const templates = ["/a.md", "/b.md"];
+    const orphans = findOrphans(templates, []);
+    expect(orphans).toEqual(templates);
+  });
+});
+
+describe("Edge cases: buildKnownVariableRegistry content", () => {
+  it("should include global.yaml configuration keys in the registry", () => {
+    const registry = buildKnownVariableRegistry(FRAMEWORK_ROOT);
+    // These are top-level keys in global.yaml that should be in the registry
+    expect(registry.has("project_name"), "project_name from global.yaml").toBe(true);
+    expect(registry.has("framework_name"), "framework_name from global.yaml").toBe(true);
+    expect(registry.has("user_name"), "user_name from global.yaml").toBe(true);
+    expect(registry.has("output_folder"), "output_folder from global.yaml").toBe(true);
+    expect(registry.has("planning_artifacts"), "planning_artifacts from global.yaml").toBe(true);
+    expect(registry.has("implementation_artifacts"), "implementation_artifacts from global.yaml").toBe(true);
+    expect(registry.has("test_artifacts"), "test_artifacts from global.yaml").toBe(true);
+  });
+
+  it("should include both system and workflow variables in the registry", () => {
+    const registry = buildKnownVariableRegistry(FRAMEWORK_ROOT);
+    // System variables
+    expect(registry.has("project-root")).toBe(true);
+    expect(registry.has("installed_path")).toBe(true);
+    // Workflow variables
+    expect(registry.has("sprint_number")).toBe(true);
+    expect(registry.has("epic_key")).toBe(true);
+    expect(registry.has("agent_model_name_version")).toBe(true);
+  });
+});

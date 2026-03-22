@@ -47,6 +47,21 @@ assert "Path manifest has ground-truth-management" "$(grep -q 'ground-truth-mana
 # 1.4 build-configs includes manifest sync step
 assert "build-configs has manifest sync step" "$(grep -qi 'skill-manifest' "$BUILD_CONFIGS" && echo true || echo false)"
 
+
+# 1.5 Both manifests have identical line counts
+ROOT_LINES=$(wc -l < "$ROOT_MANIFEST" | tr -d ' ')
+PATH_LINES=$(wc -l < "$PATH_MANIFEST" | tr -d ' ')
+assert "Manifest line counts match ($ROOT_LINES vs $PATH_LINES)" "$([ "$ROOT_LINES" = "$PATH_LINES" ] && echo true || echo false)"
+
+# 1.6 CSV header row is intact in both manifests
+assert "Root manifest has CSV header" "$(head -1 "$ROOT_MANIFEST" | grep -q '^name,displayName,description,path,applicable_agents' && echo true || echo false)"
+assert "Path manifest has CSV header" "$(head -1 "$PATH_MANIFEST" | grep -q '^name,displayName,description,path,applicable_agents' && echo true || echo false)"
+
+# 1.7 build-configs has union merge logic steps
+assert "build-configs has compare step" "$(grep -qi 'compare\|diverge' "$BUILD_CONFIGS" && echo true || echo false)"
+assert "build-configs has union strategy" "$(grep -qi 'union' "$BUILD_CONFIGS" && echo true || echo false)"
+assert "build-configs has write-both step" "$(grep -qi 'both locations\|BOTH locations' "$BUILD_CONFIGS" && echo true || echo false)"
+
 echo ""
 
 # --- AC2: Gitignore consolidation ---
@@ -60,6 +75,10 @@ assert "Nested .gitignore has NO _memory/ patterns" "$(! grep -q '_memory/' "$PA
 
 # 2.3 Nested gitignore still has project-specific patterns
 assert "Nested .gitignore has node_modules/" "$(grep -q 'node_modules/' "$PATH_GITIGNORE" && echo true || echo false)"
+
+# 2.4 Root gitignore has no duplicate _memory/ lines
+MEMORY_COUNT=$(grep -c '_memory/' "$ROOT_GITIGNORE" || true)
+assert "Root .gitignore has no duplicate _memory/ patterns ($MEMORY_COUNT occurrences)" "$([ "$MEMORY_COUNT" -le 2 ] && echo true || echo false)"
 
 echo ""
 
