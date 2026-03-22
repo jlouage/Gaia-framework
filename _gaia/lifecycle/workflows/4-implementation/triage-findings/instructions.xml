@@ -5,6 +5,7 @@
   <mandate>Source story findings must be marked as triaged with the target story key or dismissed</mandate>
   <mandate>New stories MUST be appended to epics-and-stories.md under the correct epic — the master planning artifact must stay in sync with story files</mandate>
   <mandate>New story keys MUST use the next sequential number in the epic — scan existing stories to determine the last key. NEVER reuse an existing key.</mandate>
+  <mandate>New triaged stories MUST NOT be added to sprint-status.yaml — they are backlog items that get assigned to sprints via /gaia-sprint-plan or injected via /gaia-correct-course</mandate>
 </critical>
 <step n="1" title="Scan for Findings">
   <action>Scan story files in {implementation_artifacts}/ for non-empty Findings tables</action>
@@ -24,9 +25,16 @@
     - **Scope:** If the finding is closely related to an existing backlog story → recommend ADD TO EXISTING and list candidate backlog stories for the user to pick from
     - **Relevance:** If the finding describes a temporary workaround that has since been resolved or the issue no longer applies → recommend DISMISS
     Present the recommendation with reasoning for each finding.</action>
-  <action if="yolo_mode">In YOLO mode: auto-apply the recommendation for each finding without prompting the user. Log each decision and reasoning.</action>
+  <action>For each CREATE STORY recommendation, also recommend a timing/urgency:
+    - **CRITICAL** severity (production bug, security vulnerability, data loss risk) → recommend **NOW**: "Inject into current sprint via /gaia-correct-course after triage completes"
+    - **HIGH** severity (blocking debt, significant bug) → recommend **NEXT SPRINT**: flag as priority P0 so /gaia-sprint-plan picks it up first
+    - **MEDIUM** severity → recommend **BACKLOG**: standard priority P1, pick up when capacity allows
+    - **LOW** severity → recommend **BACKLOG**: standard priority P2, no urgency
+    Present the timing recommendation alongside the triage decision.</action>
+  <action if="yolo_mode">In YOLO mode: auto-apply both the triage recommendation and the timing recommendation for each finding without prompting the user. Log each decision, reasoning, and timing.</action>
   <action if="not yolo_mode">Present the recommendation, then let the user confirm or override for each finding:</action>
-  <action>  a. CREATE STORY — generate a new story file with status 'backlog', referencing the source story and finding. Use when: the finding represents a standalone piece of work (bug fix, tech debt cleanup, missing feature) that needs its own acceptance criteria and testing.</action>
+  <action>  a. CREATE STORY — generate a new story file with status 'backlog', referencing the source story and finding. Use when: the finding represents a standalone piece of work (bug fix, tech debt cleanup, missing feature) that needs its own acceptance criteria and testing.
+    After choosing CREATE STORY, confirm timing: [n] Now (inject into sprint) | [s] Next sprint (P0) | [b] Backlog (standard priority)</action>
   <action>  b. ADD TO EXISTING — append finding to an existing backlog story's tasks. Use when: the finding is closely related to an existing backlog story and can be addressed as part of that work. Present a list of candidate backlog stories for the user to pick from.</action>
   <action>  c. DISMISS — finding is not actionable or already resolved. Use when: the finding was about a temporary state that no longer exists, the issue has been fixed by a subsequent change, or the risk is accepted.</action>
 </step>
@@ -39,10 +47,12 @@
     5. NEVER reuse an existing key — always increment from the highest found across both sources</action>
   <action>Generate a new story file using the story template:
     - Filename: {story_key}-{story_title_slug}.md
+    - Set status to 'backlog' in YAML frontmatter (do NOT use status-sync — this is a new file, not an update)
+    - Set priority based on timing decision: NOW → P0, NEXT SPRINT → P0, BACKLOG → P1 (medium) or P2 (low)
     - Link back to source story in Dependencies section
     - Use the finding's suggested action as the basis for the story's user story and acceptance criteria
-    - Set risk level based on finding severity (CRITICAL→high, HIGH→high, MEDIUM→medium, LOW→low)</action>
-  <invoke-protocol ref="status-sync" story_key="{new_story_key}" new_status="backlog" source_workflow="triage-findings" />
+    - Set risk level based on finding severity (CRITICAL→high, HIGH→high, MEDIUM→medium, LOW→low)
+    - Do NOT add this story to sprint-status.yaml — it will be assigned to a sprint later via /gaia-sprint-plan or /gaia-correct-course</action>
   <action>Update {planning_artifacts}/epics-and-stories.md:
     1. Read the file and find the epic section for the new story's epic (e.g., ## Epic 1: ...)
     2. Append the new story entry at the END of that epic's story list — after the last existing story in that epic
@@ -56,13 +66,14 @@
   <action>  - CREATE STORY: append "[TRIAGED → {new_story_key}]" to the Finding column</action>
   <action>  - ADD TO EXISTING: append "[TRIAGED → {existing_story_key}]" to the Finding column</action>
   <action>  - DISMISS: append "[DISMISSED]" to the Finding column</action>
-  <template-output file="{implementation_artifacts}/sprint-status.yaml">
-    Update sprint-status.yaml with any new backlog stories created from findings.
-  </template-output>
 </step>
-<step n="6" title="Summary">
-  <action>Present triage summary: total findings processed, stories created (with keys), items added to existing stories, dismissed</action>
+<step n="6" title="Summary and Recommendations">
+  <action>Present triage summary: total findings processed, stories created (with keys and priorities), items added to existing stories, dismissed</action>
   <action>Confirm: "epics-and-stories.md updated with {N} new stories under their respective epics."</action>
+  <action>If any stories were marked as NOW (inject into current sprint):
+    Present: "⚠ {count} story(ies) recommended for immediate sprint injection: {list of story keys with titles}. Run /gaia-correct-course to inject them into the current sprint."</action>
+  <action>If any stories were marked as NEXT SPRINT (P0):
+    Present: "{count} story(ies) flagged as P0 for next sprint planning: {list of story keys}. They will be prioritized in /gaia-sprint-plan."</action>
 </step>
 <step n="7" title="Save to Val Memory">
   <action>Auto-save triage decisions to Val's memory sidecar (no user prompt required):
@@ -78,11 +89,13 @@
      Triaged {N} findings. Created {X} new stories: {list of new_key (title)}.
      Added {Y} to existing stories: {list of existing_key}.
      Dismissed {Z}.
+     Timing: {count} NOW (inject), {count} NEXT SPRINT (P0), {count} BACKLOG.
      Mapping: {new_key → source_key for each created story}
 
   2. Replace body of {project-root}/_memory/validator-sidecar/conversation-context.md (preserve header above first ---):
      Last session: Triage of {N} findings from {source_count} stories.
      Date: {YYYY-MM-DD}. Created: {X} stories. Added: {Y}. Dismissed: {Z}.
+     Urgent: {count} stories flagged for immediate sprint injection.
 
   If _memory/validator-sidecar/ directory or files don't exist, create them with standard headers.
   If writing fails, log warning and continue — memory save is non-blocking.</action>
