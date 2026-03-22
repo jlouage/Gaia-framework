@@ -137,10 +137,8 @@ describe("E8-S1: Test Automation — Extended Coverage", () => {
   // ─── AC1 Extended: Empty sidecar directories ───
   describe("AC1 Extended: Empty sidecars have no unexpected content", () => {
     // validator-sidecar excluded — populated by E8-S13 (ground-truth.md, decision-log.md, conversation-context.md)
+    // architect-sidecar, pm-sidecar, sm-sidecar excluded — populated by E9-S2 (Tier 1 memory)
     const emptySidecars = [
-      "architect-sidecar",
-      "pm-sidecar",
-      "sm-sidecar",
       "orchestrator-sidecar",
       "test-architect-sidecar",
       "storyteller-sidecar",
