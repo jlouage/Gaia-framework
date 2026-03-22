@@ -71,6 +71,16 @@ function ensureGit() {
   }
 }
 
+function readPackageVersion(pkgPath) {
+  const { readFileSync } = require("fs");
+  const raw = readFileSync(pkgPath, "utf8");
+  const pkg = JSON.parse(raw);
+  if (!pkg.version) {
+    throw new Error(`No version field found in ${pkgPath}`);
+  }
+  return pkg.version;
+}
+
 function showUsage() {
   console.log(`
 \x1b[1mGAIA Framework — npm installer\x1b[0m
