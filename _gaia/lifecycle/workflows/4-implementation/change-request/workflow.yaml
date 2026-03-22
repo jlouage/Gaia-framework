@@ -29,7 +29,7 @@ input_file_patterns:
 quality_gates:
   pre_start:
     - check: "prd.md exists"
-      on_fail: "halt — no PRD to assess impact against. Run /gaia-create-prd first."
+      on_fail: "HALT: No PRD to assess impact against. Run /gaia-create-prd first."
 on_error:
   missing_file: "skip_and_note"
   unresolved_variable: "halt"

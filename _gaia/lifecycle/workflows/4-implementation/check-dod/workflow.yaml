@@ -10,7 +10,7 @@ validation: "{installed_path}/checklist.md"
 quality_gates:
   pre_start:
     - check: "story_status in ['in-progress', 'review']"
-      on_fail: "HALT: Story must be in-progress or review status to check DoD"
+      on_fail: "HALT: Story must be in-progress or review status to check DoD. Run /gaia-dev-story to start implementation first."
 on_error:
   missing_file: "ask_user"
   unresolved_variable: "halt"

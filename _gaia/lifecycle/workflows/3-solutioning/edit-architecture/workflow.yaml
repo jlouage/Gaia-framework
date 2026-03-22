@@ -23,7 +23,7 @@ quality_gates:
       on_fail: "HALT: No architecture.md found. Run /gaia-create-arch first."
   post_complete:
     - check: "cascade_significant"
-      on_fail: "RECOMMEND: Cascade impact is SIGNIFICANT — run recommended downstream workflows."
+      on_fail: "RECOMMEND: Cascade impact is SIGNIFICANT — run /gaia-create-epics to update stories and /gaia-test-design to update test plan."
 on_error:
   missing_file: "ask_user"
   unresolved_variable: "halt"

@@ -14,7 +14,7 @@ input_file_patterns:
 quality_gates:
   pre_start:
     - check: "story_status == 'review'"
-      on_fail: "HALT: Story must be in review status before code review"
+      on_fail: "HALT: Story must be in review status before code review. Complete /gaia-dev-story first."
 on_error:
   missing_file: "ask_user"
   unresolved_variable: "halt"

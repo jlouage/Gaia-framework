@@ -10,7 +10,7 @@ validation: "{installed_path}/checklist.md"
 quality_gates:
   pre_start:
     - check: "story_status == 'review'"
-      on_fail: "HALT: Story must be in review status before security review"
+      on_fail: "HALT: Story must be in review status before security review. Complete /gaia-dev-story first."
 input_file_patterns:
   story:
     whole: "{implementation_artifacts}/{{story_key}}-*.md"

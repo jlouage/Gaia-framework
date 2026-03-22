@@ -29,7 +29,7 @@ input_file_patterns:
 quality_gates:
   pre_start:
     - check: "prd_exists"
-      on_fail: "HALT: Run create-prd first"
+      on_fail: "HALT: Run /gaia-create-prd first — PRD required before architecture"
   post_complete:
     - check: "test_plan_recommended"
       on_fail: "RECOMMEND: Architecture complete. Run /gaia-test-design next to create the test plan before creating epics."

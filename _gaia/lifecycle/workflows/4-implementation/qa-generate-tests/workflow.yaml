@@ -10,7 +10,7 @@ validation: "{installed_path}/checklist.md"
 quality_gates:
   pre_start:
     - check: "story_status == 'review'"
-      on_fail: "HALT: Story must be in review status before QA testing"
+      on_fail: "HALT: Story must be in review status before QA testing. Complete /gaia-dev-story first."
 on_error:
   missing_file: "ask_user"
   unresolved_variable: "halt"

@@ -31,7 +31,7 @@ quality_gates:
       on_fail: "HALT: Story must be in ready-for-dev status. Run /gaia-validate-story first to validate the story."
   post_complete:
     - check: "all_tests_pass == true"
-      on_fail: "HALT: All tests must pass before marking complete."
+      on_fail: "HALT: All tests must pass before marking complete. Run test suite in {project-path}/ and fix failing tests."
 input_file_patterns:
   story:
     whole: "{implementation_artifacts}/{{story_key}}-*.md"

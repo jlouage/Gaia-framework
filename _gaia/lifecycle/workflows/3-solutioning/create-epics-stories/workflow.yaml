@@ -23,7 +23,7 @@ input_file_patterns:
 quality_gates:
   pre_start:
     - check: "architecture_exists"
-      on_fail: "HALT: Run create-architecture first"
+      on_fail: "HALT: Run /gaia-create-arch first — architecture doc required before creating epics"
     - check: "test_plan_exists"
       on_fail: "HALT: Test plan not found. Run /gaia-test-design first — test risk levels inform story sizing and ATDD decisions."
 on_error:

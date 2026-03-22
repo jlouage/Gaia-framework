@@ -14,7 +14,7 @@ input_file_patterns:
 quality_gates:
   pre_start:
     - check: "architecture_exists"
-      on_fail: "HALT: Run create-architecture first — threat modeling requires architecture doc"
+      on_fail: "HALT: Run /gaia-create-arch first — threat modeling requires architecture doc"
 on_error:
   missing_file: "ask_user"
   unresolved_variable: "halt"

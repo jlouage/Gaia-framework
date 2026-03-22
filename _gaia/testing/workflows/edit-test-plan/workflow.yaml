@@ -26,7 +26,7 @@ quality_gates:
       on_fail: "HALT: test-plan.md does not exist. Run /gaia-test-design first to create the initial test plan."
   post_complete:
     - check: "coverage_advisory"
-      on_fail: "WARNING: New requirements have test cases but coverage percentage has not been re-calculated."
+      on_fail: "WARNING: New requirements have test cases but coverage percentage has not been re-calculated. Re-run /gaia-test-design to update coverage metrics."
 on_error:
   missing_file: "ask_user"
   unresolved_variable: "halt"

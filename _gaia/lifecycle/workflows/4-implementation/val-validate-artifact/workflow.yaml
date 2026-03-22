@@ -20,7 +20,7 @@ quality_gates:
     - check: "artifact_path is provided and file exists"
       on_fail: "HALT: Target artifact path is required. Usage: /gaia-val-validate <path-to-artifact>"
     - check: "model_override == opus"
-      on_fail: "HALT: Val requires opus model. model_override must be set to opus (ADR-012)."
+      on_fail: "HALT: Val requires opus model per ADR-012. Set model_override to opus in /gaia-val-validate workflow.yaml."
 on_error:
   missing_file: "skip_and_note"
   unresolved_variable: "halt"

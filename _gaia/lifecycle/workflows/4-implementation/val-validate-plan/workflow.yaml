@@ -27,10 +27,10 @@ input_file_patterns:
 quality_gates:
   pre_start:
     - check: "plan_artifact_path is provided"
-      on_fail: "HALT: No plan artifact path specified. Pass the path to the plan being validated."
+      on_fail: "HALT: No plan artifact path specified. Usage: /gaia-val-validate-plan <path-to-plan>"
   post_complete:
     - check: "findings_written or clean_plan_confirmed"
-      on_fail: "HALT: Validation must complete with either written findings or explicit clean-plan confirmation."
+      on_fail: "HALT: Validation must complete with either written findings or explicit clean-plan confirmation. Re-run /gaia-val-validate-plan to complete validation."
 on_error:
   missing_file: "ask_user"
   unresolved_variable: "halt"

@@ -1,4 +1,4 @@
-# GAIA Framework v1.44.0
+# GAIA Framework v1.45.0
 =======
 
 

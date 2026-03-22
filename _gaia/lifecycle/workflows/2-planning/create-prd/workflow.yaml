@@ -14,7 +14,7 @@ input_file_patterns:
 quality_gates:
   pre_start:
     - check: "product_brief_exists"
-      on_fail: "HALT: Run create-product-brief first"
+      on_fail: "HALT: Run /gaia-product-brief first — product brief required before PRD"
 on_error:
   missing_file: "ask_user"
   unresolved_variable: "halt"
