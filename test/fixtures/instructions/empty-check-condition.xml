@@ -1,0 +1,5 @@
+<workflow name="test-empty-check-cond">
+<step n="1" title="Step 1">
+  <check if="">HALT if something</check>
+</step>
+</workflow>
