@@ -3,7 +3,7 @@
 # After modifying this file, run /gaia-build-configs to regenerate resolved configs.
 
 framework_name: "GAIA"
-framework_version: "1.38.6"
+framework_version: "1.38.7"
 
 # User settings
 user_name: "jlouage"

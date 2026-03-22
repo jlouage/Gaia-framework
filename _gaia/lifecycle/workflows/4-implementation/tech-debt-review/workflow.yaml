@@ -2,6 +2,7 @@ name: tech-debt-review
 description: 'Aggregate, classify, and prioritize technical debt'
 module: lifecycle
 agent: sm
+template_output_prompt: "[e] Edit dashboard before saving (or press Enter to continue — recommendations follow automatically)"
 config_resolved: "{project-root}/_gaia/lifecycle/.resolved/tech-debt-review.yaml"
 config_source: "{project-root}/_gaia/lifecycle/config.yaml"
 installed_path: "{project-root}/_gaia/lifecycle/workflows/4-implementation/tech-debt-review"
