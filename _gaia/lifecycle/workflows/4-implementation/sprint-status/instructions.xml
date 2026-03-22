@@ -8,8 +8,9 @@
   <action>Parse all story entries with their statuses</action>
 </step>
 <step n="2" title="Reconcile With Story Files">
-  <action>For each story in sprint-status.yaml: find the story file matching the story key pattern ({story_key}*.md) in {implementation_artifacts}/</action>
-  <action>Read ONLY the YAML frontmatter (stop at closing ---) and the Review Gate table from each story file</action>
+  <action>Check if {implementation_artifacts}/story-index.yaml exists. If yes: use it for fast status lookup instead of scanning individual story files. If no: fall back to scanning story files directly.</action>
+  <action>For each story in sprint-status.yaml: find the story's current status — either from story-index.yaml or by reading the story file matching {story_key}*.md in {implementation_artifacts}/</action>
+  <action>If using story files directly: read ONLY the YAML frontmatter (stop at closing ---) and the Review Gate table from each story file</action>
   <action>Compare the Status field in the story file frontmatter with the status in sprint-status.yaml</action>
   <action>If they differ: the story file frontmatter is authoritative — update sprint-status.yaml to match</action>
   <action>If a story file has all 6 Review Gate rows PASSED and status 'done' but sprint-status.yaml still shows 'review': update sprint-status.yaml to 'done'</action>

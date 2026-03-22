@@ -3,11 +3,11 @@
 
 modules:
   - name: core
-    version: "1.8.1"
+    version: "1.9.0"
     path: "_gaia/core"
     type: built-in
   - name: lifecycle
-    version: "1.30.10"
+    version: "1.31.0"
     path: "_gaia/lifecycle"
     type: built-in
   - name: dev

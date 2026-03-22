@@ -105,6 +105,11 @@
   <template-output file="{implementation_artifacts}/{story_key}-{story_title_slug}.md">
     Generate the story file following the story-template.md structure. The filename must use the story key and slugified title (e.g., E1-S1-user-login.md). Include complete YAML frontmatter with ALL 14 fields populated. Fill all template sections: User Story, Acceptance Criteria, Tasks/Subtasks (linked to AC numbers), Dev Notes, Technical Notes, Dependencies, Test Scenarios, Project Structure Notes, References, Dev Agent Record, and Estimate.
   </template-output>
+  <action>Add the new story to {implementation_artifacts}/story-index.yaml:
+    1. Read story-index.yaml (create with header if doesn't exist)
+    2. Add entry for {story_key}: title, epic (extract key from epic field), status (backlog), sprint_id (null), priority, risk, author, file ({story_key}-{story_title_slug}.md)
+    3. Update last_updated timestamp
+    4. Non-blocking — if write fails, log warning and continue</action>
 </step>
 <step n="7" title="Val Full Validation">
   <action>Invoke Val as a subagent to perform full validation on the saved story file. Val validates:

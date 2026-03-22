@@ -1,7 +1,8 @@
 <protocol name="status-sync">
 <purpose>
-Synchronize story status (and optionally sprint_id) between story file (source of truth) and sprint-status.yaml (derived view).
-Called by any workflow that changes story status. Ensures both files stay in sync at every transition.
+Synchronize story status (and optionally sprint_id) between story file (source of truth),
+sprint-status.yaml (derived view), and story-index.yaml (fast lookup index).
+Called by any workflow that changes story status. Ensures all files stay in sync at every transition.
 </purpose>
 
 <input>story_key, new_status, source_workflow, sprint_id (optional — if provided, update sprint_id field in story file; use "null" to clear it when removing a story from a sprint)</input>
@@ -23,5 +24,26 @@ Called by any workflow that changes story status. Ensures both files stay in syn
   <action if="sprint_id is NOT null (or not provided) AND story_key has entry">Update ONLY the status field of the {story_key} entry to {new_status}. Minimal write — do not modify other stories or fields.</action>
   <action if="story_key has no entry">Skip — story not yet assigned to a sprint. No entry to update.</action>
   <action>If sprint-status.yaml update fails for any reason: log warning "{source_workflow}: Failed to sync sprint-status.yaml for {story_key} → {new_status}. Run /gaia-sprint-status to reconcile." and continue — this is non-blocking.</action>
+</step>
+
+<step n="3" title="Update story-index.yaml">
+  <action>Read {implementation_artifacts}/story-index.yaml. If the file doesn't exist, create it with header:
+    # Auto-maintained by status-sync protocol. Do not edit manually.
+    last_updated: "{current ISO 8601 timestamp}"
+    stories: {}</action>
+  <action>Check if {story_key} has an entry in the stories map</action>
+  <action if="story_key has entry">Update: status to {new_status}. If sprint_id parameter provided: update sprint_id. Update last_updated timestamp.</action>
+  <action if="story_key has NO entry">Read the story file frontmatter to populate a new entry:
+    {story_key}:
+      title: {from frontmatter title field}
+      epic: {extract epic key from frontmatter epic field, e.g., "E9 — Enhanced Agent Memory" → "E9"}
+      status: {new_status}
+      sprint_id: {from frontmatter or sprint_id parameter}
+      priority: {from frontmatter}
+      risk: {from frontmatter}
+      author: {from frontmatter}
+      file: {story filename, e.g., "E9-S13-consolidate-dual-gaia-and-memory-directories.md"}
+    Update last_updated timestamp.</action>
+  <action>Write back story-index.yaml. Non-blocking — if write fails, log warning and continue. The index is a performance optimization, not a source of truth.</action>
 </step>
 </protocol>

@@ -3,6 +3,7 @@
   <mandate>Read ONLY frontmatter from story files — never load full story content (token budget protection)</mandate>
   <mandate>Stories with no .md file are counted as backlog status</mandate>
   <mandate>Cross-sprint aggregation — do NOT filter by current sprint</mandate>
+  <mandate>Story files with an epic field in frontmatter belong to that epic — even if not listed in epics-and-stories.md</mandate>
 </critical>
 <step n="1" title="Load Epics Manifest">
   <action>Read {planning_artifacts}/epics-and-stories.md</action>
@@ -10,24 +11,32 @@
   <action>Extract all story keys associated with each epic</action>
   <action>Build epic-to-stories mapping</action>
 </step>
-<step n="2" title="Scan Story Files">
-  <action>List all .md files in {implementation_artifacts}/</action>
-  <action>For each file, read ONLY the YAML frontmatter (stop at closing ---)</action>
-  <action>Extract: story key, title, status, sprint_id (if present), author</action>
-  <action>Skip non-story files (e.g., sprint-status.yaml, epic-status.md)</action>
+<step n="2" title="Scan Story Data">
+  <action>Check if {implementation_artifacts}/story-index.yaml exists</action>
+  <action if="story-index.yaml exists">Read story-index.yaml for all story metadata (key, title, status, sprint_id, epic, priority, risk, author). This is a fast single-file read — no need to scan individual story files.</action>
+  <action if="story-index.yaml does NOT exist">Fall back to scanning all .md files in {implementation_artifacts}/:
+    For each file, read ONLY the YAML frontmatter (stop at closing ---)
+    Extract: story key, title, status, sprint_id (if present), epic, author
+    Skip non-story files (e.g., sprint-status.yaml, epic-status.md, tech-debt-dashboard.md, sprint-plan.md, story-index.yaml)</action>
 </step>
 <step n="3" title="Aggregate Status">
-  <action>Join scanned story statuses to epic-story mapping from step 1</action>
+  <action>Join scanned story data to epic-story mapping from Step 1</action>
+  <action>For stories found in Step 2 that are NOT in the Step 1 epic-story mapping:
+    1. Read the story's epic field (from index or frontmatter, e.g., "E9 — Enhanced Agent Memory")
+    2. Extract the epic key (e.g., "E9")
+    3. If the epic key matches an existing epic from Step 1: add this story to that epic's story list
+    4. Do NOT put it in "untracked" if it has a valid epic key
+    5. Only stories with NO epic field go to "untracked"</action>
   <action>For each story, resolve the display title using this priority:
     1. Story file frontmatter title (from Step 2) — primary source, always preferred
     2. Title from epics-and-stories.md (from Step 1) — fallback if no story file exists
     3. If neither available: show "(no title)" with the story key
     If the story was created by triage (author field contains "Triage"): append " ⚑" flag after the title to indicate triage origin</action>
-  <action>Stories in manifest but with no file: mark as backlog</action>
+  <action>Stories in manifest but with no file and no index entry: mark as backlog</action>
   <action>Per epic: count done, in-progress, blocked, review, ready-for-dev, validating, backlog</action>
   <action>Per epic: compute completion percentage (done / total * 100)</action>
   <action>Compute overall totals across all epics</action>
-  <action>Collect any story files found that are NOT in any epic (untracked)</action>
+  <action>Collect any story files found that are NOT in any epic (no epic field) as untracked</action>
   <action>Mark epics where all stories are done as [COMPLETE]</action>
 </step>
 <step n="4" title="Dependency Analysis">
