@@ -11,7 +11,7 @@
   <action>Read the story template from {project-root}/_gaia/lifecycle/templates/story-template.md for reference</action>
   <action>Read {planning_artifacts}/architecture.md for cross-reference validation</action>
   <action>Read {planning_artifacts}/epics-and-stories.md for context</action>
-  <action>Read {project-root}/_memory/validator-sidecar/ground-truth.md if it exists (for factual verification)</action>
+  <action>Read {memory_path}/validator-sidecar/ground-truth.md if it exists (for factual verification)</action>
 </step>
 <step n="2" title="Val Full Validation">
   <action>Perform full validation on the story file:
@@ -95,7 +95,7 @@
 <step n="5" title="Save to Val Memory">
   <action>Auto-save all validation results to Val's memory sidecar (no user prompt required):
 
-  1. Append to {project-root}/_memory/validator-sidecar/decision-log.md using standardized format:
+  1. Append to {memory_path}/validator-sidecar/decision-log.md using standardized format:
      ### [YYYY-MM-DD] Story Validation: {story_key}
 
      - **Agent:** validator
@@ -110,7 +110,7 @@
      Final status: {ready-for-dev or validating}.
      {Brief summary of key findings and fixes}
 
-  2. Replace body of {project-root}/_memory/validator-sidecar/conversation-context.md (preserve header above first ---):
+  2. Replace body of {memory_path}/validator-sidecar/conversation-context.md (preserve header above first ---):
      Last session: Story validation of {story_key} ({story_title}).
      Date: {YYYY-MM-DD}. Result: {PASS/FAIL}. Attempts: {N}.
      Findings: {count}. Fixed: {fixed_count}.

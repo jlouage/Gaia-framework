@@ -25,6 +25,6 @@ on_error:
 output:
   primary: "{implementation_artifacts}/retro-{sprint_id}.md"
   sidecar_updates:
-    - "{project-root}/_gaia/_memory/*-sidecar/*.md"
+    - "{memory_path}/*-sidecar/*.md"
   skill_updates:
     - "{project-root}/_gaia/dev/skills/*.md"

@@ -44,7 +44,7 @@
   <action>Map requirements to architecture components they protect</action>
 </step>
 <step n="7" title="Generate Output">
-  <action>Record key decisions in _memory/security-sidecar/threat-model-decisions.md</action>
+  <action>Record key decisions in {memory_path}/security-sidecar/threat-model-decisions.md</action>
   <template-output file="{planning_artifacts}/threat-model.md">
     Generate threat model with: assets table, STRIDE analysis per component, DREAD scores, risk levels, mitigation strategies, and security requirements list.
   </template-output>

@@ -25,7 +25,7 @@
   <action>Greenfield: select tech stack with rationale for each choice. Consider: team expertise, scalability needs, ecosystem maturity.</action>
   <action>Brownfield: discover existing tech stack from project-documentation.md and code scan. Mark ADR status as "Existing" for discovered decisions.</action>
   <action>If brownfield artifacts were loaded in Step 1: reference the existing tech stack, constraints, and integration points from project-documentation.md and brownfield-assessment.md when evaluating technology choices. Prefer compatibility with the existing stack unless a change is justified by PRD requirements.</action>
-  <action>Record decision as ADR in _memory/architect-sidecar/architecture-decisions.md</action>
+  <action>Record decision as ADR in {memory_path}/architect-sidecar/architecture-decisions.md</action>
   <ask>Here is the recommended technology stack with rationale for each choice. Please review — confirm to proceed or request changes before I design the full architecture. [confirm / revise]</ask>
 </step>
 <step n="4" title="System Architecture">
@@ -63,7 +63,7 @@
   <action>Each ADR MUST follow this template: ### ADR-{NNN}: {Title} — **Date:** {YYYY-MM-DD} — **Status:** Proposed | Accepted | Deprecated | Superseded | Existing (brownfield) — **Context:** What is the issue or requirement driving this decision? — **Decision:** What was decided and why this option was chosen over alternatives? — **Alternatives Considered:** What other options were evaluated? — **Consequences:** What are the positive and negative implications? — **Addresses:** {FR/NFR IDs this decision satisfies}</action>
   <action>Brownfield: mark existing decisions as status "Existing", new gap-related decisions as "Proposed"</action>
   <action>For each ADR: add an "Addresses" field listing the FR/NFR IDs it satisfies (e.g., "Addresses: FR-003, NFR-002")</action>
-  <action>Append all ADRs to _memory/architect-sidecar/architecture-decisions.md</action>
+  <action>Append all ADRs to {memory_path}/architect-sidecar/architecture-decisions.md</action>
   <action>Generate a "Decision → Requirement Mapping" table mapping each ADR to the FR/NFR IDs it addresses. Flag any FR/NFR from the PRD with no corresponding ADR as a coverage gap.</action>
 </step>
 <step n="9" title="Generate Output">

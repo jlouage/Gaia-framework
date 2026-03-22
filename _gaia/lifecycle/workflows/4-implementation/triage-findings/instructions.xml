@@ -81,7 +81,7 @@
 <step n="7" title="Save to Val Memory">
   <action>Auto-save triage decisions to Val's memory sidecar (no user prompt required):
 
-  1. Append to {project-root}/_memory/validator-sidecar/decision-log.md:
+  1. Append to {memory_path}/validator-sidecar/decision-log.md:
      ### [YYYY-MM-DD] Triage: {N} findings processed
 
      - **Agent:** validator
@@ -95,7 +95,7 @@
      Timing: {count} NOW (inject), {count} NEXT SPRINT (P0), {count} BACKLOG.
      Mapping: {new_key → source_key for each created story}
 
-  2. Replace body of {project-root}/_memory/validator-sidecar/conversation-context.md (preserve header above first ---):
+  2. Replace body of {memory_path}/validator-sidecar/conversation-context.md (preserve header above first ---):
      Last session: Triage of {N} findings from {source_count} stories.
      Date: {YYYY-MM-DD}. Created: {X} stories. Added: {Y}. Dismissed: {Z}.
      Urgent: {count} stories flagged for immediate sprint injection.

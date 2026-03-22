@@ -13,7 +13,7 @@
     - Review Gate table results (which reviews PASSED/FAILED/PENDING)
     - Findings table (count and types of findings)
     - Definition of Done checklist results</action>
-  <action>Read {project-root}/_memory/validator-sidecar/decision-log.md — extract all entries for this sprint's stories (validation attempts, findings counts, pass/fail results)</action>
+  <action>Read {memory_path}/validator-sidecar/decision-log.md — extract all entries for this sprint's stories (validation attempts, findings counts, pass/fail results)</action>
   <action>Read review reports if they exist: {story_key}-review.md, {story_key}-security-review.md, {story_key}-qa-tests.md, {story_key}-performance-review.md — extract verdicts and key issues found</action>
   <action>Read {implementation_artifacts}/tech-debt-dashboard.md if it exists — extract summary metrics and trend</action>
   <action>Build a sprint data summary:
@@ -67,15 +67,15 @@
 </step>
 <step n="5" title="Agent Memory Updates">
   <action>For each improvement or lesson learned from Steps 2-4, identify which agent's domain it belongs to:
-    - Architecture/tech stack issues → _gaia/_memory/architect-sidecar/architecture-decisions.md
-    - Testing/quality issues → _gaia/_memory/test-architect-sidecar/test-decisions.md
-    - Security issues → _gaia/_memory/security-sidecar/threat-model-decisions.md
-    - Infrastructure/deployment issues → _gaia/_memory/devops-sidecar/infrastructure-decisions.md
-    - Process/velocity issues → _gaia/_memory/sm-sidecar/velocity-data.md
-    - Requirements/scope issues → _gaia/_memory/pm-sidecar/product-decisions.md</action>
+    - Architecture/tech stack issues → {memory_path}/architect-sidecar/architecture-decisions.md
+    - Testing/quality issues → {memory_path}/test-architect-sidecar/test-decisions.md
+    - Security issues → {memory_path}/security-sidecar/threat-model-decisions.md
+    - Infrastructure/deployment issues → {memory_path}/devops-sidecar/infrastructure-decisions.md
+    - Process/velocity issues → {memory_path}/sm-sidecar/velocity-data.md
+    - Requirements/scope issues → {memory_path}/pm-sidecar/product-decisions.md</action>
   <action>For each identified lesson, append to the relevant sidecar file:
     Format: "- {date} [RETRO-{sprint_id}]: {lesson learned}. Context: {what happened}. Recommendation: {what to do differently}."</action>
-  <action>ALWAYS append sprint velocity data to _gaia/_memory/sm-sidecar/velocity-data.md:
+  <action>ALWAYS append sprint velocity data to {memory_path}/sm-sidecar/velocity-data.md:
     ### Sprint {sprint_id}
     - Planned: {X} points ({N} stories)
     - Completed: {Y} points ({M} stories)
@@ -124,7 +124,7 @@
 <step n="10" title="Save to Val Memory">
   <action>Auto-save retrospective summary to Val's memory sidecar (no user prompt required):
 
-  1. Append to {project-root}/_memory/validator-sidecar/decision-log.md:
+  1. Append to {memory_path}/validator-sidecar/decision-log.md:
      ### [YYYY-MM-DD] Retrospective: {sprint_id}
 
      - **Agent:** validator
@@ -142,7 +142,7 @@
      Action items: {count} for next sprint.
      Memory sidecars updated: {list of updated sidecars}.
 
-  2. Replace body of {project-root}/_memory/validator-sidecar/conversation-context.md (preserve header above first ---):
+  2. Replace body of {memory_path}/validator-sidecar/conversation-context.md (preserve header above first ---):
      Last session: Retrospective for {sprint_id}.
      Date: {YYYY-MM-DD}. Velocity: {completed}/{planned} pts.
      Went well: {count}. Improvements: {count}. Action items: {count}.

@@ -18,7 +18,7 @@
   <action>If retro found: extract open action items — carry forward as sprint constraints or tasks. Present to user: "Previous retro action items to carry forward:" with status of each.</action>
 </step>
 <step n="2" title="Optional: Memory Hygiene Check" optional="true">
-  <action>Check if any sidecar directories under _gaia/_memory/*-sidecar/ contain content beyond their template header</action>
+  <action>Check if any sidecar directories under {memory_path}/*-sidecar/ contain content beyond their template header</action>
   <check if="any sidecars have content">
     <ask>Agent memory sidecars contain decisions from previous sessions. Would you like to run memory hygiene? This spawns a subagent in a separate context. Recommended if architecture or requirement changes occurred since last sprint. (yes / skip)</ask>
     <action>If yes: spawn a subagent using the Agent tool: "Load {project-root}/_gaia/core/engine/workflow.xml, then process {project-root}/_gaia/lifecycle/workflows/anytime/memory-hygiene/workflow.yaml as workflow-config. Run in YOLO mode. Follow the workflow engine instructions EXACTLY."</action>

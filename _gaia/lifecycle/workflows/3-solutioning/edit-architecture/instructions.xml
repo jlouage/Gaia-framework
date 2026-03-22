@@ -86,6 +86,6 @@
   </action>
   <action>For each artifact with impact > NONE: recommend the appropriate update workflow</action>
   <action>Report cascade assessment to user with recommended next command(s)</action>
-  <action>Record all architecture changes and new ADRs in Theo's memory sidecar: {project-root}/_gaia/_memory/architect-sidecar/architecture-decisions.md</action>
+  <action>Record all architecture changes and new ADRs in Theo's memory sidecar: {memory_path}/architect-sidecar/architecture-decisions.md</action>
 </step>
 </workflow>

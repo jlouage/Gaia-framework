@@ -8,11 +8,11 @@
 </critical>
 
 <step n="1" title="Initialize Validator Sidecar">
-  <action>Check if {project-root}/_memory/validator-sidecar/ directory exists</action>
-  <action if="directory missing">Create {project-root}/_memory/validator-sidecar/ directory</action>
-  <action if="ground-truth.md missing">Create {project-root}/_memory/validator-sidecar/ground-truth.md with empty header containing last-refresh timestamp set to "never"</action>
-  <action if="decision-log.md missing">Create {project-root}/_memory/validator-sidecar/decision-log.md with header: "# Val Decision Log" and empty entries</action>
-  <action if="conversation-context.md missing">Create {project-root}/_memory/validator-sidecar/conversation-context.md with header: "# Val Conversation Context" and empty rolling state</action>
+  <action>Check if {memory_path}/validator-sidecar/ directory exists</action>
+  <action if="directory missing">Create {memory_path}/validator-sidecar/ directory</action>
+  <action if="ground-truth.md missing">Create {memory_path}/validator-sidecar/ground-truth.md with empty header containing last-refresh timestamp set to "never"</action>
+  <action if="decision-log.md missing">Create {memory_path}/validator-sidecar/decision-log.md with header: "# Val Decision Log" and empty entries</action>
+  <action if="conversation-context.md missing">Create {memory_path}/validator-sidecar/conversation-context.md with header: "# Val Conversation Context" and empty rolling state</action>
 </step>
 
 <step n="2" title="Determine Refresh Mode">
@@ -27,7 +27,7 @@
 </step>
 
 <step n="4" title="Parse Previous State">
-  <action>Read existing {project-root}/_memory/validator-sidecar/ground-truth.md</action>
+  <action>Read existing {memory_path}/validator-sidecar/ground-truth.md</action>
   <action>Extract last-refresh timestamp from header</action>
   <action>Parse all existing entries into a lookup map keyed by file path for diff comparison</action>
   <action if="incremental mode">Filter scan targets to only files modified after last-refresh timestamp</action>
@@ -88,7 +88,7 @@
 </step>
 
 <step n="7" title="Write Ground Truth">
-  <action>Update {project-root}/_memory/validator-sidecar/ground-truth.md with all scan results</action>
+  <action>Update {memory_path}/validator-sidecar/ground-truth.md with all scan results</action>
   <action>Write header with last-refresh timestamp set to current date/time</action>
   <action>Organize entries by category: Agents, Workflows, Skills, Commands, Manifests, Config, Artifacts</action>
   <action>Include verified counts, locations, and structural patterns for each category</action>
@@ -104,7 +104,7 @@
 </step>
 
 <step n="9" title="Log to Decision Log">
-  <action>Append the diff/delta report to {project-root}/_memory/validator-sidecar/decision-log.md</action>
+  <action>Append the diff/delta report to {memory_path}/validator-sidecar/decision-log.md</action>
   <action>Include date, refresh mode (full or incremental), and summary</action>
   <action>Format: "## Refresh — {date} ({mode})\n{summary}"</action>
 </step>
@@ -117,7 +117,7 @@
 </step>
 
 <step n="11" title="Present Results">
-  <template-output file="{project-root}/_memory/validator-sidecar/ground-truth.md">
+  <template-output file="{memory_path}/validator-sidecar/ground-truth.md">
     Ground truth refreshed with verified inventory of all framework components.
     Includes last-refresh timestamp, categorized entries, and REMOVED markers for deleted files.
   </template-output>

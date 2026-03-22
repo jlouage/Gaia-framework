@@ -21,11 +21,11 @@ required_skill_sections:
   - "ground-truth-management:token-budget"
 input_file_patterns:
   ground_truth:
-    whole: "{project-root}/_memory/validator-sidecar/ground-truth.md"
+    whole: "{memory_path}/validator-sidecar/ground-truth.md"
     load_strategy: "FULL_LOAD"
 on_error:
   missing_file: "ask_user"
   unresolved_variable: "halt"
 
 output:
-  primary: "{project-root}/_memory/validator-sidecar/ground-truth.md"
+  primary: "{memory_path}/validator-sidecar/ground-truth.md"

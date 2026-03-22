@@ -114,7 +114,7 @@
 <step n="7" title="Save to Val Memory">
   <action>Auto-save tech debt review decisions to Val's memory sidecar (no user prompt required):
 
-  1. Append to {project-root}/_memory/validator-sidecar/decision-log.md:
+  1. Append to {memory_path}/validator-sidecar/decision-log.md:
      ### [YYYY-MM-DD] Tech Debt Review: {total_count} items
 
      - **Agent:** validator
@@ -130,7 +130,7 @@
      Top 3 FIX NOW items: {brief list with scores}.
      Recommendations: {list of recommended /gaia-* commands}.
 
-  2. Replace body of {project-root}/_memory/validator-sidecar/conversation-context.md (preserve header above first ---):
+  2. Replace body of {memory_path}/validator-sidecar/conversation-context.md (preserve header above first ---):
      Last session: Tech debt review for {sprint_id}.
      Date: {YYYY-MM-DD}. Items: {total_count}. FIX NOW: {fix_now_count}. Overdue: {overdue_count}.
      Stale targets: {stale_count}. Unassigned: {unassigned_count}.

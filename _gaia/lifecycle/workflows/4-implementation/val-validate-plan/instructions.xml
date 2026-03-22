@@ -70,7 +70,7 @@
 </step>
 
 <step n="5" title="Architecture Cross-Reference">
-  <action>Check if ground truth exists at _memory/validator-sidecar/ground-truth.md</action>
+  <action>Check if ground truth exists at {memory_path}/validator-sidecar/ground-truth.md</action>
   <check if="ground truth not seeded">INFO "Ground truth not available — cross-reference verification skipped". Skip remainder of this step.</check>
   <action>If plan references ADRs (e.g., ADR-012), load the relevant ADR section from architecture.md</action>
   <action>Verify planned changes align with ADR specifications:
@@ -135,7 +135,7 @@
 <step n="8" title="Save to Val Memory">
   <action>Auto-save all validation results to Val's memory sidecar (no user prompt required):
 
-  1. Append to {project-root}/_memory/validator-sidecar/decision-log.md using standardized format:
+  1. Append to {project-root}/{memory_path}/validator-sidecar/decision-log.md using standardized format:
      ### [YYYY-MM-DD] Plan Validation: {plan_name}
 
      - **Agent:** validator
@@ -149,12 +149,12 @@
      Findings: {total_findings} ({approved_count} approved, {dismissed_count} dismissed).
      {Brief summary of key findings}
 
-  2. Replace body of {project-root}/_memory/validator-sidecar/conversation-context.md (preserve header above first ---):
+  2. Replace body of {project-root}/{memory_path}/validator-sidecar/conversation-context.md (preserve header above first ---):
      Last session: Plan validation of {plan_name}.
      Date: {YYYY-MM-DD}. Findings: {total_findings}.
      Approved: {approved_count}. Dismissed: {dismissed_count}.
 
-  If _memory/validator-sidecar/ directory or files don't exist, create them with standard headers:
+  If {memory_path}/validator-sidecar/ directory or files don't exist, create them with standard headers:
   decision-log.md: "# Val Validator — Decision Log\n\n> Chronological record of validation decisions.\n\n---"
   conversation-context.md: "# Val Validator — Conversation Context\n\n> Rolling summary of the most recent validation session.\n\n---\n\nNo sessions recorded yet."
   If writing fails, log warning and continue — memory save is non-blocking.</action>

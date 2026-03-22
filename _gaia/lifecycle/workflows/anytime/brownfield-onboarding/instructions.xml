@@ -83,7 +83,7 @@
 </step>
 
 <step n="7" title="Bootstrap Val Ground Truth" optional="true">
-  <action>Check if Val is installed: verify {project-root}/_gaia/lifecycle/agents/validator.md exists AND {project-root}/_memory/validator-sidecar/ directory exists</action>
+  <action>Check if Val is installed: verify {project-root}/_gaia/lifecycle/agents/validator.md exists AND {memory_path}/validator-sidecar/ directory exists</action>
   <check if="validator.md not found OR validator-sidecar/ not found">Skip Step 7 silently — Val is not installed. Brownfield onboarding continues without ground truth bootstrap.</check>
 
   <ask>Step 7: Bootstrap Val ground truth from brownfield assessment? [y/n]</ask>
@@ -100,7 +100,7 @@
     — {planning_artifacts}/project-documentation.md: extract architecture patterns, conventions, config values → structural-pattern and cross-reference entries
     — {test_artifacts}/nfr-assessment.md (if present): extract performance targets, security requirements → variable-inventory entries</action>
 
-  <action>Write extracted project facts to {project-root}/_memory/validator-sidecar/ground-truth.md. If ground-truth.md already exists with content: merge new facts with existing entries — add new facts, update changed facts, flag removed facts — never destructive overwrite. Follow merge semantics from ground-truth-management conflict-resolution section. If ground-truth.md is empty or new: write all extracted facts as initial seed entries with verification count = 1.</action>
+  <action>Write extracted project facts to {memory_path}/validator-sidecar/ground-truth.md. If ground-truth.md already exists with content: merge new facts with existing entries — add new facts, update changed facts, flag removed facts — never destructive overwrite. Follow merge semantics from ground-truth-management conflict-resolution section. If ground-truth.md is empty or new: write all extracted facts as initial seed entries with verification count = 1.</action>
   <action>Report: "Seeded {N} ground-truth entries from brownfield artifacts + filesystem scan"</action>
 </step>
 

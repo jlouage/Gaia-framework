@@ -128,7 +128,7 @@
   (d) Dependencies — all declared dependencies exist and resolve
   (e) Factual verification — extract verifiable claims (file paths, component references, API endpoints, versions), verify against filesystem and ground truth, classify as CRITICAL/WARNING/INFO
 
-  Val must load: the saved story file, {planning_artifacts}/architecture.md, {planning_artifacts}/epics-and-stories.md, and {project-root}/_memory/validator-sidecar/ground-truth.md (if exists).
+  Val must load: the saved story file, {planning_artifacts}/architecture.md, {planning_artifacts}/epics-and-stories.md, and {memory_path}/validator-sidecar/ground-truth.md (if exists).
   Error guard: if Val fails or crashes, log warning, keep status as backlog, and skip to Step 9.</action>
 
   <invoke-workflow
@@ -162,7 +162,7 @@
 <step n="9" title="Save to Val Memory">
   <action>Auto-save all validation results to Val's memory sidecar (no user prompt required):
 
-  1. Append to {project-root}/_memory/validator-sidecar/decision-log.md using standardized format:
+  1. Append to {memory_path}/validator-sidecar/decision-log.md using standardized format:
      ### [YYYY-MM-DD] Story Validation: {story_key}
 
      - **Agent:** validator
@@ -177,7 +177,7 @@
      Final status: {ready-for-dev or validating}.
      {Brief summary of key findings and fixes}
 
-  2. Replace body of {project-root}/_memory/validator-sidecar/conversation-context.md (preserve header above first ---):
+  2. Replace body of {memory_path}/validator-sidecar/conversation-context.md (preserve header above first ---):
      Last session: Story validation of {story_key} ({story_title}).
      Date: {YYYY-MM-DD}. Result: {PASS/FAIL}. Attempts: {N}.
      Findings: {count}. Fixed: {fixed_count}.
