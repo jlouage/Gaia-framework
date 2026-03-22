@@ -213,7 +213,7 @@ if [ -f "$SKILL_FILE" ]; then
     fi
   done
   # Check for status values
-  for sval in "active" "superseded" "revoked"; do
+  for sval in "active" "superseded" "archived"; do
     if echo "$DF_SECTION" | grep -qi "$sval"; then
       assert "decision-formatting defines status '$sval'" "true"
     else
@@ -227,7 +227,7 @@ else
   for dtype in "architectural" "implementation" "validation" "process"; do
     assert "decision-formatting defines type '$dtype'" "false"
   done
-  for sval in "active" "superseded" "revoked"; do
+  for sval in "active" "superseded" "archived"; do
     assert "decision-formatting defines status '$sval'" "false"
   done
 fi
@@ -318,6 +318,258 @@ else
   assert "deduplication detects same-artifact same-topic duplicates" "false"
   assert "deduplication detects near-duplicates" "false"
   assert "deduplication keeps newer, archives older" "false"
+fi
+
+# --- Expanded coverage: Section marker pairing ---
+echo ""
+echo "EXPANDED: Every SECTION marker has a matching END SECTION marker"
+if [ -f "$SKILL_FILE" ]; then
+  START_COUNT=$(grep -c "<!-- SECTION:" "$SKILL_FILE" || true)
+  END_COUNT=$(grep -c "<!-- END SECTION -->" "$SKILL_FILE" || true)
+  if [ "$START_COUNT" -eq "$END_COUNT" ] && [ "$START_COUNT" -eq 6 ]; then
+    assert "Section start markers (${START_COUNT}) match end markers (${END_COUNT})" "true"
+  else
+    assert "Section start markers (${START_COUNT}) match end markers (${END_COUNT})" "false"
+  fi
+  # Verify each specific section has its own END SECTION
+  for section in "${EXPECTED_SECTIONS[@]}"; do
+    SECTION_CONTENT=$(sed -n "/<!-- SECTION: $section -->/,/<!-- END SECTION -->/p" "$SKILL_FILE" 2>/dev/null)
+    END_MARKER=$(echo "$SECTION_CONTENT" | grep -c "<!-- END SECTION -->" || true)
+    if [ "$END_MARKER" -eq 1 ]; then
+      assert "Section '$section' has exactly one END SECTION marker" "true"
+    else
+      assert "Section '$section' has exactly one END SECTION marker" "false"
+    fi
+  done
+fi
+
+# --- Expanded coverage: AC4 manifest CSV field validation ---
+echo ""
+echo "EXPANDED: Manifest CSV row has correct field count and displayName"
+if [ -f "$MANIFEST" ]; then
+  MM_ROW=$(grep "memory-management" "$MANIFEST")
+  # Count CSV fields accounting for quoted fields containing commas
+  # A proper CSV field count: remove content inside quotes, then count commas + 1
+  FIELD_COUNT=$(echo "$MM_ROW" | sed 's/"[^"]*"//g' | awk -F',' '{print NF}')
+  if [ "$FIELD_COUNT" -eq 5 ]; then
+    assert "Manifest row has exactly 5 CSV fields matching header" "true"
+  else
+    assert "Manifest row has exactly 5 CSV fields matching header (got $FIELD_COUNT)" "false"
+  fi
+  if echo "$MM_ROW" | grep -q '"Memory Management"'; then
+    assert "Manifest row has displayName 'Memory Management'" "true"
+  else
+    assert "Manifest row has displayName 'Memory Management'" "false"
+  fi
+else
+  assert "Manifest row has exactly 5 fields matching header" "false"
+  assert "Manifest row has displayName 'Memory Management'" "false"
+fi
+
+# --- Expanded coverage: AC5 empty file (0-byte) handling ---
+echo ""
+echo "EXPANDED: session-load handles empty (0-byte) files"
+if [ -f "$SKILL_FILE" ]; then
+  SL_SECTION=$(sed -n '/<!-- SECTION: session-load -->/,/<!-- END SECTION -->/p' "$SKILL_FILE" 2>/dev/null)
+  if echo "$SL_SECTION" | grep -qi "empty.*file\|0.*byte\|0-byte\|missing.*empty"; then
+    assert "session-load mentions empty/0-byte file handling" "true"
+  else
+    assert "session-load mentions empty/0-byte file handling" "false"
+  fi
+else
+  assert "session-load mentions empty/0-byte file handling" "false"
+fi
+
+# --- Expanded coverage: AC6 budget warning thresholds ---
+echo ""
+echo "EXPANDED: session-save defines specific budget warning thresholds"
+if [ -f "$SKILL_FILE" ]; then
+  SS_SECTION=$(sed -n '/<!-- SECTION: session-save -->/,/<!-- END SECTION -->/p' "$SKILL_FILE" 2>/dev/null)
+  if echo "$SS_SECTION" | grep -qi "80%"; then
+    assert "session-save warns at 80% threshold" "true"
+  else
+    assert "session-save warns at 80% threshold" "false"
+  fi
+  if echo "$SS_SECTION" | grep -qi "90%"; then
+    assert "session-save warns at 90% threshold" "true"
+  else
+    assert "session-save warns at 90% threshold" "false"
+  fi
+  if echo "$SS_SECTION" | grep -qi "100%\|archival.*prompt\|trigger.*archival"; then
+    assert "session-save triggers archival at 100% threshold" "true"
+  else
+    assert "session-save triggers archival at 100% threshold" "false"
+  fi
+else
+  assert "session-save warns at 80% threshold" "false"
+  assert "session-save warns at 90% threshold" "false"
+  assert "session-save triggers archival at 100% threshold" "false"
+fi
+
+# --- Expanded coverage: AC7 no partial writes ---
+echo ""
+echo "EXPANDED: session-save explicitly prohibits partial writes"
+if [ -f "$SKILL_FILE" ]; then
+  SS_SECTION=$(sed -n '/<!-- SECTION: session-save -->/,/<!-- END SECTION -->/p' "$SKILL_FILE" 2>/dev/null)
+  if echo "$SS_SECTION" | grep -qi "no.*partial\|never.*partial\|not.*partial"; then
+    assert "session-save prohibits partial writes" "true"
+  else
+    assert "session-save prohibits partial writes" "false"
+  fi
+else
+  assert "session-save prohibits partial writes" "false"
+fi
+
+# --- Expanded coverage: AC8 Workflow and date fields ---
+echo ""
+echo "EXPANDED: decision-formatting includes Workflow and date fields"
+if [ -f "$SKILL_FILE" ]; then
+  DF_SECTION=$(sed -n '/<!-- SECTION: decision-formatting -->/,/<!-- END SECTION -->/p' "$SKILL_FILE" 2>/dev/null)
+  if echo "$DF_SECTION" | grep -q "Workflow"; then
+    assert "decision-formatting includes 'Workflow' field" "true"
+  else
+    assert "decision-formatting includes 'Workflow' field" "false"
+  fi
+  if echo "$DF_SECTION" | grep -qi "YYYY-MM-DD\|ISO 8601\|date"; then
+    assert "decision-formatting includes date format specification" "true"
+  else
+    assert "decision-formatting includes date format specification" "false"
+  fi
+  if echo "$DF_SECTION" | grep -qi "Type.*field\|decision.*type"; then
+    assert "decision-formatting includes Type field" "true"
+  else
+    assert "decision-formatting includes Type field" "false"
+  fi
+else
+  assert "decision-formatting includes 'Workflow' field" "false"
+  assert "decision-formatting includes date format specification" "false"
+  assert "decision-formatting includes Type field" "false"
+fi
+
+# --- Expanded coverage: AC9 character limit equivalence ---
+echo ""
+echo "EXPANDED: context-summarization documents character limit equivalence"
+if [ -f "$SKILL_FILE" ]; then
+  CS_SECTION=$(sed -n '/<!-- SECTION: context-summarization -->/,/<!-- END SECTION -->/p' "$SKILL_FILE" 2>/dev/null)
+  if echo "$CS_SECTION" | grep -qi "8.000\|8,000\|8000.*char"; then
+    assert "context-summarization documents ~8000 character equivalence" "true"
+  else
+    assert "context-summarization documents ~8000 character equivalence" "false"
+  fi
+  if echo "$CS_SECTION" | grep -qi "prioritize\|prioriti"; then
+    assert "context-summarization defines prioritization when space is tight" "true"
+  else
+    assert "context-summarization defines prioritization when space is tight" "false"
+  fi
+else
+  assert "context-summarization documents ~8000 character equivalence" "false"
+  assert "context-summarization defines prioritization when space is tight" "false"
+fi
+
+# --- Expanded coverage: AC10 output format ---
+echo ""
+echo "EXPANDED: stale-detection defines structured output format"
+if [ -f "$SKILL_FILE" ]; then
+  SD_SECTION=$(sed -n '/<!-- SECTION: stale-detection -->/,/<!-- END SECTION -->/p' "$SKILL_FILE" 2>/dev/null)
+  if echo "$SD_SECTION" | grep -qi "Entry.*Category.*Reason\|output.*format"; then
+    assert "stale-detection defines structured output table" "true"
+  else
+    assert "stale-detection defines structured output table" "false"
+  fi
+  if echo "$SD_SECTION" | grep -qi "epics-and-stories"; then
+    assert "stale-detection references epics-and-stories.md for orphan checks" "true"
+  else
+    assert "stale-detection references epics-and-stories.md for orphan checks" "false"
+  fi
+else
+  assert "stale-detection defines structured output table" "false"
+  assert "stale-detection references epics-and-stories.md for orphan checks" "false"
+fi
+
+# --- Expanded coverage: AC11 ambiguous supersession ---
+echo ""
+echo "EXPANDED: deduplication handles ambiguous supersession"
+if [ -f "$SKILL_FILE" ]; then
+  DD_SECTION=$(sed -n '/<!-- SECTION: deduplication -->/,/<!-- END SECTION -->/p' "$SKILL_FILE" 2>/dev/null)
+  if echo "$DD_SECTION" | grep -qi "ambiguous"; then
+    assert "deduplication handles ambiguous supersession" "true"
+  else
+    assert "deduplication handles ambiguous supersession" "false"
+  fi
+  if echo "$DD_SECTION" | grep -qi "confirmation\|confirm\|manual.*review"; then
+    assert "deduplication requires confirmation for near-duplicates" "true"
+  else
+    assert "deduplication requires confirmation for near-duplicates" "false"
+  fi
+else
+  assert "deduplication handles ambiguous supersession" "false"
+  assert "deduplication requires confirmation for near-duplicates" "false"
+fi
+
+# --- Expanded coverage: YAML frontmatter validation ---
+echo ""
+echo "EXPANDED: Skill file has valid YAML frontmatter"
+if [ -f "$SKILL_FILE" ]; then
+  FIRST_LINE=$(head -1 "$SKILL_FILE")
+  if [ "$FIRST_LINE" = "---" ]; then
+    assert "Skill file starts with YAML frontmatter delimiter" "true"
+  else
+    assert "Skill file starts with YAML frontmatter delimiter" "false"
+  fi
+  if head -10 "$SKILL_FILE" | grep -q "name: memory-management"; then
+    assert "Frontmatter contains name: memory-management" "true"
+  else
+    assert "Frontmatter contains name: memory-management" "false"
+  fi
+  if head -10 "$SKILL_FILE" | grep -q "applicable_agents:.*all"; then
+    assert "Frontmatter contains applicable_agents including all" "true"
+  else
+    assert "Frontmatter contains applicable_agents including all" "false"
+  fi
+fi
+
+# --- Expanded coverage: session-load parameters ---
+echo ""
+echo "EXPANDED: session-load documents required parameters"
+if [ -f "$SKILL_FILE" ]; then
+  SL_SECTION=$(sed -n '/<!-- SECTION: session-load -->/,/<!-- END SECTION -->/p' "$SKILL_FILE" 2>/dev/null)
+  if echo "$SL_SECTION" | grep -qi "sidecar_path"; then
+    assert "session-load documents sidecar_path parameter" "true"
+  else
+    assert "session-load documents sidecar_path parameter" "false"
+  fi
+  if echo "$SL_SECTION" | grep -qi "tier_budget"; then
+    assert "session-load documents tier_budget parameter" "true"
+  else
+    assert "session-load documents tier_budget parameter" "false"
+  fi
+  if echo "$SL_SECTION" | grep -qi "recent_n"; then
+    assert "session-load documents recent_n parameter" "true"
+  else
+    assert "session-load documents recent_n parameter" "false"
+  fi
+fi
+
+# --- Expanded coverage: session-save parameters ---
+echo ""
+echo "EXPANDED: session-save documents required parameters"
+if [ -f "$SKILL_FILE" ]; then
+  SS_SECTION=$(sed -n '/<!-- SECTION: session-save -->/,/<!-- END SECTION -->/p' "$SKILL_FILE" 2>/dev/null)
+  if echo "$SS_SECTION" | grep -qi "sidecar_path"; then
+    assert "session-save documents sidecar_path parameter" "true"
+  else
+    assert "session-save documents sidecar_path parameter" "false"
+  fi
+  if echo "$SS_SECTION" | grep -qi "new_entries"; then
+    assert "session-save documents new_entries parameter" "true"
+  else
+    assert "session-save documents new_entries parameter" "false"
+  fi
+  if echo "$SS_SECTION" | grep -qi "context_summary"; then
+    assert "session-save documents context_summary parameter" "true"
+  else
+    assert "session-save documents context_summary parameter" "false"
+  fi
 fi
 
 echo ""
