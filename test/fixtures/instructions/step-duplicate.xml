@@ -1,0 +1,14 @@
+<workflow name="test-step-duplicate">
+<step n="1" title="Step 1">
+  <action>First</action>
+</step>
+<step n="2" title="Step 2a">
+  <action>Second</action>
+</step>
+<step n="2" title="Step 2b">
+  <action>Duplicate step 2</action>
+</step>
+<step n="3" title="Step 3">
+  <action>Third</action>
+</step>
+</workflow>

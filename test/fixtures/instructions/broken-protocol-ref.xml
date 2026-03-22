@@ -1,0 +1,5 @@
+<workflow name="test-broken-protocol">
+<step n="1" title="Step 1">
+  <invoke-protocol file="{project-root}/_gaia/core/protocols/nonexistent-protocol.xml" />
+</step>
+</workflow>

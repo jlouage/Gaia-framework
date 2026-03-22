@@ -1,0 +1,16 @@
+<workflow name="test-valid">
+<step n="1" title="First Step">
+  <action>Do something</action>
+  <check if="condition_met">Verify condition</check>
+  <template-output file="{implementation_artifacts}/{story_key}-output.md">
+    Generate output
+  </template-output>
+</step>
+<step n="2" title="Second Step">
+  <action>Do another thing</action>
+  <check>If something fails: HALT</check>
+</step>
+<step n="3" title="Third Step">
+  <action>Final action</action>
+</step>
+</workflow>

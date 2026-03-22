@@ -1,0 +1,5 @@
+<workflow name="test-broken-workflow">
+<step n="1" title="Step 1">
+  <invoke-workflow target="{project-root}/_gaia/lifecycle/workflows/nonexistent/workflow.yaml" />
+</step>
+</workflow>

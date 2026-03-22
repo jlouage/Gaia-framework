@@ -1,0 +1,11 @@
+<workflow name="test-step-gap">
+<step n="1" title="Step 1">
+  <action>First</action>
+</step>
+<step n="2" title="Step 2">
+  <action>Second</action>
+</step>
+<step n="4" title="Step 4">
+  <action>Fourth — step 3 is missing</action>
+</step>
+</workflow>
