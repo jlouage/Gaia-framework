@@ -1,6 +1,6 @@
 {
   "name": "gaia-framework",
-  "version": "1.44.0",
+  "version": "1.45.0",
   "description": "GAIA — Generative Agile Intelligence Architecture installer",
   "bin": {
     "gaia-framework": "./bin/gaia-framework.js"
@@ -14,6 +14,7 @@
     "test:integration": "vitest run test/integration",
     "test:shell": "node -e \"if(process.platform==='win32'){console.log('BATS tests skipped on Windows');process.exit(0)}\" && bats test/shell/",
     "test:all": "vitest run && node -e \"if(process.platform==='win32'){console.log('BATS tests skipped on Windows');process.exit(0)}\" && bats test/shell/",
+    "test:tier2": "vitest run --config vitest.config.tier2.js",
     "fixtures:check": "node test/fixtures/sync-check.js"
   },
   "keywords": [
