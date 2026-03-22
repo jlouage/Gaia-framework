@@ -1,0 +1,6 @@
+# Test fixture: module config.yaml — inherits from global.yaml
+inherits: "global.yaml"
+module_name: "lifecycle"
+module_version: "1.0.0-test"
+module_setting: "from-module"
+override_test: "module-value"

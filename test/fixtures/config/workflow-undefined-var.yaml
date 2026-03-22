@@ -1,0 +1,4 @@
+# Test fixture: workflow.yaml with undefined variable
+name: "broken-workflow"
+instructions: "{nonexistent_var}/instructions.xml"
+output_path: "{undefined_setting}/output"

@@ -1,0 +1,9 @@
+# Test fixture: workflow.yaml — workflow-specific overrides
+name: "test-workflow"
+description: "Test workflow for config resolution"
+module: lifecycle
+config_source: "{project-root}/_gaia/lifecycle/config.yaml"
+installed_path: "{project-root}/_gaia/lifecycle/workflows/test-workflow"
+instructions: "{installed_path}/instructions.xml"
+workflow_setting: "from-workflow"
+override_test: "workflow-value"

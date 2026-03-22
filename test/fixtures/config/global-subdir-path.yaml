@@ -1,0 +1,5 @@
+# Test fixture: global.yaml with project_path = "Gaia-framework"
+framework_name: "GAIA"
+project_root: "{project-root}"
+project_path: "Gaia-framework"
+installed_path: "{project-root}/_gaia"
