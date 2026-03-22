@@ -1,0 +1,5 @@
+<workflow name="test-broken-task">
+<step n="1" title="Step 1">
+  <action>Spawn subagent: Load {project-root}/_gaia/core/tasks/nonexistent-task.xml</action>
+</step>
+</workflow>

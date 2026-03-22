@@ -4,6 +4,7 @@ import { join, resolve } from "path";
 import { execSync } from "child_process";
 
 // Project root is where _gaia/ lives (4 levels up: test/validation/atdd/ -> Gaia-framework/ -> GAIA-Framework/)
+// Project root is where _gaia/ lives (4 levels up: test/validation/atdd/ -> test/validation/ -> test/ -> Gaia-framework/ -> GAIA-Framework/)
 const PROJECT_ROOT = resolve(import.meta.dirname, "../../../..");
 const GAIA_DIR = join(PROJECT_ROOT, "_gaia");
 const VALIDATOR_PATH = join(

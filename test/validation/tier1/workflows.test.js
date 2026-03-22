@@ -1,66 +1,78 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync, existsSync } from "fs";
 import { join, resolve } from "path";
-import { execSync } from "child_process";
+import yaml from "js-yaml";
+import {
+  getWorkflowPaths,
+  VALID_VARIABLE_REFS,
+  resolveVariable,
+} from "../helpers/workflow-paths.js";
 
 // Project root is where _gaia/ lives
 const PROJECT_ROOT = resolve(import.meta.dirname, "../../..");
 
-// Use glob to find all workflow.yaml files
-function findWorkflowFiles() {
-  const result = execSync(
-    `find "${PROJECT_ROOT}/_gaia" -name "workflow.yaml" -not -path "*/node_modules/*"`,
-    { encoding: "utf8" },
-  );
-  return result
-    .trim()
-    .split("\n")
-    .filter((f) => f.length > 0);
-}
-
 describe("Workflow Definition Validation (FR-30)", () => {
-  const workflowFiles = findWorkflowFiles();
+  const workflowFiles = getWorkflowPaths(PROJECT_ROOT);
 
   it("should find workflow.yaml files", () => {
     expect(workflowFiles.length).toBeGreaterThan(0);
+  });
+
+  it("should exclude _backups/ directory from discovery", () => {
+    const backupFiles = workflowFiles.filter((f) => f.includes("_backups"));
+    expect(
+      backupFiles,
+      "Backup workflow files should be excluded from validation scope",
+    ).toHaveLength(0);
   });
 
   describe.each(workflowFiles)("%s", (workflowPath) => {
     let config;
 
     try {
-      // Simple YAML parsing for key fields (replace with js-yaml when available)
       const content = readFileSync(workflowPath, "utf8");
-      config = parseSimpleYaml(content);
+      config = yaml.load(content);
     } catch {
       config = null;
     }
 
     it("should parse as valid YAML", () => {
-      expect(config).not.toBeNull();
+      expect(
+        config,
+        `YAML parse error (workflow: ${workflowPath})`,
+      ).not.toBeNull();
     });
 
     it("should have a name field", () => {
-      expect(config?.name).toBeTruthy();
+      expect(
+        config?.name,
+        `Missing name field (workflow: ${workflowPath})`,
+      ).toBeTruthy();
     });
 
     it("should have an instructions field", () => {
-      expect(config?.instructions).toBeTruthy();
+      expect(
+        config?.instructions,
+        `Missing instructions field (workflow: ${workflowPath})`,
+      ).toBeTruthy();
     });
 
-    it("should reference an existing instructions file", () => {
+    it("should reference an existing instructions file or directory", () => {
       if (!config?.instructions) return;
-      const resolvedPath = resolveVariable(config.instructions, workflowPath, config);
+      const resolvedPath = resolveVariable(
+        config.instructions,
+        workflowPath,
+        config,
+        PROJECT_ROOT,
+      );
       expect(
         existsSync(resolvedPath),
-        `Instructions file not found: ${resolvedPath}`,
+        `Instructions not found: ${resolvedPath} (workflow: ${workflowPath})`,
       ).toBe(true);
     });
 
     it("should reference an existing agent file (if agent declared)", () => {
       if (!config?.agent || config.agent === "orchestrator") return;
-
-      // dev-* is a wildcard — the engine asks the user which stack to use at runtime
       if (config.agent === "dev-*") return;
 
       const module = config.module || "lifecycle";
@@ -73,56 +85,68 @@ describe("Workflow Definition Validation (FR-30)", () => {
       );
       expect(
         existsSync(agentPath),
-        `Agent file not found: ${agentPath}`,
+        `Agent file not found: ${agentPath} (workflow: ${workflowPath})`,
+      ).toBe(true);
+    });
+
+    it("should reference an existing config_source file (if declared)", () => {
+      if (!config?.config_source) return;
+      const resolvedPath = resolveVariable(
+        config.config_source,
+        workflowPath,
+        config,
+        PROJECT_ROOT,
+      );
+      expect(
+        existsSync(resolvedPath),
+        `config_source not found: ${resolvedPath} (workflow: ${workflowPath})`,
       ).toBe(true);
     });
 
     it("should reference an existing validation/checklist file (if declared)", () => {
       if (!config?.validation) return;
-      const resolvedPath = resolveVariable(config.validation, workflowPath, config);
+      const resolvedPath = resolveVariable(
+        config.validation,
+        workflowPath,
+        config,
+        PROJECT_ROOT,
+      );
       expect(
         existsSync(resolvedPath),
-        `Validation file not found: ${resolvedPath}`,
+        `Validation file not found: ${resolvedPath} (workflow: ${workflowPath})`,
       ).toBe(true);
+    });
+
+    it("should have valid quality_gates structure (if declared)", () => {
+      if (!config?.quality_gates) return;
+
+      const gates = [
+        ...(config.quality_gates.pre_start || []),
+        ...(config.quality_gates.post_complete || []),
+      ];
+
+      for (const gate of gates) {
+        expect(
+          gate.check,
+          `quality_gates entry missing 'check' field (workflow: ${workflowPath})`,
+        ).toBeTruthy();
+        expect(
+          gate.on_fail,
+          `quality_gates entry missing 'on_fail' field (workflow: ${workflowPath})`,
+        ).toBeTruthy();
+      }
+    });
+
+    it("should use only valid variable references in output.primary (if declared)", () => {
+      if (!config?.output?.primary) return;
+
+      const varRefs = config.output.primary.match(/\{[^}]+\}/g) || [];
+      for (const ref of varRefs) {
+        expect(
+          VALID_VARIABLE_REFS,
+          `Invalid variable reference '${ref}' in output.primary (workflow: ${workflowPath})`,
+        ).toContain(ref);
+      }
     });
   });
 });
-
-/**
- * Minimal YAML parser for flat key-value workflow.yaml files.
- * Replace with js-yaml for production use.
- */
-function parseSimpleYaml(content) {
-  const result = {};
-  for (const line of content.split("\n")) {
-    // Match key: value (with or without quotes, allowing braces in values)
-    const match = line.match(/^(\w[\w_]*)\s*:\s*["']?(.+?)["']?\s*$/);
-    if (match) {
-      const value = match[2].replace(/#.*$/, "").trim();
-      if (value) result[match[1]] = value;
-    }
-  }
-  return Object.keys(result).length > 0 ? result : null;
-}
-
-/**
- * Resolve variables in a path using the workflow's own declared installed_path.
- * {project-root} resolves to PROJECT_ROOT (Gaia-framework/).
- * {installed_path} resolves from the workflow.yaml's installed_path field,
- * falling back to {project-root}/_gaia (from global.yaml) if not declared.
- */
-function resolveVariable(value, workflowPath, parsedConfig) {
-  // Default installed_path from global.yaml: "{project-root}/_gaia"
-  let installedPath = join(PROJECT_ROOT, "_gaia");
-
-  if (parsedConfig?.installed_path) {
-    installedPath = parsedConfig.installed_path.replace(
-      /\{project-root\}/g,
-      PROJECT_ROOT,
-    );
-  }
-
-  return value
-    .replace(/\{installed_path\}/g, installedPath)
-    .replace(/\{project-root\}/g, PROJECT_ROOT);
-}

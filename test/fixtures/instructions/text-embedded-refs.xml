@@ -1,0 +1,8 @@
+<workflow name="test-text-refs">
+<step n="1" title="Step 1">
+  <action>Load {project-root}/_gaia/dev/skills/git-workflow.md — section "commits"</action>
+</step>
+<step n="2" title="Step 2">
+  <action>Load {project-root}/_gaia/dev/skills/testing-patterns.md for TDD guidance</action>
+</step>
+</workflow>

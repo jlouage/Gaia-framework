@@ -1,0 +1,8 @@
+<workflow name="test-invalid-var">
+<step n="1" title="Step 1">
+  <action>Action</action>
+  <template-output file="{invalid_var}/output.md">
+    Bad variable reference
+  </template-output>
+</step>
+</workflow>

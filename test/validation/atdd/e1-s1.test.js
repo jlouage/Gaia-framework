@@ -45,6 +45,14 @@ const VALID_VARIABLE_REFS = [
 ];
 
 function findWorkflowFiles() {
+  "{memory_path}",
+  "{checkpoint_path}",
+  "{data_path}",
+  "{agent}",
+];
+
+function findWorkflowFiles() {
+  const { execSync } = require("child_process");
   const result = execSync(
     `find -L "${GAIA_ROOT}" -name "workflow.yaml" -not -path "*/node_modules/*" -not -path "*/_backups/*"`,
     { encoding: "utf8" },
@@ -197,6 +205,30 @@ describe("ATDD E1-S1: Workflow Definition Validation", () => {
         },
       );
     });
+    describe.each(workflowsWithGates.map((w) => [w.path, w.config]))(
+      "%s",
+      (wPath, wConfig) => {
+        const gates = [
+          ...(wConfig.quality_gates?.pre_start || []),
+          ...(wConfig.quality_gates?.post_complete || []),
+        ];
+
+        it.each(gates)(
+          "gate '%s' has a verifiable check and on_fail message",
+          (gate) => {
+            // Each gate entry must have 'check' and 'on_fail' fields
+            expect(
+              gate.check,
+              `Gate missing 'check' field in ${wPath}`,
+            ).toBeTruthy();
+            expect(
+              gate.on_fail,
+              `Gate missing 'on_fail' field in ${wPath}`,
+            ).toBeTruthy();
+          },
+        );
+      },
+    );
   });
 
   // ── AC3: Output artifact variable references ──────────────────────
@@ -245,6 +277,34 @@ describe("ATDD E1-S1: Workflow Definition Validation", () => {
         },
       );
     });
+    describe.each(workflowsWithOutput.map((w) => [w.path, w.config]))(
+      "%s",
+      (wPath, wConfig) => {
+        const outputPaths = [];
+        if (wConfig.output?.primary) outputPaths.push(wConfig.output.primary);
+        if (wConfig.output?.artifacts) {
+          if (Array.isArray(wConfig.output.artifacts)) {
+            outputPaths.push(...wConfig.output.artifacts);
+          } else if (typeof wConfig.output.artifacts === "string") {
+            outputPaths.push(wConfig.output.artifacts);
+          }
+        }
+
+        it.each(outputPaths)(
+          "output path '%s' uses only valid variable references",
+          (outputPath) => {
+            // Extract all {variable} references from the path
+            const varRefs = outputPath.match(/\{[^}]+\}/g) || [];
+            for (const ref of varRefs) {
+              expect(
+                VALID_VARIABLE_REFS,
+                `Invalid variable reference '${ref}' in output path of ${wPath}`,
+              ).toContain(ref);
+            }
+          },
+        );
+      },
+    );
   });
 
   // ── AC4: YAML parsing without error ───────────────────────────────
@@ -282,6 +342,11 @@ describe("ATDD E1-S1: Workflow Definition Validation", () => {
         thisFile.match(/\$\{w(?:orkflow)?Path\}/g) || []
       ).length;
       // We expect at least 5 assertions that embed the workflow path
+    it("test file contains workflow-identifying error messages in assertions", () => {
+      const thisFile = readFileSync(import.meta.filename, "utf8");
+      const assertionsWithContext = (
+        thisFile.match(/\$\{w(?:orkflow)?Path\}/g) || []
+      ).length;
       expect(
         assertionsWithContext,
         "Too few assertions include workflow-identifying error messages",
@@ -375,6 +440,9 @@ describe("ATDD E1-S1: Workflow Definition Validation", () => {
         content,
         "workflows.test.js should validate output paths",
       ).toMatch(/output.*artifact|output.*primary/i);
+      expect(content, "workflows.test.js should validate output paths").toMatch(
+        /output.*artifact|output.*primary/i,
+      );
     });
   });
 });

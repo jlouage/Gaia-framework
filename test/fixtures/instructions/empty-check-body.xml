@@ -1,0 +1,5 @@
+<workflow name="test-empty-check-body">
+<step n="1" title="Step 1">
+  <check if="some_condition"></check>
+</step>
+</workflow>

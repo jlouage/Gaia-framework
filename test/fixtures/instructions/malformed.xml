@@ -1,0 +1,5 @@
+<workflow name="test-malformed">
+<step n="1" title="Broken Step">
+  <action>Missing closing tag
+</step>
+</workflow>
