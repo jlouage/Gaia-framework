@@ -84,10 +84,49 @@
   </action>
 </step>
 <step n="9" title="Generate Output">
-  <template-output file="{implementation_artifacts}/sprint-{sprint_id}-plan.md">
+  <template-output file="{implementation_artifacts}/{sprint_id}-plan.md">
     Generate sprint plan document with: sprint goals, selected stories (ordered), velocity target, risk assessment, Sprint Burndown Estimate (points remaining per day), and a Testing Readiness section listing ONLY high-risk stories with their ATDD file status. Medium and low risk stories do NOT require ATDD and should NOT appear in the ATDD readiness checks.
   </template-output>
   <action>Write sprint-status.yaml to {implementation_artifacts}/sprint-status.yaml</action>
+</step>
+<step n="10" title="Val Validation">
+  <action>Invoke Val to validate the sprint plan. Val verifies:
+    (a) All selected story keys exist as story files with status 'ready-for-dev'
+    (b) Dependency ordering is correct — no story selected before its blocking dependency is 'done'
+    (c) Points math is correct — total selected points ≤ velocity capacity
+    (d) No duplicate story keys in the selection
+    (e) Sprint-status.yaml entries match the sprint plan document
+    If findings: SM auto-fixes (e.g., remove invalid stories, fix ordering), re-validates.
+    If Val fails or crashes: log warning and continue — validation is non-blocking for sprint planning.</action>
+  <invoke-workflow
+    target="{project-root}/_gaia/lifecycle/workflows/4-implementation/val-validate-artifact/workflow.yaml"
+    input_artifact="{implementation_artifacts}/{sprint_id}-plan.md"
+    on_error="warn_and_continue"
+    model_override="opus" />
+</step>
+<step n="11" title="Save to Val Memory">
+  <action>Auto-save sprint planning decisions to Val's memory sidecar (no user prompt required):
+
+  1. Append to {memory_path}/validator-sidecar/decision-log.md:
+     ### [YYYY-MM-DD] Sprint Planning: {sprint_id}
+
+     - **Agent:** validator
+     - **Workflow:** sprint-planning
+     - **Sprint:** {sprint_id}
+     - **Status:** recorded
+
+     Sprint {sprint_id} planned. Duration: {duration}. Velocity: {velocity_capacity} pts.
+     Stories selected: {count} ({total_points} pts, {utilization}% capacity).
+     Story keys: {comma-separated list}.
+     High-risk stories: {count} (ATDD: {verified/missing}).
+     Retro action items carried forward: {count or "none"}.
+
+  2. Replace body of {memory_path}/validator-sidecar/conversation-context.md (preserve header above first ---):
+     Last session: Sprint planning for {sprint_id}.
+     Date: {YYYY-MM-DD}. Stories: {count} ({total_points} pts). Velocity: {velocity_capacity}.
+
+  If {memory_path}/validator-sidecar/ directory or files don't exist, create them with standard headers.
+  If writing fails, log warning and continue — memory save is non-blocking.</action>
 </step>
 <next-step source="lifecycle-sequence.yaml">
   <primary command="/gaia-dev-story">Start implementing the first story from the sprint</primary>

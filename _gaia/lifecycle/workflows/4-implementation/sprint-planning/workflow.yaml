@@ -2,6 +2,7 @@ name: sprint-planning
 description: 'Generate sprint plan from epics and stories'
 module: lifecycle
 agent: sm
+template_output_prompt: "auto"
 config_resolved: "{project-root}/_gaia/lifecycle/.resolved/sprint-planning.yaml"
 config_source: "{project-root}/_gaia/lifecycle/config.yaml"
 installed_path: "{project-root}/_gaia/lifecycle/workflows/4-implementation/sprint-planning"
@@ -29,4 +30,4 @@ on_error:
   unresolved_variable: "halt"
 
 output:
-  primary: "{implementation_artifacts}/sprint-{sprint_id}-plan.md"
+  primary: "{implementation_artifacts}/{sprint_id}-plan.md"
