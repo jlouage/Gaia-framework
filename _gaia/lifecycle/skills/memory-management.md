@@ -17,11 +17,15 @@ All decision-log entries use this standardized format:
 - **Workflow:** {workflow name}
 - **Sprint:** {sprint ID}
 - **Type:** architectural | implementation | validation | process
-- **Status:** active | superseded | revoked
+- **Status:** active | superseded | archived
 - **Related:** {artifact paths, story keys}
 
-{Decision body — describe what was decided and why}
+{Decision body — free-form markdown with no structural constraints}
 ```
+
+**Required vs optional fields:**
+- **Required:** Agent, Status — a warning should be logged if these are absent
+- **Optional:** Workflow, Sprint, Type, Related — these default gracefully (empty/null) when missing; the entry remains parseable
 
 **Decision types:**
 - `architectural` — system structure, technology choices, ADR-level decisions
@@ -32,10 +36,10 @@ All decision-log entries use this standardized format:
 **Status values:**
 - `active` — current, in effect
 - `superseded` — replaced by a newer decision (link to replacement)
-- `revoked` — withdrawn, no longer applies
+- `archived` — no longer applies, retained for history
 
 **Field constraints:**
-- Date: ISO 8601 (YYYY-MM-DD)
+- Date: ISO 8601 strict (YYYY-MM-DD). Malformed dates (e.g., `[2026-3-5]`) should trigger a warning and best-effort parsing rather than silently dropping the entry. Entries with unrecoverable dates use `[YYYY-MM-DD-UNKNOWN]` as placeholder.
 - Agent: must match an agent ID from the agent manifest
 - Sprint: sprint ID from sprint-status.yaml, or "pre-sprint" if decided outside a sprint
 - Related: comma-separated list of artifact paths or story keys (e.g., `docs/planning-artifacts/architecture.md, E3-S1`)
