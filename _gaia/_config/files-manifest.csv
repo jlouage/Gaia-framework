@@ -5,7 +5,6 @@ path,type,module,description
 "_gaia/dev/config.yaml","config","dev","Developer module configuration"
 "_gaia/creative/config.yaml","config","creative","Creative module configuration"
 "_gaia/testing/config.yaml","config","testing","Testing module configuration"
-"_gaia/_memory/config.yaml","config","memory","Memory module configuration"
 "_gaia/core/engine/workflow.xml","engine","core","Workflow execution engine"
 "_gaia/core/engine/protocols/discover-inputs.xml","protocol","core","Input file discovery protocol"
 "_gaia/core/engine/protocols/preflight-check.xml","protocol","core","Pre-execution validation protocol"

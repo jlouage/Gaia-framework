@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { readFileSync, existsSync, readdirSync, statSync } from "fs";
+import { readFileSync, existsSync } from "fs";
 import { join, resolve, relative, dirname } from "path";
 import { execSync } from "child_process";
 
@@ -51,63 +51,40 @@ function parseCSVLine(line) {
 }
 
 /**
- * Find all workflow directories on disk (directories containing workflow.yaml).
+ * Run a find command under _gaia/ and return paths relative to PROJECT_ROOT.
+ * @param {string} findArgs - arguments appended to `find -L _gaia/`
+ * @param {(abs: string) => string} [mapFn] - optional transform per result (default: relative path)
  */
+function findOnDisk(findArgs, mapFn) {
+  const result = execSync(
+    `find -L "${PROJECT_ROOT}/_gaia" ${findArgs} -not -path "*/node_modules/*" -not -path "*/_backups/*"`,
+    { encoding: "utf8" },
+  );
+  const mapper = mapFn || ((f) => relative(PROJECT_ROOT, f));
+  return result
+    .trim()
+    .split("\n")
+    .filter((f) => f.length > 0)
+    .map(mapper);
+}
+
 function findWorkflowDirsOnDisk() {
-  const result = execSync(
-    `find -L "${PROJECT_ROOT}/_gaia" -name "workflow.yaml" -not -path "*/node_modules/*" -not -path "*/.resolved/*" -not -path "*/_backups/*"`,
-    { encoding: "utf8" },
+  return findOnDisk(
+    '-name "workflow.yaml" -not -path "*/.resolved/*"',
+    (f) => relative(PROJECT_ROOT, dirname(f)),
   );
-  return result
-    .trim()
-    .split("\n")
-    .filter((f) => f.length > 0)
-    .map((f) => relative(PROJECT_ROOT, dirname(f)));
 }
 
-/**
- * Find all agent .md files on disk (excluding _base-dev.md and non-agent files).
- */
 function findAgentFilesOnDisk() {
-  const result = execSync(
-    `find -L "${PROJECT_ROOT}/_gaia" -path "*/agents/*.md" -not -path "*/node_modules/*" -not -path "*/_backups/*" -not -name "_base-dev.md"`,
-    { encoding: "utf8" },
-  );
-  return result
-    .trim()
-    .split("\n")
-    .filter((f) => f.length > 0)
-    .map((f) => relative(PROJECT_ROOT, f));
+  return findOnDisk('-path "*/agents/*.md" -not -path "*/_config/agents/*"');
 }
 
-/**
- * Find all skill .md files on disk.
- */
 function findSkillFilesOnDisk() {
-  const result = execSync(
-    `find -L "${PROJECT_ROOT}/_gaia" -path "*/skills/*.md" -not -path "*/node_modules/*" -not -path "*/_backups/*" -not -name "_skill-index.yaml"`,
-    { encoding: "utf8" },
-  );
-  return result
-    .trim()
-    .split("\n")
-    .filter((f) => f.length > 0)
-    .map((f) => relative(PROJECT_ROOT, f));
+  return findOnDisk('-path "*/skills/*.md" -not -name "_skill-index.yaml"');
 }
 
-/**
- * Find all task files on disk (.md and .xml in tasks/ directories).
- */
 function findTaskFilesOnDisk() {
-  const result = execSync(
-    `find -L "${PROJECT_ROOT}/_gaia" -path "*/tasks/*" \\( -name "*.md" -o -name "*.xml" \\) -not -path "*/node_modules/*" -not -path "*/_backups/*"`,
-    { encoding: "utf8" },
-  );
-  return result
-    .trim()
-    .split("\n")
-    .filter((f) => f.length > 0)
-    .map((f) => relative(PROJECT_ROOT, f));
+  return findOnDisk('-path "*/tasks/*" \\( -name "*.md" -o -name "*.xml" \\)');
 }
 
 // ─── Load manifests ───────────────────────────────────────────────
@@ -116,6 +93,7 @@ const workflowManifest = parseCSV(join(CONFIG_PATH, "workflow-manifest.csv"));
 const agentManifest = parseCSV(join(CONFIG_PATH, "agent-manifest.csv"));
 const skillManifest = parseCSV(join(CONFIG_PATH, "skill-manifest.csv"));
 const taskManifest = parseCSV(join(CONFIG_PATH, "task-manifest.csv"));
+const filesManifest = parseCSV(join(CONFIG_PATH, "files-manifest.csv"));
 
 // ─── AC1: Every workflow-manifest entry has a corresponding workflow directory ─
 
@@ -194,9 +172,28 @@ describe("Manifest-Filesystem Sync Validation (E1-S5)", () => {
     );
   });
 
-  // ─── AC5: Reverse check — every file on disk has a manifest entry ─────
+  // ─── AC5: Every files-manifest entry has a corresponding file ───────────
 
-  describe("AC5: filesystem → manifest (reverse check)", () => {
+  describe("AC5: files-manifest → filesystem", () => {
+    it("should have files-manifest entries to validate", () => {
+      expect(filesManifest.length).toBeGreaterThan(0);
+    });
+
+    it.each(filesManifest.map((f) => [f.path, f.type]))(
+      "file '%s' (%s) should exist on disk",
+      (path, type) => {
+        const fullPath = join(PROJECT_ROOT, path);
+        expect(
+          existsSync(fullPath),
+          `files-manifest entry '${path}' (type: ${type}) does not exist on disk`,
+        ).toBe(true);
+      },
+    );
+  });
+
+  // ─── AC6: Reverse check — every file on disk has a manifest entry ─────
+
+  describe("AC6: filesystem → manifest (reverse check)", () => {
     const workflowPaths = new Set(
       workflowManifest.map((w) => w.path),
     );
@@ -318,6 +315,16 @@ describe("Manifest-Filesystem Sync Validation (E1-S5)", () => {
       expect(
         orphaned,
         `Orphaned task entries: ${orphaned.map((t) => t.name).join(", ")}`,
+      ).toHaveLength(0);
+    });
+
+    it("should have zero orphaned files-manifest entries (manifest → disk)", () => {
+      const orphaned = filesManifest.filter(
+        (f) => !existsSync(join(PROJECT_ROOT, f.path)),
+      );
+      expect(
+        orphaned,
+        `Orphaned files-manifest entries: ${orphaned.map((f) => f.path).join(", ")}`,
       ).toHaveLength(0);
     });
 
