@@ -24,7 +24,7 @@ quality_gates:
       on_fail: "WARN: Test plan not found at {test_artifacts}/test-plan.md. Sprint risk assessment will be incomplete. Consider running /gaia-test-design."
 tracking_system: "file-system"
 status_file: "{implementation_artifacts}/sprint-status.yaml"
-story_statuses: [backlog, validating, ready-for-dev, in-progress, blocked, review, done]
+story_statuses: [backlog, validating, ready-for-dev, in-progress, invalid, review, done]
 on_error:
   missing_file: "ask_user"
   unresolved_variable: "halt"

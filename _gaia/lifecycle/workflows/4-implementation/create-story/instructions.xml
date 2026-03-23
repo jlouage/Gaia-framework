@@ -14,7 +14,7 @@
     If a story file already exists for this key:
       1. Read its YAML frontmatter status field
       2. If status is 'backlog': warn "Story file exists with status backlog. Proceeding will regenerate it." Allow continue.
-      3. If status is anything else (validating, ready-for-dev, in-progress, blocked, review, done):
+      3. If status is anything else (validating, ready-for-dev, in-progress, invalid, review, done):
          HALT: "Story {key} is in '{status}' status. Overwriting would destroy work in progress.
          - To edit the story: use /gaia-fix-story {key}
          - To reset to backlog and recreate: manually set frontmatter status to 'backlog' first"

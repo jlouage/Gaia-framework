@@ -36,7 +36,7 @@ abstract: true
 
 ## Sprint Status Updates
 - After starting: update sprint-status.yaml status to `in-progress`
-- If blocked: update to `blocked` with reason
+- If invalid: update to `invalid` with reason
 - After completing: update to `review`
 
 ## Code Review Follow-up
@@ -83,8 +83,8 @@ abstract: true
 - Record test results in checkpoint
 
 ## Error Handling
-- If a dependency is missing: set status to `blocked`, record reason
-- If tests fail after 3 attempts: escalate, set status to `blocked`
+- If a dependency is missing: set status to `invalid`, record reason
+- If tests fail after 3 attempts: escalate, set status to `invalid`
 - If story has unresolved `depends_on`: HALT, notify user
 
 ## Findings Protocol
@@ -101,7 +101,7 @@ abstract: true
   </scope>
   <escalation-triggers>
     <trigger>Story has unresolved depends_on — cannot proceed</trigger>
-    <trigger>Tests fail after 3 fix attempts — systemic issue, set status to blocked</trigger>
+    <trigger>Tests fail after 3 fix attempts — systemic issue, set status to invalid</trigger>
     <trigger>Implementation requires architecture change not covered by architecture.md</trigger>
     <trigger>Story scope is larger than estimated — report to Nate for re-planning</trigger>
   </escalation-triggers>
@@ -124,7 +124,7 @@ abstract: true
   </constraints>
   <handoffs>
     <handoff to="sm" when="Story complete, status=review" gate="all DoD items checked" />
-    <handoff to="sm" when="Story blocked" gate="blocked reason documented" />
+    <handoff to="sm" when="Story invalid" gate="blocked reason documented" />
   </handoffs>
 </specification>
 

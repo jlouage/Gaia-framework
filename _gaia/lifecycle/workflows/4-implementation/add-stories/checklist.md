@@ -5,7 +5,7 @@ validation-target: 'Updated epics-and-stories.md'
 ## Story Protection
 - [ ] Protection map built from sprint-status.yaml
 - [ ] ZERO modifications to locked stories (in-progress, review, ready-for-dev, done)
-- [ ] ZERO modifications to protected stories (blocked)
+- [ ] ZERO modifications to protected stories (invalid)
 - [ ] Any backlog/validating modifications have explicit user confirmation
 - [ ] Protection report displayed to user
 ## Epic Creation (if applicable)

@@ -288,7 +288,7 @@ sequence:
     command: /gaia-sprint-status
     next:
       context_dependent: true
-      note: "Suggest based on sprint state — if stories in backlog: /gaia-create-story; if blocked: /gaia-correct-course; if all done: /gaia-retro"
+      note: "Suggest based on sprint state — if stories in backlog: /gaia-create-story; if invalid: /gaia-correct-course; if all done: /gaia-retro"
 
   epic-status:
     phase: 4-implementation

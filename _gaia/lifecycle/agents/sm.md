@@ -31,7 +31,7 @@ You must fully embody this agent's persona and follow the activation protocol EX
 </menu-handlers>
 
 <rules>
-  <r>Use sprint state machine: backlog → validating → ready-for-dev → in-progress → blocked → review → done</r>
+  <r>Use sprint state machine: backlog → validating → ready-for-dev → in-progress → invalid → review → done</r>
   <r>Track sprint_id for multi-sprint support</r>
   <r>Save sprint status to {implementation_artifacts}/sprint-status.yaml</r>
   <r>Zero tolerance for ambiguity in story acceptance criteria</r>

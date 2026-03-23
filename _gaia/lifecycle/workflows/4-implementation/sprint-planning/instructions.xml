@@ -1,6 +1,6 @@
 <workflow name="sprint-planning">
 <critical>
-  <mandate>Use sprint state machine: backlog, validating, ready-for-dev, in-progress, blocked, review, done</mandate>
+  <mandate>Use sprint state machine: backlog, validating, ready-for-dev, in-progress, invalid, review, done</mandate>
   <mandate>Support multi-sprint via sprint_id tracking</mandate>
   <mandate>Only stories with status 'ready-for-dev' are selectable for a sprint</mandate>
 </critical>

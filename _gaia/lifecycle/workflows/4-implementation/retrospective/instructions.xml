@@ -7,9 +7,9 @@
 </critical>
 <step n="1" title="Load Sprint Data">
   <action>Read sprint-status.yaml for completed sprint — extract sprint_id, all story keys, planned points</action>
-  <action>Calculate: stories completed, stories blocked, stories carried over, velocity (points delivered vs planned)</action>
+  <action>Calculate: stories completed, stories invalid, stories carried over, velocity (points delivered vs planned)</action>
   <action>Read ALL story files for this sprint (from sprint-status.yaml story list). For each story extract:
-    - Status (done, review, in-progress, blocked)
+    - Status (done, review, in-progress, invalid)
     - Review Gate table results (which reviews PASSED/FAILED/PENDING)
     - Findings table (count and types of findings)
     - Definition of Done checklist results</action>

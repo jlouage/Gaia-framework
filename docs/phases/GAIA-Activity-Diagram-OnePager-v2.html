@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>GAIA v1.37.0 — Lifecycle Activity Diagram v2</title>
+<title>GAIA v1.38.3 — Lifecycle Activity Diagram v2</title>
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
   body{font-family:'Segoe UI',system-ui,sans-serif;background:#0F172A;color:#F8FAFC;padding:16px 20px;min-width:1700px}
@@ -153,7 +153,7 @@
 <!-- HEADER -->
 <div class="hdr">
   <h1>GAIA <span>— Full Lifecycle Activity Diagram v2</span></h1>
-  <div class="meta"><strong>v1.37.0</strong> &nbsp;|&nbsp; 27 Agents (w/ Specifications) &nbsp;|&nbsp; 67 Workflows &nbsp;|&nbsp; 8 Shared Skills &nbsp;|&nbsp; 17 Quality Gates &nbsp;|&nbsp; 122 Bugs Fixed &nbsp;|&nbsp; Engine: 7-step flow (planning mode — v1.26.0, Val YOLO opt-in — v1.37.0) &nbsp;|&nbsp; Model Assignment: Opus / Sonnet — v1.28.0</div>
+  <div class="meta"><strong>v1.38.3</strong> &nbsp;|&nbsp; 27 Agents (w/ Specifications) &nbsp;|&nbsp; 67 Workflows &nbsp;|&nbsp; 8 Shared Skills &nbsp;|&nbsp; 17 Quality Gates &nbsp;|&nbsp; 122 Bugs Fixed &nbsp;|&nbsp; Engine: 7-step flow (planning mode — v1.26.0, Val YOLO opt-in — v1.37.0, status-sync protocol — v1.38.0, template_output_prompt override — v1.37.1) &nbsp;|&nbsp; Model Assignment: Opus / Sonnet — v1.28.0</div>
 </div>
 
 <!-- ENTRY POINTS -->
@@ -482,8 +482,8 @@
     <!-- ── GROUP 1: STORY PREP (before sprint planning) ── -->
     <div class="grp">① Story Prep (before sprint planning)</div>
     <div class="nd">
-      <span class="cmd">/gaia-create-story</span><span class="model-badge sonnet">SONNET</span><span class="agent">Nate</span>
-      <div class="desc">Prioritized story list → elaborate → backlog</div>
+      <span class="cmd">/gaia-create-story {key} [yolo]</span><span class="model-badge sonnet">SONNET</span><span class="agent">Nate</span>
+      <div class="desc">Prioritized story list → elaborate → backlog<br><span style="color:#F59E0B;font-weight:700;font-size:5px">⚡ YOLO: auto-selects [a] agent elaboration, Val auto-validates at Step 6 — v1.37.1</span><br><span style="color:#94A3B8;font-size:5px">Custom prompt: [e] Edit | [v] Val (no [c]/[y]) · Val validates automatically in Step 7 · status-sync protocol</span></div>
       <div class="doc-io">
         <span class="doc-in">epics-and-stories.md</span>
         <span class="doc-in">architecture.md</span>
@@ -599,17 +599,17 @@
     <div class="grp" style="margin-top:4px;color:#F472B6">④ Sprint Closure</div>
     <div style="font-size:4.5px;color:#94A3B8;text-align:center;margin-bottom:2px;font-style:italic">Run sequentially at end of sprint — each step feeds the next</div>
     <div class="nd" style="border-left-color:#F472B6">
-      <span class="cmd">/gaia-triage-findings</span><span class="model-badge sonnet">SONNET</span><span class="agent">Nate</span>
-      <div class="desc">Scan completed stories → collect unresolved findings → promote to backlog or accept/defer</div>
+      <span class="cmd">/gaia-triage-findings [yolo]</span><span class="model-badge sonnet">SONNET</span><span class="agent">Nate</span>
+      <div class="desc">Scan completed stories → collect unresolved findings → promote to backlog or accept/defer<br><span style="color:#34D399;font-weight:700;font-size:5px">(7 steps — v1.38.1): recommendation-based triage, sequential story keys, epics-and-stories.md sync, status-sync, Val memory</span><br><span style="color:#F59E0B;font-weight:700;font-size:5px">⚡ YOLO: auto-applies recommendations (CREATE/ADD/DISMISS) without user prompts</span></div>
       <div class="doc-io">
         <span class="doc-in">story-*.md (completed)</span>
       </div>
-      <div class="doc-io"><span class="doc-out">promoted stories → backlog</span></div>
+      <div class="doc-io"><span class="doc-out">promoted stories → backlog</span><span class="doc-out">epics-and-stories.md (appended)</span></div>
     </div>
     <div class="fa" style="color:#F472B6">▾</div>
     <div class="nd" style="border-left-color:#F472B6">
-      <span class="cmd">/gaia-tech-debt-review</span><span class="model-badge sonnet">SONNET</span><span class="agent">Nate</span>
-      <div class="desc">Classify, score & prioritize debt (6 steps) — includes promoted findings</div>
+      <span class="cmd">/gaia-tech-debt-review [yolo]</span><span class="model-badge sonnet">SONNET</span><span class="agent">Nate</span>
+      <div class="desc">Classify, score & prioritize debt (7 steps — v1.38.2) — includes promoted findings<br><span style="color:#F59E0B;font-weight:700;font-size:5px">⚡ YOLO: auto-confirms scores · Val memory save with dashboard summary</span></div>
       <div class="doc-io">
         <span class="doc-in">sprint-status.yaml</span>
         <span class="doc-in">story-*.md (frontmatter)</span>
@@ -619,16 +619,19 @@
     </div>
     <div class="fa" style="color:#F472B6">▾</div>
     <div class="nd" style="border-left-color:#F472B6">
-      <span class="cmd">/gaia-retro</span><span class="model-badge sonnet">SONNET</span><span class="agent">Nate</span>
-      <div class="desc">Retrospective + debt reflection + agent memory update (6 steps, v1.26.0)</div>
+      <span class="cmd">/gaia-retro [yolo]</span><span class="model-badge sonnet">SONNET</span><span class="agent">Nate</span>
+      <div class="desc">Data-driven retrospective (10 steps — v1.38.3)<br><span style="color:#34D399;font-weight:700;font-size:5px">Mines artifacts: review rates, velocity, Val findings, blockers, carryover, debt trends</span><br><span style="color:#F59E0B;font-weight:700;font-size:5px">⚡ YOLO: auto-confirms all findings, auto-approves skills, auto-escalates systemic issues · Val memory</span></div>
       <div class="doc-io">
         <span class="doc-in">sprint-status.yaml</span>
+        <span class="doc-in">story-*.md (all sprint stories)</span>
         <span class="doc-in">tech-debt-dashboard.md</span>
-        <span class="doc-in">triage summary</span>
+        <span class="doc-in">retro-*.md (previous)</span>
+        <span class="doc-in">Val decision-log.md</span>
+        <span class="doc-in">review reports</span>
       </div>
-      <div class="doc-io"><span class="doc-out">retro-{sprint_id}.md</span></div>
+      <div class="doc-io"><span class="doc-out">retro-{sprint_id}.md</span><span class="doc-out">agent sidecars (lessons)</span><span class="doc-out">skill files (improvements)</span></div>
     </div>
-    <div style="font-size:5px;color:#F472B6;text-align:center;margin-top:3px;font-weight:700;background:rgba(244,114,182,.08);padding:2px;border-radius:3px">Sprint Closure Flow: triage-findings → tech-debt-review → retro → loop back to ① Story Prep + ② Sprint Plan</div>
+    <div style="font-size:5px;color:#F472B6;text-align:center;margin-top:3px;font-weight:700;background:rgba(244,114,182,.08);padding:2px;border-radius:3px">Sprint Closure Flow: triage-findings → tech-debt-review → retro → loop back to ① Story Prep + ② Sprint Plan<br><span style="color:#F59E0B">⚡ All 3 support YOLO mode + Val memory save (v1.38.x) — fully automated sprint closure</span></div>
 
     <div class="dec" style="font-size:5px;--dc:#818CF8;margin-top:3px">More sprints? → loop to ① Story Prep</div>
   </div>
@@ -919,7 +922,9 @@
 
 <!-- Planning Execution Mode (v1.26.0) -->
 <div style="font-size:5px;color:#818CF8;text-align:center;margin:1px 0 1px;font-weight:700;letter-spacing:.3px">📋 Planning Mode (v1.26.0) — engine step 5 "Planning Gate": workflows declaring execution_mode: planning present structured execution plan before processing steps &nbsp;|&nbsp; User selects: [a] Approve (normal) | [y] Approve (YOLO) | [r] Revise | [x] Abort &nbsp;|&nbsp; Subagent invocations override planning mode &nbsp;|&nbsp; Currently: <span style="color:#34D399">/gaia-dev-story</span></div>
-<div style="font-size:5px;color:#F59E0B;text-align:center;margin:1px 0 3px;font-weight:700;letter-spacing:.3px">⚡ Val YOLO Auto-Validation (v1.37.0) — engine opt-in via val_auto_in_yolo + val_auto_in_yolo_steps in workflow.yaml &nbsp;|&nbsp; Val auto-validates at template-outputs, findings must be fixed (fix→validate loop, 3 iterations max) &nbsp;|&nbsp; Val failure = HALT (no auto-continue) &nbsp;|&nbsp; Planning gate stays active in YOLO — Val validates the plan &nbsp;|&nbsp; Auto-agent detection via agent_auto_detect_strategy (story tech_stack → arch → file extensions → ask user)</div>
+<div style="font-size:5px;color:#F59E0B;text-align:center;margin:1px 0 1px;font-weight:700;letter-spacing:.3px">⚡ Val YOLO Auto-Validation (v1.37.0) — engine opt-in via val_auto_in_yolo + val_auto_in_yolo_steps in workflow.yaml &nbsp;|&nbsp; Val auto-validates at template-outputs, findings must be fixed (fix→validate loop, 3 iterations max) &nbsp;|&nbsp; Val failure = HALT (no auto-continue) &nbsp;|&nbsp; Planning gate stays active in YOLO — Val validates the plan &nbsp;|&nbsp; Auto-agent detection via agent_auto_detect_strategy (story tech_stack → arch → file extensions → ask user)</div>
+<div style="font-size:5px;color:#34D399;text-align:center;margin:1px 0 1px;font-weight:700;letter-spacing:.3px">🔄 Status-Sync Protocol (v1.38.0) — centralized story status synchronization across story file + sprint-status.yaml &nbsp;|&nbsp; Replaces manual dual-writes in 8 workflows &nbsp;|&nbsp; Story file = source of truth, sprint-status.yaml = derived view &nbsp;|&nbsp; Non-blocking: skips if sprint not created or story not in sprint</div>
+<div style="font-size:5px;color:#FB923C;text-align:center;margin:1px 0 3px;font-weight:700;letter-spacing:.3px">🧠 Val Memory Save (v1.38.x) — triage-findings, tech-debt-review, and retro save decisions to validator-sidecar/decision-log.md &nbsp;|&nbsp; Inform only (no validation during save) &nbsp;|&nbsp; Enables Val to have context for future artifact validation &nbsp;|&nbsp; Sprint Closure fully YOLO-capable: triage → tech-debt → retro all support [yolo] parameter</div>
 
 <!-- BOTTOM BAR -->
 <div class="bottom">

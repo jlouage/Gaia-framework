@@ -9,7 +9,7 @@
 </critical>
 <step n="1" title="Scan for Findings">
   <action>Scan story files in {implementation_artifacts}/ for non-empty Findings tables</action>
-  <action>Collect all findings from ALL story files regardless of status — scan every .md file that has a non-empty Findings table. This ensures triage catches findings from stories in any status (backlog, validating, ready-for-dev, in-progress, blocked, review, done) so nothing is invisible to tech-debt-review later.</action>
+  <action>Collect all findings from ALL story files regardless of status — scan every .md file that has a non-empty Findings table. This ensures triage catches findings from stories in any status (backlog, validating, ready-for-dev, in-progress, invalid, review, done) so nothing is invisible to tech-debt-review later.</action>
   <action>Skip findings already marked as [TRIAGED] or [DISMISSED]</action>
   <action>If no untriaged findings found: inform user "No findings to triage" and stop</action>
 </step>

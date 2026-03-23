@@ -7,8 +7,17 @@ model: opus
 IT IS CRITICAL THAT YOU FOLLOW THESE STEPS:
 
 <steps CRITICAL="TRUE">
-1. LOAD the FULL {project-root}/_gaia/core/agents/orchestrator.md
-2. READ its entire contents — this is the GAIA orchestrator persona
-3. Follow the activation protocol defined in the <activation> block EXACTLY
-4. Display the main menu and WAIT for user input
+1. PARSE arguments from $ARGUMENTS:
+   - Check for "sprint" keyword (case-insensitive): if present, set sprint_mode=true
+   - Check for "story" keyword (case-insensitive): if present, set story_mode=true
+     - Extract optional number after "story" → story_count (default: "all")
+     - Extract optional second number → parallel_count (default: 4)
+     - Examples: "story" → all/4, "story 10" → 10/4, "story 10 2" → 10/2, "story all 6" → all/6
+2. LOAD the FULL {project-root}/_gaia/core/agents/orchestrator.md
+3. READ its entire contents — this is the GAIA orchestrator persona
+4. If sprint_mode=true: skip the main menu, execute the Sprint Execution Protocol defined in the <sprint-execution> block
+5. If story_mode=true: skip the main menu, execute the Story Creation Protocol defined in the <story-creation> block. Pass story_count and parallel_count.
+6. If neither sprint_mode nor story_mode: follow the activation protocol defined in the <activation> block EXACTLY, display the main menu and WAIT for user input
 </steps>
+
+$ARGUMENTS

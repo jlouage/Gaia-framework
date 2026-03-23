@@ -135,7 +135,7 @@ GAIA supports separating the framework from the application source code. The `pr
 ## Sprint State Machine
 
 ```
-backlog → validating → ready-for-dev → in-progress → blocked → review → done
+backlog → validating → ready-for-dev → in-progress → invalid → review → done
 ```
 
 **Review Gate:** A story in `review` requires ALL six reviews to pass before moving to `done`:

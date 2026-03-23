@@ -13,7 +13,7 @@
   <action>Parse all existing story IDs per epic — identify highest ID per epic and overall</action>
   <action>Build protection map: for each story, record its current status from sprint-status.yaml:
     - LOCKED: done, review, in-progress, ready-for-dev — cannot be modified
-    - PROTECTED: blocked — cannot be modified by default
+    - PROTECTED: invalid — cannot be modified by default
     - CAUTIOUS: validating, backlog — modification requires explicit user confirmation
     - OPEN: new stories not yet in sprint-status — full read/write</action>
   <action>Display summary: total epics, total stories, stories by protection level (locked/protected/cautious/open)</action>
@@ -63,7 +63,7 @@
 
 <step n="6" title="Protection Validation">
   <action>Scan all proposed changes against the protection map from Step 1</action>
-  <action>Verify: ZERO modifications to stories with status in-progress, review, ready-for-dev, done, or blocked</action>
+  <action>Verify: ZERO modifications to stories with status in-progress, review, ready-for-dev, done, or invalid</action>
   <action>If any backlog or validating story would be modified: present the specific change and ask for explicit user confirmation with documented reason</action>
   <action>Display protection report: "{count} locked stories verified READ-ONLY. {count} protected stories verified READ-ONLY. {count} new stories will be created."</action>
   <action>If any protection violation detected: HALT — do not proceed until resolved</action>

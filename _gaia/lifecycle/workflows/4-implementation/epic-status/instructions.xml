@@ -33,7 +33,7 @@
     3. If neither available: show "(no title)" with the story key
     If the story was created by triage (author field contains "Triage"): append " ⚑" flag after the title to indicate triage origin</action>
   <action>Stories in manifest but with no file and no index entry: mark as backlog</action>
-  <action>Per epic: count done, in-progress, blocked, review, ready-for-dev, validating, backlog</action>
+  <action>Per epic: count done, in-progress, invalid, review, ready-for-dev, validating, backlog</action>
   <action>Per epic: compute completion percentage (done / total * 100)</action>
   <action>Compute overall totals across all epics</action>
   <action>Collect any story files found that are NOT in any epic (no epic field) as untracked</action>
