@@ -4,6 +4,7 @@
 [![License](https://img.shields.io/badge/license-AGPL--3.0-green)]()
 [![Agents](https://img.shields.io/badge/agents-25-purple)]()
 [![Workflows](https://img.shields.io/badge/workflows-73-orange)]()
+[![Claude Code](https://img.shields.io/badge/Claude_Code-compatible-blueviolet?style=flat&logo=anthropic)](https://docs.anthropic.com/en/docs/claude-code)
 
 AI agent framework for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) that orchestrates software product development through **25 specialized agents**, **73 workflows**, and **11 shared skills** — from initial research all the way to deployment.
 

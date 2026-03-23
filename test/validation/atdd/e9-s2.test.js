@@ -300,4 +300,82 @@ describe("E9-S2: Tier 1 Memory — Theo, Derek, Nate", () => {
       }
     });
   });
+
+  // Coverage gap: Conversation-context structure validation
+  describe("Conversation-context structure", () => {
+    it("all Tier 1 conversation-context.md files have YAML frontmatter", () => {
+      for (const sidecar of ["architect-sidecar", "pm-sidecar", "sm-sidecar"]) {
+        const content = readFile(sidecarPath(sidecar, "conversation-context.md"));
+        expect(content, `${sidecar}/conversation-context.md should start with YAML frontmatter`).toMatch(/^---\n/);
+        expect(content).toMatch(/agent:/);
+        expect(content).toMatch(/tier: 1/);
+      }
+    });
+
+    it("all Tier 1 conversation-context.md files have agent-specific headers", () => {
+      const expectedHeaders = {
+        "architect-sidecar": /Theo|Architect/i,
+        "pm-sidecar": /Derek|Product Manager/i,
+        "sm-sidecar": /Nate|Scrum Master/i,
+      };
+      for (const [sidecar, pattern] of Object.entries(expectedHeaders)) {
+        const content = readFile(sidecarPath(sidecar, "conversation-context.md"));
+        expect(content, `${sidecar}/conversation-context.md should have agent-specific header`).toMatch(pattern);
+      }
+    });
+  });
+
+  // Coverage gap: Ground-truth YAML frontmatter field validation
+  describe("Ground-truth frontmatter completeness", () => {
+    it("all Tier 1 ground-truth.md files have required YAML frontmatter fields", () => {
+      const expectedBudgets = {
+        "architect-sidecar": 150000,
+        "pm-sidecar": 100000,
+        "sm-sidecar": 100000,
+      };
+      for (const [sidecar, budget] of Object.entries(expectedBudgets)) {
+        const content = readFile(sidecarPath(sidecar, "ground-truth.md"));
+        expect(content, `${sidecar}/ground-truth.md should have agent field`).toMatch(/agent:/);
+        expect(content, `${sidecar}/ground-truth.md should have tier field`).toMatch(/tier: 1/);
+        expect(content, `${sidecar}/ground-truth.md should have token_budget field`).toMatch(
+          new RegExp(`token_budget: ${budget}`),
+        );
+      }
+    });
+  });
+
+  // Coverage gap: SM decision-log stub header
+  describe("SM decision-log stub structure", () => {
+    it("sm decision-log.md has proper header", () => {
+      const content = readFile(sidecarPath("sm-sidecar", "decision-log.md"));
+      expect(content).toMatch(/Decision Log|decision.log/i);
+      expect(content).toMatch(/Nate|Scrum Master/i);
+    });
+  });
+
+  // Coverage gap: Exact file count per sidecar (no extra files)
+  describe("Sidecar file count", () => {
+    it("each Tier 1 sidecar has exactly 3 files (no extra files)", () => {
+      for (const sidecar of ["architect-sidecar", "pm-sidecar", "sm-sidecar"]) {
+        const sidecarDir = join(MEMORY_DIR, sidecar);
+        const files = readdirSync(sidecarDir).filter(
+          (f) => !f.startsWith(".") && f !== "archive",
+        );
+        expect(
+          files.sort(),
+          `${sidecar} should have exactly 3 files`,
+        ).toEqual(REQUIRED_FILES.sort());
+      }
+    });
+  });
+
+  // Coverage gap: Architect decision-log entry count after migration
+  describe("Architect decision-log migration completeness", () => {
+    it("architect decision-log has expected number of migrated entries", () => {
+      const content = readFile(sidecarPath("architect-sidecar", "decision-log.md"));
+      const entries = content.match(/### \[\d{4}-\d{2}-\d{2}\]/g) || [];
+      // Story notes: consolidated architecture-decisions.md (2 entries) + decision-log.md (6 entries) = 8 total
+      expect(entries.length, "Expected 8 migrated entries in architect decision-log").toBe(8);
+    });
+  });
 });
