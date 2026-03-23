@@ -11,7 +11,7 @@ modules:
     path: "_gaia/lifecycle"
     type: built-in
   - name: dev
-    version: "1.0.3"
+    version: "1.1.0"
     path: "_gaia/dev"
     type: built-in
   - name: creative

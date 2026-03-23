@@ -7,9 +7,9 @@ val_auto_in_yolo: true
 val_auto_in_yolo_steps: [5, 6, 7, 8]
 agent_auto_detect: true
 agent_auto_detect_strategy: |
-  1. Read story file frontmatter for tech_stack or stack field — map to agent (typescript→typescript-dev, angular→angular-dev, flutter→flutter-dev, java→java-dev, python→python-dev, mobile→mobile-dev)
+  1. Read story file frontmatter for tech_stack or stack field — map to agent (typescript→typescript-dev, angular→angular-dev, flutter→flutter-dev, java→java-dev, python→python-dev, mobile→mobile-dev, go→go-dev)
   2. If absent: read {planning_artifacts}/architecture.md for primary language/framework
-  3. If ambiguous: check file extensions in story subtasks (.ts/.tsx→typescript, .dart→flutter, .java→java, .py→python, .swift/.kt→mobile, .component.ts→angular)
+  3. If ambiguous: check file extensions in story subtasks (.ts/.tsx→typescript, .dart→flutter, .java→java, .py→python, .swift/.kt→mobile, .component.ts→angular, .go→go)
   4. Fallback: ask user which developer to use
 config_resolved: "{project-root}/_gaia/lifecycle/.resolved/dev-story.yaml"
 config_source: "{project-root}/_gaia/lifecycle/config.yaml"

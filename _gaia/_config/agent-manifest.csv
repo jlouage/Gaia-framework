@@ -14,6 +14,7 @@ name,displayName,title,icon,module,path
 "java-dev","Hugo","Java Developer","💻","dev","_gaia/dev/agents/java-dev.md"
 "python-dev","Ravi","Python Developer","💻","dev","_gaia/dev/agents/python-dev.md"
 "mobile-dev","Talia","Mobile Developer","📱","dev","_gaia/dev/agents/mobile-dev.md"
+"go-dev","Kai","Go Developer","💻","dev","_gaia/dev/agents/go-dev.md"
 "brainstorming-coach","Rex","Brainstorming Facilitator","🧠","creative","_gaia/creative/agents/brainstorming-coach.md"
 "problem-solver","Nova","Problem-Solving Expert","🔬","creative","_gaia/creative/agents/problem-solver.md"
 "design-thinking-coach","Lyra","Design Thinking Expert","🎨","creative","_gaia/creative/agents/design-thinking-coach.md"
