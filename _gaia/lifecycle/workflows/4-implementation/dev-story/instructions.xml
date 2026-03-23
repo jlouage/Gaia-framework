@@ -1,6 +1,6 @@
 <workflow name="dev-story">
 <critical>
-  <mandate>Story must be in ready-for-dev status before starting</mandate>
+  <mandate>Story must be in ready-for-dev or in-progress status before starting. Three modes: FRESH (ready-for-dev → new implementation), REWORK (in-progress with failed reviews → fix review issues), RESUME (in-progress with checkpoint or continuing interrupted work)</mandate>
   <mandate>Follow TDD cycle: red, green, refactor</mandate>
   <mandate>TDD phases MUST be executed as separate, sequential steps — NEVER combine them. Do NOT write implementation code during the Red phase. Do NOT skip the Refactor phase. Each phase must produce its own checkpoint and wait for user confirmation before the next phase begins.</mandate>
   <mandate>Write an intermediate checkpoint to {checkpoint_path}/dev-story-{story_key}.yaml after EACH TDD phase completes (Steps 6, 7, 8). Each checkpoint must include: workflow name, current step number, phase status (red_complete/green_complete/refactor_complete), key variables (story_key, epic_key, risk_level), output file path, and files_touched with sha256 checksums (shasum -a 256) for every file created or modified in that phase.</mandate>
@@ -13,9 +13,20 @@
   <action>Extract: key, status, acceptance criteria, subtasks, dependencies</action>
   <action>Resolve story file path: search {implementation_artifacts}/ for {story_key}-*.md. If no match, try {story_key}.md. Use the resolved path for all subsequent reads and writes.</action>
 </step>
-<step n="2" title="Pre-Start Gate">
-  <action>Verify story status is 'ready-for-dev'</action>
-  <check if="status != ready-for-dev">HALT: Story must be in ready-for-dev status</check>
+<step n="2" title="Pre-Start Gate and Mode Detection">
+  <action>Verify story status is 'ready-for-dev' or 'in-progress'</action>
+  <check if="status not in [ready-for-dev, in-progress]">HALT: Story must be in ready-for-dev or in-progress status</check>
+  <action>Detect execution mode based on story state:
+    If status is 'ready-for-dev': set mode=FRESH — new implementation from scratch
+    If status is 'in-progress': determine sub-mode:
+      1. Read story's Review Gate table (if the section exists in the story file)
+      2. If any Review Gate row shows FAILED → set mode=REWORK — review feedback needs to be addressed
+         Display: "Mode: REWORK — review feedback detected. Will focus on fixing review issues."
+      3. Else check for checkpoint at {checkpoint_path}/dev-story-{story_key}.yaml
+         If checkpoint exists → set mode=RESUME — interrupted work
+         Display: "Mode: RESUME — checkpoint found. Will pick up from last phase."
+      4. Else → set mode=RESUME — in-progress but no checkpoint, continue from current state
+         Display: "Mode: RESUME — continuing from current state."</action>
   <action>Read story frontmatter: extract risk_level field (default: low if absent)</action>
   <action>Extract epic_key from story_key — e.g., if story_key is "E1-S1", epic_key is "E1" (everything before the last hyphen-and-story-number)</action>
   <check if="risk_level == high">
@@ -32,12 +43,34 @@
   <check if="checkpoint_exists">Offer to resume from last checkpoint or start fresh</check>
 </step>
 <step n="4" title="Update Status">
-  <invoke-protocol ref="status-sync" story_key="{story_key}" new_status="in-progress" source_workflow="dev-story" />
+  <action if="mode == FRESH">
+    <invoke-protocol ref="status-sync" story_key="{story_key}" new_status="in-progress" source_workflow="dev-story" />
+  </action>
+  <action if="mode == REWORK or mode == RESUME">Skip status change — story is already in-progress.</action>
 </step>
 <step n="5" title="Plan Implementation">
-  <action>Load relevant sections from {planning_artifacts}/architecture.md — identify architectural components, patterns, and ADRs that apply to this story's scope</action>
-  <action>Load relevant sections from {planning_artifacts}/ux-design.md if available — identify UI components, interaction patterns, navigation flows, and accessibility requirements for this story</action>
-  <action>Generate a detailed implementation plan with the following mandatory sections:
+  <action if="mode == REWORK">REWORK MODE — Focus plan on fixing review feedback:
+    1. Read the story's Review Gate table — identify which reviews FAILED
+    2. For each FAILED review, read its report file:
+       - Code Review: {implementation_artifacts}/{story_key}-review.md
+       - Security Review: {implementation_artifacts}/{story_key}-security-review.md
+       - QA Tests: {test_artifacts}/{story_key}-qa-tests.md
+       - Test Automation: {test_artifacts}/{story_key}-test-automation.md
+       - Test Review: {test_artifacts}/{story_key}-test-review.md
+       - Performance Review: {implementation_artifacts}/{story_key}-performance-review.md
+    3. Extract specific issues, REQUEST_CHANGES items, and FAILED criteria from each report
+    4. Generate a REWORK plan focused on:
+       - What specific issues each failed review flagged
+       - What code/tests need to change to address each issue
+       - What does NOT need to change (passed reviews — leave alone)
+    5. Present the rework plan. Skip the full implementation plan sections below.
+    6. After presenting: proceed to Step 6 with rework-focused TDD.</action>
+  <action if="mode == RESUME">RESUME MODE — Continue from current state:
+    If checkpoint exists: Step 3 already handled the resume. Proceed from the checkpoint phase.
+    If no checkpoint: re-assess current implementation state and generate a continuation plan focused on remaining work.</action>
+  <action if="mode == FRESH or mode not set">Load relevant sections from {planning_artifacts}/architecture.md — identify architectural components, patterns, and ADRs that apply to this story's scope</action>
+  <action if="mode == FRESH or mode not set">Load relevant sections from {planning_artifacts}/ux-design.md if available — identify UI components, interaction patterns, navigation flows, and accessibility requirements for this story</action>
+  <action if="mode == FRESH or mode not set">Generate a detailed implementation plan with the following mandatory sections:
 
   **Context** — Why this change is being made: the user need or requirement it addresses, which acceptance criteria it satisfies, and the intended outcome. Reference the story's epic context and how this story fits into the larger feature.
 
