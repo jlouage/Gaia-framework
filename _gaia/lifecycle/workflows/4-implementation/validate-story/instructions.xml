@@ -6,6 +6,7 @@
   <mandate>Auto-save all validation results to Val memory sidecar — no user prompt required</mandate>
 </critical>
 <step n="1" title="Load Story">
+  <action if="story_key provided via arguments">Use the provided story key directly — skip the ask prompt below.</action>
   <ask>Which story to validate? (provide story key, e.g., E1-S2)</ask>
   <action>Find and read the story file matching {story_key}-*.md in {implementation_artifacts}/</action>
   <action>Read the story template from {project-root}/_gaia/lifecycle/templates/story-template.md for reference</action>
@@ -49,27 +50,27 @@
 <step n="3" title="Validation Fix Loop">
   <check if="zero findings from Step 2">
     <invoke-protocol ref="status-sync" story_key="{story_key}" new_status="ready-for-dev" source_workflow="validate-story" />
-    <action>Report "Validation passed — story is ready for dev." Proceed to Step 4.</action>
+    <action>Proceed to Step 4.</action>
   </check>
 
   <check if="findings exist">
     <action>Set validation_attempt = 1.</action>
     <invoke-protocol ref="status-sync" story_key="{story_key}" new_status="validating" source_workflow="validate-story" />
-    <action>Present findings table to user (severity, section, claim, finding, evidence).</action>
+    <action if="yolo_mode">In YOLO mode: SM auto-fixes all CRITICAL and WARNING findings without presenting to user. INFO findings are auto-acknowledged. Skip all user prompts in the fix loop.</action>
+    <action if="not yolo_mode">Present findings table to user (severity, section, claim, finding, evidence).</action>
     <action>SM (Nate) addresses each finding:
       - For each CRITICAL or WARNING finding: fix the story content directly
-      - For each INFO finding: fix or acknowledge with a note
-      Present the corrected story sections to user for confirmation.</action>
+      - For each INFO finding: fix or acknowledge with a note</action>
+    <action if="not yolo_mode">Present the corrected story sections to user for confirmation.</action>
     <action>After SM applies all fixes, write the updated story file. Increment validation_attempt.</action>
     <action>Re-run Val validation on the updated story (same checks as Step 2).
       - If zero findings: invoke status-sync with new_status='ready-for-dev'. Exit loop. Proceed to Step 4.
       - If findings remain AND validation_attempt &lt; 3: SM fixes again, Val re-validates.
       - If findings remain AND validation_attempt = 3 (hard limit): keep status as 'validating',
-        report "Validation limit reached — {N} findings remain. Run /gaia-validate-story {story_key} to continue."
-        Proceed to Step 4.</action>
+        proceed to Step 4.</action>
   </check>
 </step>
-<step n="4" title="Generate Validation Report">
+<step n="4" title="Save and Report">
   <action>Append validation result at the END of the story file, after a horizontal rule (---) separator.
     Include: date, overall PASS/FAIL verdict, validation attempts count, and per-section findings.</action>
   <action>Create a separate validation report file at {implementation_artifacts}/story-validation-{story_key}.md with YAML frontmatter:
@@ -86,11 +87,30 @@
     ---
     Then detailed findings for each section.</action>
   <template-output file="{implementation_artifacts}/{story_key}-{story_title_slug}.md">
-    Save the story file with status updated (ready-for-dev if PASS, validating if FAIL) and validation report appended.
+    Save the story file with status updated and validation report appended.
   </template-output>
-  <template-output file="{implementation_artifacts}/story-validation-{story_key}.md">
-    Create standalone validation report with YAML frontmatter and detailed per-section results.
-  </template-output>
+  <action>Display consolidated validation result DIRECTLY in the conversation:
+
+    ═══ Validation Result: {story_key} — {story_title} ═══
+
+    Status: {PASS ✓ or FAIL ✗}
+    Attempts: {validation_attempts}
+    Final status: {ready-for-dev or validating}
+
+    | # | Section | Severity | Result | Issue |
+    |---|---------|----------|--------|-------|
+    {for each finding: number, section name, CRITICAL/WARNING/INFO, PASS/FIXED/FAIL, issue description or "—"}
+
+    {if PASS:}
+    ✓ Story is ready for development.
+
+    {if FAIL:}
+    ✗ {remaining_count} findings unresolved after {validation_attempts} attempts.
+    Run /gaia-fix-story {story_key} to address remaining issues.
+
+    Files updated:
+    - {implementation_artifacts}/{story_key}-*.md (status + validation appended)
+    - {implementation_artifacts}/story-validation-{story_key}.md (standalone report)</action>
 </step>
 <step n="5" title="Save to Val Memory">
   <action>Auto-save all validation results to Val's memory sidecar (no user prompt required):
@@ -115,7 +135,7 @@
      Date: {YYYY-MM-DD}. Result: {PASS/FAIL}. Attempts: {N}.
      Findings: {count}. Fixed: {fixed_count}.
 
-  If _memory/validator-sidecar/ directory or files don't exist, create them with standard headers.
+  If {memory_path}/validator-sidecar/ directory or files don't exist, create them with standard headers.
   If writing fails, log warning and continue — memory save is non-blocking.</action>
 </step>
 <next-step source="lifecycle-sequence.yaml">
