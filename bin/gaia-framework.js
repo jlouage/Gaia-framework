@@ -6,7 +6,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 const { execSync, execFileSync } = require("child_process");
-const { mkdtempSync, rmSync, existsSync } = require("fs");
+const { mkdtempSync, rmSync, existsSync, realpathSync } = require("fs");
 const { join } = require("path");
 const { tmpdir } = require("os");
 
@@ -144,6 +144,10 @@ function main() {
 
   // Clone the repo to a temp directory
   tempDir = mkdtempSync(join(tmpdir(), "gaia-framework-"));
+  // Resolve 8.3 short names to long paths on Windows (e.g., ELIASN~1 → Elias Nasser)
+  if (IS_WINDOWS) {
+    try { tempDir = realpathSync(tempDir); } catch {}
+  }
 
   // Register cleanup for all exit scenarios
   process.on("exit", cleanup);
@@ -190,7 +194,17 @@ function main() {
   try {
     // Convert all passthrough args that look like paths (contain backslash or drive letter)
     const posixArgs = passthrough.map(a => IS_WINDOWS && /[\\:]/.test(a) && !a.startsWith("--") ? toPosixPath(a) : a);
-    execFileSync(bashPath, [toPosixPath(scriptPath), ...posixArgs], {
+    const posixScript = toPosixPath(scriptPath);
+
+    // Debug: on Windows, log the resolved paths if --verbose is passed
+    if (IS_WINDOWS && args.includes("--verbose")) {
+      info(`Bash: ${bashPath}`);
+      info(`Script (Windows): ${scriptPath}`);
+      info(`Script (POSIX): ${posixScript}`);
+      info(`Temp dir: ${tempDir}`);
+    }
+
+    execFileSync(bashPath, [posixScript, ...posixArgs], {
       stdio: "inherit",
       env: { ...process.env, GAIA_SOURCE: toPosixPath(tempDir) },
     });
