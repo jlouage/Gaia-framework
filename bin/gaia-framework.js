@@ -144,12 +144,12 @@ Examples:
 
 function main(deps) {
   // Dependency injection for testability — defaults to real modules
-  const _exec = deps && deps.execSync || childProcess.execSync;
-  const _execFile = deps && deps.execFileSync || childProcess.execFileSync;
-  const _mkdtemp = deps && deps.mkdtempSync || fs.mkdtempSync;
-  const _exists = deps && deps.existsSync || fs.existsSync;
-  const _join = deps && deps.join || path.join;
-  const _tmpdir = deps && deps.tmpdir || os.tmpdir;
+  const _exec = deps && deps.execSync || execSync;
+  const _execFile = deps && deps.execFileSync || execFileSync;
+  const _mkdtemp = deps && deps.mkdtempSync || mkdtempSync;
+  const _exists = deps && deps.existsSync || existsSync;
+  const _join = deps && deps.join || join;
+  const _tmpdir = deps && deps.tmpdir || tmpdir;
 
   const args = process.argv.slice(2);
 
