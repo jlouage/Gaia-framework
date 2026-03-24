@@ -110,6 +110,11 @@
   <action>  If INFRASTRUCTURE debt dominates: "Run /gaia-ci-setup to close CI/CD gaps"</action>
   <action>  If items were auto-escalated: "Review escalated items — aging has upgraded their priority"</action>
   <action>Present the specific /gaia-* command chain for each top-priority item</action>
+  <action>For FIX NOW + OVERDUE items: write each to {implementation_artifacts}/action-items.yaml as an action item (if not already tracked):
+    type: "implementation", priority: "high", status: "open",
+    source_workflow: "tech-debt-review", source_sprint: {sprint_id},
+    title: "{debt item description}", related_stories: [{target story if exists}]
+    Check existing action items by title similarity to avoid duplicates.</action>
 </step>
 <step n="7" title="Save to Val Memory">
   <action>Auto-save tech debt review decisions to Val's memory sidecar (no user prompt required):
