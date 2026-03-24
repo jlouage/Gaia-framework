@@ -865,3 +865,122 @@ YAML
 
   rm -rf "$SRC_DIR"
 }
+
+# ─── E6-S2: cmd_update find -print0 cross-platform tests ─────────────────
+
+@test "E6-S2: cmd_update copies nested files including names with spaces (AC2, AC5)" {
+  local SRC_DIR="$(mktemp -d)"
+  create_mock_source "$SRC_DIR"
+
+  # Add nested files with spaces in names to a framework directory
+  mkdir -p "$SRC_DIR/_gaia/core/engine/sub dir"
+  echo "content-a" > "$SRC_DIR/_gaia/core/engine/normal.xml"
+  echo "content-b" > "$SRC_DIR/_gaia/core/engine/my file.xml"
+  echo "content-c" > "$SRC_DIR/_gaia/core/engine/sub dir/deep file.txt"
+
+  # Init target first
+  run bash "$SCRIPT" init --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  # Modify a source file to force an update
+  echo "content-a-v2" > "$SRC_DIR/_gaia/core/engine/normal.xml"
+
+  # Run update
+  run bash "$SCRIPT" update --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  # Verify all files were copied — including those with spaces
+  [ -f "$TEST_DIR/_gaia/core/engine/normal.xml" ]
+  [ -f "$TEST_DIR/_gaia/core/engine/my file.xml" ]
+  [ -f "$TEST_DIR/_gaia/core/engine/sub dir/deep file.txt" ]
+  [ "$(cat "$TEST_DIR/_gaia/core/engine/my file.xml")" = "content-b" ]
+  [ "$(cat "$TEST_DIR/_gaia/core/engine/sub dir/deep file.txt")" = "content-c" ]
+
+  rm -rf "$SRC_DIR"
+}
+
+@test "E6-S2: cmd_update handles empty source directory without error (AC6)" {
+  local SRC_DIR="$(mktemp -d)"
+  create_mock_source "$SRC_DIR"
+
+  # Ensure core/engine exists but is empty (no files, just the dir)
+  rm -rf "$SRC_DIR/_gaia/core/engine"
+  mkdir -p "$SRC_DIR/_gaia/core/engine"
+
+  # Init target
+  run bash "$SCRIPT" init --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  # Run update — empty dir should not cause an error
+  run bash "$SCRIPT" update --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  rm -rf "$SRC_DIR"
+}
+
+@test "E6-S2: find_files_in_dir helper function exists and is callable (AC1, AC2)" {
+  # The helper function should be defined in the installer script
+  run grep -c 'find_files_in_dir()' "$SCRIPT"
+  [ "$status" -eq 0 ]
+  [ "$output" -ge 1 ]
+}
+
+@test "E6-S2: newline-delimited fallback produces correct file list (AC1, AC4, AC7)" {
+  local SRC_DIR="$(mktemp -d)"
+  create_mock_source "$SRC_DIR"
+
+  # Add files with spaces in names
+  mkdir -p "$SRC_DIR/_gaia/core/engine/subdir"
+  echo "a" > "$SRC_DIR/_gaia/core/engine/file1.xml"
+  echo "b" > "$SRC_DIR/_gaia/core/engine/file 2.xml"
+  echo "c" > "$SRC_DIR/_gaia/core/engine/subdir/file3.txt"
+
+  # Init target
+  run bash "$SCRIPT" init --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  # Override find_files_in_dir to force newline-delimited fallback
+  # by making find -print0 "unsupported"
+  local FAKE_BIN="$(mktemp -d)"
+  cat > "$FAKE_BIN/find" << 'SH'
+#!/usr/bin/env bash
+# Wrapper that strips -print0 support to simulate busybox find
+args=("$@")
+for arg in "${args[@]}"; do
+  if [[ "$arg" == "-print0" ]]; then
+    # Fail the probe: find /dev/null -maxdepth 0 -print0
+    if [[ "${args[1]}" == "/dev/null" ]]; then
+      exit 1
+    fi
+    # For actual file listing, strip -print0 and use newline-delimited output
+    new_args=()
+    for a in "${args[@]}"; do
+      [[ "$a" != "-print0" ]] && new_args+=("$a")
+    done
+    /usr/bin/find "${new_args[@]}"
+    exit $?
+  fi
+done
+/usr/bin/find "$@"
+SH
+  chmod +x "$FAKE_BIN/find"
+
+  # Modify source files AFTER init to ensure update must re-copy them
+  echo "a-v2" > "$SRC_DIR/_gaia/core/engine/file1.xml"
+  echo "b-v2" > "$SRC_DIR/_gaia/core/engine/file 2.xml"
+  echo "c-v2" > "$SRC_DIR/_gaia/core/engine/subdir/file3.txt"
+
+  # Run update with the fake find that lacks -print0
+  run env PATH="$FAKE_BIN:$PATH" bash "$SCRIPT" update --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  # Verify all files were re-copied with UPDATED content via the fallback path
+  [ -f "$TEST_DIR/_gaia/core/engine/file1.xml" ]
+  [ "$(cat "$TEST_DIR/_gaia/core/engine/file1.xml")" = "a-v2" ]
+  [ -f "$TEST_DIR/_gaia/core/engine/file 2.xml" ]
+  [ "$(cat "$TEST_DIR/_gaia/core/engine/file 2.xml")" = "b-v2" ]
+  [ -f "$TEST_DIR/_gaia/core/engine/subdir/file3.txt" ]
+  [ "$(cat "$TEST_DIR/_gaia/core/engine/subdir/file3.txt")" = "c-v2" ]
+
+  rm -rf "$SRC_DIR" "$FAKE_BIN"
+}

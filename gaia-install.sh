@@ -6,7 +6,7 @@ set -euo pipefail
 # Installs, updates, validates, and reports on GAIA installations.
 # ─────────────────────────────────────────────────────────────────────────────
 
-readonly VERSION="1.49.2"
+readonly VERSION="1.54.0"
 readonly GITHUB_REPO="https://github.com/jlouage/Gaia-framework.git"
 readonly MANIFEST_REL="_gaia/_config/manifest.yaml"
 
@@ -191,6 +191,77 @@ copy_with_backup() {
   [[ "$OPT_VERBOSE" == true ]] && detail "Updated (backed up): $dst" || true
 }
 
+# Remove .resolved/*.yaml files from target _gaia/ directory.
+# Called after cp/tar copy to replicate rsync's --exclude behavior.
+# Only .resolved/*.yaml is relevant to the _gaia/ subtree; the other rsync
+# --exclude patterns target _memory/ paths outside _gaia/ and never match.
+clean_resolved_yaml() {
+  local target_gaia="$1"
+  find "$target_gaia" -path '*/.resolved/*.yaml' -delete 2>/dev/null || true
+}
+
+# Copy _gaia/ directory from source to target using a fallback chain:
+#   rsync → cp -rp → tar
+# Tries each tool in order. If a tool is found but fails at runtime (e.g.,
+# broken rsync stub on Windows), falls through to the next tool. Exits with
+# a diagnostic error if all tools fail or none are available.
+#
+# Excludes .resolved/*.yaml files from the final output (rsync handles this
+# natively via --exclude; cp and tar do a post-copy cleanup).
+#
+# Note: No symlinks currently exist in _gaia/. If symlinks are introduced
+# in the future, verify that cp -rp behavior matches rsync -a on all
+# target platforms (ADR-004).
+copy_gaia_files() {
+  local src="$1" dst="$2"
+  local copy_done=false
+
+  # Try rsync first (preferred — handles excludes natively)
+  if command -v rsync >/dev/null 2>&1; then
+    if rsync -a \
+      --exclude='_memory/checkpoints/*.yaml' \
+      --exclude='_memory/checkpoints/completed/*.yaml' \
+      --exclude='.resolved/*.yaml' \
+      --exclude='_memory/*-sidecar/*.md' \
+      --exclude='_memory/*-sidecar/*.yaml' \
+      "$src/_gaia/" "$dst/_gaia/" 2>/dev/null; then
+      detail "Copied framework files using rsync"
+      copy_done=true
+    else
+      detail "rsync found but failed — trying fallback methods"
+    fi
+  fi
+
+  # Fallback: cp -rp (preserves permissions like rsync -a)
+  if [[ "$copy_done" == false ]] && command -v cp >/dev/null 2>&1; then
+    if cp -rp "$src/_gaia/" "$dst/_gaia/" 2>/dev/null; then
+      clean_resolved_yaml "$dst/_gaia"
+      detail "Copied framework files using cp -rp (rsync unavailable)"
+      copy_done=true
+    else
+      error "cp failed to copy framework files — check permissions and disk space"
+      exit 1
+    fi
+  fi
+
+  # Fallback: tar (last resort — available on virtually all POSIX systems)
+  if [[ "$copy_done" == false ]] && command -v tar >/dev/null 2>&1; then
+    if (tar -cf - -C "$src" _gaia | tar -xf - -C "$dst") 2>/dev/null; then
+      clean_resolved_yaml "$dst/_gaia"
+      detail "Copied framework files using tar (rsync and cp unavailable)"
+      copy_done=true
+    else
+      error "tar failed to copy framework files — check permissions and disk space"
+      exit 1
+    fi
+  fi
+
+  if [[ "$copy_done" == false ]]; then
+    error "No suitable copy tool found (tried rsync, cp, tar). Cannot copy framework files."
+    exit 1
+  fi
+}
+
 append_if_missing() {
   local file="$1" marker="$2" content="$3"
   if [[ -f "$file" ]] && grep -qF "$marker" "$file"; then
@@ -270,18 +341,22 @@ cmd_init() {
   done
 
   # Step 2: Copy _gaia/ recursively (excluding checkpoints and .resolved/*.yaml)
+  # Uses rsync if available, falls back to cp -rp, then tar (ADR-004: Windows best-effort)
   step "Copying framework files..."
   if [[ "$OPT_DRY_RUN" == true ]]; then
-    detail "[dry-run] Would copy _gaia/ (excluding checkpoints and .resolved/*.yaml)"
+    if command -v rsync >/dev/null 2>&1; then
+      detail "[dry-run] Would copy _gaia/ using rsync (excluding checkpoints and .resolved/*.yaml)"
+    elif command -v cp >/dev/null 2>&1; then
+      detail "[dry-run] Would copy _gaia/ using cp -rp (rsync unavailable)"
+    elif command -v tar >/dev/null 2>&1; then
+      detail "[dry-run] Would copy _gaia/ using tar (rsync and cp unavailable)"
+    else
+      error "No suitable copy tool found (tried rsync, cp, tar)"
+      exit 1
+    fi
   else
     mkdir -p "$TARGET/_gaia"
-    rsync -a \
-      --exclude='_memory/checkpoints/*.yaml' \
-      --exclude='_memory/checkpoints/completed/*.yaml' \
-      --exclude='.resolved/*.yaml' \
-      --exclude='_memory/*-sidecar/*.md' \
-      --exclude='_memory/*-sidecar/*.yaml' \
-      "$source/_gaia/" "$TARGET/_gaia/"
+    copy_gaia_files "$source" "$TARGET"
   fi
 
   # Step 3: Create _memory/ directory tree at project root (ADR-013)
@@ -442,6 +517,21 @@ GITIGNORE
   echo ""
 }
 
+# ─── find_files_in_dir ──────────────────────────────────────────────────────
+# Lists all files in a directory tree. Uses null-delimited output (find -print0)
+# when supported, falls back to newline-delimited output on systems where -print0
+# is unavailable (e.g., Windows Git Bash with busybox find).
+# GAIA file paths never contain newlines, so the newline-delimited fallback is safe.
+
+find_files_in_dir() {
+  local dir="$1"
+  if find /dev/null -maxdepth 0 -print0 2>/dev/null | head -c0 2>/dev/null; then
+    find "$dir" -type f -print0
+  else
+    find "$dir" -type f
+  fi
+}
+
 # ─── cmd_update ─────────────────────────────────────────────────────────────
 
 cmd_update() {
@@ -509,6 +599,12 @@ cmd_update() {
   step "Updating framework files..."
   local updated=0 skipped=0 changed=0
 
+  # Feature-detect find -print0 support once before the loop (E6-S2)
+  local use_print0=false
+  if find /dev/null -maxdepth 0 -print0 2>/dev/null | head -c0 2>/dev/null; then
+    use_print0=true
+  fi
+
   for entry in "${update_targets[@]}"; do
     local src_path="$source/_gaia/$entry"
     local dst_path="$TARGET/_gaia/$entry"
@@ -527,12 +623,24 @@ cmd_update() {
       copy_with_backup "$src_path" "$dst_path" "$backup_dir"
       updated=$((updated + 1))
     elif [[ -d "$src_path" ]]; then
-      # Directory — update each file
-      while IFS= read -r -d '' file; do
-        local rel="${file#$src_path/}"
-        copy_with_backup "$file" "$dst_path/$rel" "$backup_dir"
-        updated=$((updated + 1))
-      done < <(find "$src_path" -type f -print0) || true
+      # Directory — update each file via find_files_in_dir helper
+      if [[ "$use_print0" == true ]]; then
+        # Null-delimited path (macOS/Linux with GNU or BSD find)
+        while IFS= read -r -d '' file; do
+          local rel="${file#$src_path/}"
+          copy_with_backup "$file" "$dst_path/$rel" "$backup_dir"
+          updated=$((updated + 1))
+        done < <(find_files_in_dir "$src_path") || true
+      else
+        # Newline-delimited fallback (Windows Git Bash / busybox find)
+        # Safe because GAIA file paths never contain newlines
+        while IFS= read -r file; do
+          [[ -z "$file" ]] && continue
+          local rel="${file#$src_path/}"
+          copy_with_backup "$file" "$dst_path/$rel" "$backup_dir"
+          updated=$((updated + 1))
+        done < <(find_files_in_dir "$src_path") || true
+      fi
     fi
   done
 

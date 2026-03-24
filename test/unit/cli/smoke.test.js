@@ -44,15 +44,15 @@ describe("Vitest config requirements", () => {
     expect(configSource).toContain("test/shell/");
   });
 
-  it("should have coverage thresholds set to 0% initially (AC3)", () => {
-    expect(configSource).toMatch(/lines:\s*0/);
+  it("should have 80% line coverage threshold enforced (E3-S6)", () => {
+    expect(configSource).toMatch(/lines:\s*80/);
     expect(configSource).toMatch(/functions:\s*0/);
     expect(configSource).toMatch(/branches:\s*0/);
     expect(configSource).toMatch(/statements:\s*0/);
   });
 
-  it("should have TODO comment referencing E3-S6 for threshold raise (AC3)", () => {
-    expect(configSource).toMatch(/TODO.*E3-S6/i);
+  it("should have E3-S6 comment documenting threshold rationale", () => {
+    expect(configSource).toMatch(/E3-S6/i);
   });
 });
 

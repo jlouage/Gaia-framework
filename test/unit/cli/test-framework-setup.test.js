@@ -47,11 +47,11 @@ describe("package.json scripts (AC3, AC4)", () => {
   const pkgPath = path.resolve(ROOT, "package.json");
   const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf8"));
 
-  it("should have 'test' script that runs vitest without coverage (AC4)", () => {
+  it("should have 'test' script that runs vitest with coverage (E3-S6)", () => {
     expect(pkg.scripts.test).toBeDefined();
-    expect(pkg.scripts.test).toBe("vitest run");
-    // Must NOT include --coverage flag — keep CI fast
-    expect(pkg.scripts.test).not.toContain("--coverage");
+    expect(pkg.scripts.test).toBe("vitest run --coverage");
+    // E3-S6: coverage always runs with npm test to enforce thresholds
+    expect(pkg.scripts.test).toContain("--coverage");
   });
 
   it("should have 'test:coverage' script with coverage flag (AC3)", () => {
