@@ -1,0 +1,19 @@
+name: action-items
+description: 'Process and resolve action items from retro, triage, tech-debt, and correct-course'
+module: lifecycle
+agent: orchestrator
+template_output_prompt: "auto"
+config_resolved: "{project-root}/_gaia/lifecycle/.resolved/action-items.yaml"
+config_source: "{project-root}/_gaia/lifecycle/config.yaml"
+installed_path: "{project-root}/_gaia/lifecycle/workflows/4-implementation/action-items"
+instructions: "{installed_path}/instructions.xml"
+input_file_patterns:
+  action_items:
+    whole: "{implementation_artifacts}/action-items.yaml"
+    load_strategy: "FULL_LOAD"
+on_error:
+  missing_file: "ask_user"
+  unresolved_variable: "halt"
+
+output:
+  primary: "{implementation_artifacts}/action-items.yaml"

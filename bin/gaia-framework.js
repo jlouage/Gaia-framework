@@ -6,7 +6,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 const { execSync, execFileSync } = require("child_process");
-const { mkdtempSync, rmSync, existsSync } = require("fs");
+const { mkdtempSync, rmSync, existsSync, realpathSync } = require("fs");
 const { join } = require("path");
 const { tmpdir } = require("os");
 
@@ -15,19 +15,25 @@ const SCRIPT_NAME = "gaia-install.sh";
 const IS_WINDOWS = process.platform === "win32";
 
 let tempDir = null;
+let bashType = "native"; // "native" (mac/linux), "gitbash", or "wsl"
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
+
+function toPosixPath(p) {
+  if (!IS_WINDOWS) return p;
+  const forward = p.replace(/\\/g, "/");
+  if (bashType === "wsl") {
+    // WSL: C:\foo\bar → /mnt/c/foo/bar
+    return forward.replace(/^([A-Za-z]):/, (_, letter) => "/mnt/" + letter.toLowerCase());
+  }
+  // Git Bash: C:\foo\bar → /c/foo/bar
+  return forward.replace(/^([A-Za-z]):/, (_, letter) => "/" + letter.toLowerCase());
+}
 
 function findBash() {
   if (!IS_WINDOWS) return "bash";
 
-  // Try bash in PATH first (WSL, Git Bash in PATH, etc.)
-  try {
-    execSync("bash --version", { stdio: "ignore" });
-    return "bash";
-  } catch {}
-
-  // Try Git for Windows default locations
+  // 1. Try Git for Windows FIRST (preferred — simpler path mapping)
   const gitBashPaths = [
     join(process.env.ProgramFiles || "C:\\Program Files", "Git", "bin", "bash.exe"),
     join(process.env["ProgramFiles(x86)"] || "C:\\Program Files (x86)", "Git", "bin", "bash.exe"),
@@ -35,8 +41,34 @@ function findBash() {
   ];
 
   for (const p of gitBashPaths) {
-    if (existsSync(p)) return p;
+    if (existsSync(p)) {
+      bashType = "gitbash";
+      return p;
+    }
   }
+
+  // 2. Try bash in PATH — detect if it's WSL or Git Bash
+  try {
+    execSync("bash --version", { stdio: "ignore" });
+    // Detect WSL vs Git Bash by checking uname
+    try {
+      const uname = execSync('bash -c "uname -r"', { encoding: "utf8", stdio: ["pipe", "pipe", "ignore"] }).trim();
+      if (/microsoft|wsl/i.test(uname)) {
+        bashType = "wsl";
+      } else {
+        bashType = "gitbash";
+      }
+    } catch {
+      // Can't detect — try MSYSTEM env which Git Bash sets
+      try {
+        const msys = execSync('bash -c "echo $MSYSTEM"', { encoding: "utf8", stdio: ["pipe", "pipe", "ignore"] }).trim();
+        bashType = msys ? "gitbash" : "wsl";
+      } catch {
+        bashType = "wsl"; // Assume WSL if detection fails — safer path mapping
+      }
+    }
+    return "bash";
+  } catch {}
 
   return null;
 }
@@ -138,6 +170,17 @@ function main() {
 
   // Clone the repo to a temp directory
   tempDir = mkdtempSync(join(tmpdir(), "gaia-framework-"));
+  // Resolve 8.3 short names to long paths on Windows (e.g., ELIASN~1 → Elias Nasser)
+  // Node's realpathSync doesn't expand 8.3 names, so use PowerShell
+  if (IS_WINDOWS) {
+    try {
+      const longPath = execSync(
+        `powershell -NoProfile -Command "(Get-Item -LiteralPath '${tempDir}').FullName"`,
+        { encoding: "utf8", stdio: ["pipe", "pipe", "ignore"] }
+      ).trim();
+      if (longPath && existsSync(longPath)) tempDir = longPath;
+    } catch {}
+  }
 
   // Register cleanup for all exit scenarios
   process.on("exit", cleanup);
@@ -166,8 +209,8 @@ function main() {
   // Build the shell command: inject --source pointing to the temp clone
   // so the shell script doesn't need to clone again
   const passthrough = args.slice(0);
-  // Insert --source right after the command
-  passthrough.splice(1, 0, "--source", tempDir);
+  // Insert --source right after the command (convert to POSIX for bash on Windows)
+  passthrough.splice(1, 0, "--source", toPosixPath(tempDir));
 
   // Locate bash (critical for Windows support)
   const bashPath = findBash();
@@ -182,9 +225,21 @@ function main() {
   info("Running installer...\n");
 
   try {
-    execFileSync(bashPath, [scriptPath, ...passthrough], {
+    // Convert all passthrough args that look like paths (contain backslash or drive letter)
+    const posixArgs = passthrough.map(a => IS_WINDOWS && /[\\:]/.test(a) && !a.startsWith("--") ? toPosixPath(a) : a);
+    const posixScript = toPosixPath(scriptPath);
+
+    // Debug: on Windows, log the resolved paths if --verbose is passed
+    if (IS_WINDOWS && args.includes("--verbose")) {
+      info(`Bash: ${bashPath} (${bashType})`);
+      info(`Script (Windows): ${scriptPath}`);
+      info(`Script (POSIX): ${posixScript}`);
+      info(`Temp dir: ${tempDir}`);
+    }
+
+    execFileSync(bashPath, [posixScript, ...posixArgs], {
       stdio: "inherit",
-      env: { ...process.env, GAIA_SOURCE: tempDir },
+      env: { ...process.env, GAIA_SOURCE: toPosixPath(tempDir) },
     });
   } catch (err) {
     process.exit(err.status || 1);

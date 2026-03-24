@@ -4,7 +4,12 @@
   <mandate>Support multi-sprint via sprint_id tracking</mandate>
   <mandate>Only stories with status 'ready-for-dev' are selectable for a sprint</mandate>
 </critical>
-<step n="1" title="Load Epics, Stories, and Previous Retro">
+<step n="1" title="Load Epics, Stories, Action Items, and Previous Retro">
+  <action>Read {implementation_artifacts}/action-items.yaml if it exists. Check for HIGH priority items open for 2+ sprints (escalation_count >= 2 AND priority == "high" AND status == "open").
+    If any found: HALT — "Cannot start sprint planning. {count} HIGH priority action items have been open for {escalation_count}+ sprints:
+    {for each: A-{NNN}: {title} (open since {source_sprint})}
+    Run /gaia action to resolve them first."
+    For MEDIUM/LOW open items: display warning but do NOT halt: "Note: {count} action items still open (non-blocking)."</action>
   <action>Read {planning_artifacts}/epics-and-stories.md</action>
   <action>Parse all stories with their priorities, sizes, dependencies</action>
   <action>Scan {implementation_artifacts}/ for individual story files matching {story_key}-*.md. For each file found, read its frontmatter Status field.</action>
