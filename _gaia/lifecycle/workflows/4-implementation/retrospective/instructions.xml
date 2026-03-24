@@ -115,6 +115,17 @@
   <action>Define concrete improvements for next sprint</action>
   <action>Include any escalated systemic issues from Step 7</action>
   <action>Assign ownership for each action item</action>
+  <action>Write each action item to {implementation_artifacts}/action-items.yaml:
+    1. Read action-items.yaml (create with header if doesn't exist:
+       "# Action Items — centralized tracker\nlast_updated: {timestamp}\nitems: []")
+    2. For each action item, generate auto-incremented ID (A-{NNN}, increment from highest existing)
+    3. Classify type: clarification | implementation | process | automation
+    4. Set priority based on escalation count: items flagged in 2+ sprints = high, new items = medium by default
+    5. Write entry with: id, title, source_workflow: "retrospective", source_sprint: {sprint_id},
+       source_ref: "retro-{sprint_id}.md", created: {date}, type, priority, status: "open",
+       assignee (from ownership), target_sprint: next sprint, resolution: null,
+       resolved_date: null, related_stories: [], escalation_count: {count from cross-retro detection}
+    6. Update last_updated timestamp</action>
 </step>
 <step n="9" title="Generate Output">
   <template-output file="{implementation_artifacts}/retro-{sprint_id}.md">

@@ -74,7 +74,10 @@
   <action>Present triage summary: total findings processed, stories created (with keys and priorities), items added to existing stories, dismissed</action>
   <action>Confirm: "epics-and-stories.md updated with {N} new stories under their respective epics."</action>
   <action>If any stories were marked as NOW (inject into current sprint):
-    Present: "⚠ {count} story(ies) recommended for immediate sprint injection: {list of story keys with titles}. Run /gaia-correct-course to inject them into the current sprint."</action>
+    Present: "⚠ {count} story(ies) recommended for immediate sprint injection: {list of story keys with titles}. Run /gaia-correct-course to inject them into the current sprint."
+    Write each NOW story to {implementation_artifacts}/action-items.yaml as an action item:
+    type: "implementation", priority: "high", status: "open", assignee: null,
+    source_workflow: "triage-findings", related_stories: [{story_key}]</action>
   <action>If any stories were marked as NEXT SPRINT (P0):
     Present: "{count} story(ies) flagged as P0 for next sprint planning: {list of story keys}. They will be prioritized in /gaia-sprint-plan."</action>
 </step>
