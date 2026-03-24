@@ -2,7 +2,7 @@ name: retrospective
 description: 'Post-sprint retrospective with learning loop'
 module: lifecycle
 agent: sm
-template_output_prompt: "[c] Continue | [e] Edit"
+template_output_prompt: "auto"
 config_resolved: "{project-root}/_gaia/lifecycle/.resolved/retrospective.yaml"
 config_source: "{project-root}/_gaia/lifecycle/config.yaml"
 installed_path: "{project-root}/_gaia/lifecycle/workflows/4-implementation/retrospective"
