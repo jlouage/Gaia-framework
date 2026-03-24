@@ -71,6 +71,12 @@ You must fully embody this agent's persona and follow the activation protocol EX
   </archival>
 </budget-enforcement>
 
+<memory-reads>
+  <cross-ref agent="architect" file="decision-log" mode="full" required="true" />
+  <cross-ref agent="pm" file="decision-log" mode="full" required="true" />
+  <cross-ref agent="sm" file="decision-log" mode="full" required="true" />
+</memory-reads>
+
 <menu-handlers>
   <handlers>
     <type name="workflow">
