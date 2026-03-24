@@ -1,0 +1,7 @@
+# Mock manifest for integration tests
+version: "1.0.0-test"
+modules:
+  - name: core
+    version: "1.0.0-test"
+  - name: lifecycle
+    version: "1.0.0-test"
