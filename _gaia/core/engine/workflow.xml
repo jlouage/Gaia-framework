@@ -133,6 +133,31 @@ execution modes (normal/yolo/planning), checkpoints, and quality gates.
     <action>Evaluate all checklist items against completed work</action>
     <action>Archive checkpoint to _memory/checkpoints/completed/</action>
     <action>Report workflow complete with summary of outputs</action>
+
+    <!-- Session Memory Save Prompt (E9-S8) — Tier 1/2 agents save session decisions at workflow end -->
+    <!-- Phase 1: Tier resolution — determine if save prompt applies -->
+    <action if="workflow.yaml has no 'agent' field or agent is empty">Skip save prompt silently — no agent to save for. Proceed to next-step suggestions.</action>
+    <action if="agent field exists">Read {project-root}/_memory/config.yaml. If the file does not exist, log "Memory config not found — skipping session save prompt." and proceed to next-step suggestions.</action>
+    <action if="config loaded">Look up the resolved agent ID in _memory/config.yaml: check tiers.tier_1.agents and tiers.tier_2.agents lists. If the agent is not in either Tier 1 or Tier 2 (i.e., Tier 3 or unlisted), skip save prompt silently.</action>
+    <!-- Phase 2: Resolve agent-specific config from _memory/config.yaml -->
+    <action if="agent is Tier 1 or Tier 2">Resolve sidecar_path: read agents.{agent-id}.sidecar from _memory/config.yaml, construct absolute path {project-root}/_memory/{sidecar_value}/</action>
+    <action if="agent is Tier 1">Resolve tier_budget from tiers.tier_1.session_budget</action>
+    <action if="agent is Tier 2">Resolve tier_budget from tiers.tier_2.session_budget</action>
+    <!-- Phase 3: Generate session summary -->
+    <action>JIT-load the context-summarization and decision-formatting sections from _gaia/lifecycle/skills/memory-management.md</action>
+    <action if="agent is Tier 1">Generate session summary per context-summarization format (2K token / ~8,000 character ceiling): include decisions made, context updates, and ground truth corrections.</action>
+    <action if="agent is Tier 2">Generate session summary per context-summarization format (2K token / ~8,000 character ceiling): include decisions made and context updates only (no ground truth — Tier 2 agents do not have ground-truth.md).</action>
+    <action if="no decisions made, no context changed, no ground truth corrected">Display "No persistable decisions this session." and offer [y] Save anyway | [n] Skip. If user selects [n], skip to next-step suggestions.</action>
+    <!-- Phase 4: User confirmation — YOLO pauses here (open-question) -->
+    <action>Display the generated session summary to the user.</action>
+    <action>Present save confirmation prompt: "[y] Save | [n] Skip | [e] Edit summary". This is classified as an open-question indicator — YOLO mode MUST pause here and require explicit user confirmation. Memory writes are never auto-approved.
+      - [y]: proceed to session-save skill invocation
+      - [n]: skip the save, proceed to next-step suggestions without writing any memory files and without raising an error
+      - [e]: allow user to edit the summary text, then re-display and re-prompt</action>
+    <!-- Phase 5: Invoke session-save skill (only on [y]) -->
+    <action if="user selected [y]">JIT-load the session-save section from _gaia/lifecycle/skills/memory-management.md. Invoke session-save with parameters: sidecar_path, tier_budget, new_entries (formatted per decision-formatting), context_summary (the generated or edited summary), and third_file_content (ground truth updates for Tier 1, omitted for Tier 2). Budget enforcement runs within the skill — the engine does not implement save logic inline.</action>
+    <!-- End Session Memory Save Prompt -->
+
     <action>Load _gaia/_config/lifecycle-sequence.yaml and look up current workflow name in sequence</action>
     <action>If entry has next.primary: present "Suggested next step: {command}" with description from workflow-manifest.csv</action>
     <action>If entry has next.on_pass/on_fail: present conditional suggestions based on workflow outcome</action>
