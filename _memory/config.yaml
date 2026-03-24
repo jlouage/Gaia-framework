@@ -48,6 +48,20 @@ agents:
     sidecar: storyteller-sidecar
   tech-writer:
     sidecar: tech-writer-sidecar
+  angular-dev:
+    sidecar: angular-dev-sidecar
+  typescript-dev:
+    sidecar: typescript-dev-sidecar
+  flutter-dev:
+    sidecar: flutter-dev-sidecar
+  java-dev:
+    sidecar: java-dev-sidecar
+  python-dev:
+    sidecar: python-dev-sidecar
+  mobile-dev:
+    sidecar: mobile-dev-sidecar
+  qa:
+    sidecar: qa-sidecar
 
 # Cross-agent read access matrix (ADR-015)
 # All cross-references are read-only, loaded JIT
