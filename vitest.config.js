@@ -8,6 +8,7 @@ export default defineConfig({
     include: [
       "test/unit/**/*.test.js",
       "test/integration/**/*.test.js",
+      "test/fixtures/**/*.test.js",
       "test/validation/tier1/**/*.test.js",
       "test/validation/atdd/**/*.test.js",
       "test/shell/**/*.test.js",

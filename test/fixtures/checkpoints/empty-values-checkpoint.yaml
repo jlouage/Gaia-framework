@@ -1,0 +1,7 @@
+# Checkpoint with null/empty values for edge case testing
+workflow: null
+step: 0
+total_steps: null
+status: ""
+files_touched: null
+variables: null

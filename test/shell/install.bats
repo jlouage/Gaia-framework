@@ -633,6 +633,178 @@ YAML
   rm -rf "$SRC_DIR"
 }
 
+# ─── E7-S1: Command Injection & eval Removal Tests ─────────────────────────
+
+@test "E7-S1: no eval in cmd_validate check() helper (AC1)" {
+  # After refactoring, the check() helper must not use eval
+  run grep -n 'eval ' "$SCRIPT"
+  # Filter out comments
+  local non_comment_evals=0
+  while IFS= read -r line; do
+    # Skip blank lines and comment-only lines
+    [[ -z "$line" ]] && continue
+    local stripped
+    stripped="$(echo "$line" | sed 's/^[0-9]*://')"
+    stripped="$(echo "$stripped" | sed 's/^[[:space:]]*//')"
+    [[ "$stripped" == \#* ]] && continue
+    non_comment_evals=$((non_comment_evals + 1))
+  done <<< "$output"
+  [ "$non_comment_evals" -eq 0 ]
+}
+
+@test "E7-S1: validate handles TARGET with semicolons safely (AC2, AC3a)" {
+  # A malicious TARGET with a semicolon should not execute injected commands
+  local marker_file="$TEST_DIR/injection_marker"
+  local malicious_target="; touch $marker_file ;"
+  run bash "$SCRIPT" validate "$malicious_target"
+  # Should fail (non-zero exit) — the path is not a valid GAIA install
+  [ "$status" -ne 0 ]
+  # The injected command must NOT have executed
+  [ ! -f "$marker_file" ]
+}
+
+@test "E7-S1: validate handles TARGET with backticks safely (AC2, AC3a)" {
+  local marker_file="$TEST_DIR/backtick_marker"
+  local malicious_target="\`touch $marker_file\`"
+  run bash "$SCRIPT" validate "$malicious_target"
+  [ "$status" -ne 0 ]
+  [ ! -f "$marker_file" ]
+}
+
+@test "E7-S1: validate handles TARGET with subshell syntax safely (AC2, AC3a)" {
+  local marker_file="$TEST_DIR/subshell_marker"
+  local malicious_target="\$(touch $marker_file)"
+  run bash "$SCRIPT" validate "$malicious_target"
+  [ "$status" -ne 0 ]
+  [ ! -f "$marker_file" ]
+}
+
+@test "E7-S1: validate handles TARGET with pipe safely (AC2)" {
+  local malicious_target="| echo pwned"
+  run bash "$SCRIPT" validate "$malicious_target"
+  [ "$status" -ne 0 ]
+}
+
+@test "E7-S1: validate rejects empty TARGET (AC5)" {
+  run bash "$SCRIPT" validate ""
+  [ "$status" -ne 0 ]
+}
+
+@test "E7-S1: validate rejects whitespace-only TARGET (AC5)" {
+  run bash "$SCRIPT" validate "   "
+  [ "$status" -ne 0 ]
+}
+
+@test "E7-S1: validate handles TARGET with spaces correctly (AC2)" {
+  # Create a valid framework directory at a path with spaces
+  local space_dir="$TEST_DIR/path with spaces/project"
+  mkdir -p "$space_dir/_gaia/_config"
+  cat > "$space_dir/_gaia/_config/manifest.yaml" <<'YAML'
+name: test
+version: "1.0.0"
+YAML
+  cat > "$space_dir/_gaia/_config/global.yaml" <<'YAML'
+framework_name: "GAIA"
+framework_version: "1.0.0"
+project_name: "test"
+user_name: "tester"
+YAML
+  for mod in core lifecycle dev creative testing; do
+    mkdir -p "$space_dir/_gaia/$mod"
+  done
+  mkdir -p "$space_dir/_gaia/core/.resolved"
+  mkdir -p "$space_dir/_gaia/lifecycle/.resolved"
+  mkdir -p "$space_dir/_gaia/creative/.resolved"
+  mkdir -p "$space_dir/_gaia/testing/.resolved"
+  mkdir -p "$space_dir/.claude/commands"
+  echo "x" > "$space_dir/.claude/commands/gaia-help.md"
+  echo "# GAIA" > "$space_dir/CLAUDE.md"
+  for dir in planning-artifacts implementation-artifacts test-artifacts creative-artifacts; do
+    mkdir -p "$space_dir/docs/$dir"
+  done
+  mkdir -p "$space_dir/_memory/checkpoints/completed"
+  local all_sidecars=(
+    "validator-sidecar" "architect-sidecar" "pm-sidecar" "sm-sidecar"
+    "orchestrator-sidecar" "security-sidecar" "devops-sidecar" "test-architect-sidecar"
+    "storyteller-sidecar" "tech-writer-sidecar"
+    "angular-dev-sidecar" "typescript-dev-sidecar" "flutter-dev-sidecar"
+    "java-dev-sidecar" "python-dev-sidecar" "mobile-dev-sidecar"
+    "brainstorming-coach-sidecar" "design-thinking-coach-sidecar"
+    "innovation-strategist-sidecar" "problem-solver-sidecar"
+    "presentation-designer-sidecar" "analyst-sidecar" "ux-designer-sidecar"
+    "qa-sidecar" "performance-sidecar" "data-engineer-sidecar"
+  )
+  for dir in "${all_sidecars[@]}"; do
+    mkdir -p "$space_dir/_memory/$dir"
+  done
+
+  # Validate should work with spaces in path
+  run bash "$SCRIPT" validate "$space_dir"
+  [ "$status" -eq 0 ]
+}
+
+@test "E7-S1: no bash -c or sh -c with user input introduced (AC4)" {
+  # Verify no equivalent dynamic execution constructs replaced eval
+  local dangerous_patterns=0
+  while IFS= read -r line; do
+    [[ -z "$line" ]] && continue
+    local stripped
+    stripped="$(echo "$line" | sed 's/^[0-9]*://')"
+    stripped="$(echo "$stripped" | sed 's/^[[:space:]]*//')"
+    [[ "$stripped" == \#* ]] && continue
+    dangerous_patterns=$((dangerous_patterns + 1))
+  done <<< "$(grep -n 'bash -c\|sh -c' "$SCRIPT" 2>/dev/null || true)"
+  [ "$dangerous_patterns" -eq 0 ]
+}
+
+@test "E7-S1: existing validate regression — all checks pass on valid install (AC3b)" {
+  # Create a full valid install — same as "validate passes when _memory/ is present"
+  mkdir -p "$TEST_DIR/_gaia/_config"
+  cat > "$TEST_DIR/_gaia/_config/manifest.yaml" <<'YAML'
+name: test
+version: "1.0.0"
+YAML
+  cat > "$TEST_DIR/_gaia/_config/global.yaml" <<'YAML'
+framework_name: "GAIA"
+framework_version: "1.0.0"
+project_name: "test"
+user_name: "tester"
+YAML
+  for mod in core lifecycle dev creative testing; do
+    mkdir -p "$TEST_DIR/_gaia/$mod"
+  done
+  mkdir -p "$TEST_DIR/_gaia/core/.resolved"
+  mkdir -p "$TEST_DIR/_gaia/lifecycle/.resolved"
+  mkdir -p "$TEST_DIR/_gaia/creative/.resolved"
+  mkdir -p "$TEST_DIR/_gaia/testing/.resolved"
+  mkdir -p "$TEST_DIR/.claude/commands"
+  echo "x" > "$TEST_DIR/.claude/commands/gaia-help.md"
+  echo "# GAIA" > "$TEST_DIR/CLAUDE.md"
+  for dir in planning-artifacts implementation-artifacts test-artifacts creative-artifacts; do
+    mkdir -p "$TEST_DIR/docs/$dir"
+  done
+  mkdir -p "$TEST_DIR/_memory/checkpoints/completed"
+  local all_sidecars=(
+    "validator-sidecar" "architect-sidecar" "pm-sidecar" "sm-sidecar"
+    "orchestrator-sidecar" "security-sidecar" "devops-sidecar" "test-architect-sidecar"
+    "storyteller-sidecar" "tech-writer-sidecar"
+    "angular-dev-sidecar" "typescript-dev-sidecar" "flutter-dev-sidecar"
+    "java-dev-sidecar" "python-dev-sidecar" "mobile-dev-sidecar"
+    "brainstorming-coach-sidecar" "design-thinking-coach-sidecar"
+    "innovation-strategist-sidecar" "problem-solver-sidecar"
+    "presentation-designer-sidecar" "analyst-sidecar" "ux-designer-sidecar"
+    "qa-sidecar" "performance-sidecar" "data-engineer-sidecar"
+  )
+  for dir in "${all_sidecars[@]}"; do
+    mkdir -p "$TEST_DIR/_memory/$dir"
+  done
+
+  run bash "$SCRIPT" validate "$TEST_DIR"
+  [ "$status" -eq 0 ]
+  # Verify the expected pass count format appears
+  [[ "$output" == *"checks passed"* ]]
+}
+
 @test "update updates framework version in global.yaml" {
   local SRC_DIR="$(mktemp -d)"
   create_mock_source "$SRC_DIR"

@@ -1,0 +1,4 @@
+# Missing 'step' field entirely, empty 'workflow'
+workflow: ""
+status: in-progress
+files_touched: []

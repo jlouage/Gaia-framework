@@ -1,0 +1,8 @@
+# Mock global config for integration tests
+framework_name: "GAIA"
+framework_version: "1.0.0-test"
+project_name: "test-project"
+user_name: "test-user"
+project_path: "."
+memory_path: "{project-root}/_memory"
+checkpoint_path: "{project-root}/_memory/checkpoints"

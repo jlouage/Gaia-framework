@@ -600,6 +600,12 @@ cmd_update() {
 # ─── cmd_validate ───────────────────────────────────────────────────────────
 
 cmd_validate() {
+  # Guard: reject empty, unset, or whitespace-only TARGET
+  if [[ -z "${TARGET:-}" || "${TARGET}" =~ ^[[:space:]]+$ ]]; then
+    error "TARGET path is empty or whitespace-only"
+    exit 1
+  fi
+
   if [[ ! -d "$TARGET/_gaia" ]]; then
     error "No GAIA installation found at $TARGET"
     exit 1
@@ -610,9 +616,12 @@ cmd_validate() {
 
   local pass=0 fail=0
 
+  # check: accepts a label and the exit status ($?) of a preceding test command.
+  # The test command runs inline before calling check, passing $? as the result.
+  # This avoids eval entirely — conditions execute directly via [[ ]] or grep.
   check() {
-    local label="$1" condition="$2"
-    if eval "$condition"; then
+    local label="$1" result="$2"
+    if [[ "$result" -eq 0 ]]; then
       printf "  ${GREEN}✔${RESET}  %s\n" "$label"
       pass=$((pass + 1))
     else
@@ -622,47 +631,47 @@ cmd_validate() {
   }
 
   # Manifest
-  check "manifest.yaml exists" "[[ -f '$TARGET/$MANIFEST_REL' ]]"
+  [[ -f "$TARGET/$MANIFEST_REL" ]]; check "manifest.yaml exists" $?
 
   # Global config fields
   local global="$TARGET/_gaia/_config/global.yaml"
-  check "global.yaml exists" "[[ -f '$global' ]]"
+  [[ -f "$global" ]]; check "global.yaml exists" $?
   if [[ -f "$global" ]]; then
-    check "global.yaml has project_name" "grep -q '^project_name:' '$global'"
-    check "global.yaml has user_name" "grep -q '^user_name:' '$global'"
-    check "global.yaml has framework_version" "grep -q '^framework_version:' '$global'"
+    local grc=0; grep -q '^project_name:' "$global" || grc=$?; check "global.yaml has project_name" $grc
+    grc=0; grep -q '^user_name:' "$global" || grc=$?; check "global.yaml has user_name" $grc
+    grc=0; grep -q '^framework_version:' "$global" || grc=$?; check "global.yaml has framework_version" $grc
   fi
 
   # Module directories
   for mod in core lifecycle dev creative testing; do
-    check "Module: $mod" "[[ -d '$TARGET/_gaia/$mod' ]]"
+    [[ -d "$TARGET/_gaia/$mod" ]]; check "Module: $mod" $?
   done
 
   # .resolved directories
   for mod in core lifecycle creative testing; do
-    check ".resolved: $mod" "[[ -d '$TARGET/_gaia/$mod/.resolved' ]]"
+    [[ -d "$TARGET/_gaia/$mod/.resolved" ]]; check ".resolved: $mod" $?
   done
 
   # Memory directory at project root (ADR-013)
-  check "_memory/ directory" "[[ -d '$TARGET/_memory' ]]"
+  [[ -d "$TARGET/_memory" ]]; check "_memory/ directory" $?
   for dir in "${MEMORY_DIRS[@]}"; do
-    check "Memory: $dir" "[[ -d '$TARGET/_memory/$dir' ]]"
+    [[ -d "$TARGET/_memory/$dir" ]]; check "Memory: $dir" $?
   done
 
   # CLAUDE.md
-  check "CLAUDE.md exists" "[[ -f '$TARGET/CLAUDE.md' ]]"
+  [[ -f "$TARGET/CLAUDE.md" ]]; check "CLAUDE.md exists" $?
 
   # Slash commands
-  check "Slash commands directory" "[[ -d '$TARGET/.claude/commands' ]]"
+  [[ -d "$TARGET/.claude/commands" ]]; check "Slash commands directory" $?
   if [[ -d "$TARGET/.claude/commands" ]]; then
     local cmd_count
     cmd_count="$(find "$TARGET/.claude/commands" -name 'gaia*.md' -type f 2>/dev/null | wc -l | tr -d ' ')"
-    check "Slash commands present (found: $cmd_count)" "[[ $cmd_count -gt 0 ]]"
+    [[ "$cmd_count" -gt 0 ]]; check "Slash commands present (found: $cmd_count)" $?
   fi
 
   # Docs directories
   for dir in planning-artifacts implementation-artifacts test-artifacts creative-artifacts; do
-    check "Docs: $dir" "[[ -d '$TARGET/docs/$dir' ]]"
+    [[ -d "$TARGET/docs/$dir" ]]; check "Docs: $dir" $?
   done
 
   # Version

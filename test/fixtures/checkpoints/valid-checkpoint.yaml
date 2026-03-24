@@ -1,0 +1,16 @@
+workflow: dev-story
+step: 3
+total_steps: 6
+status: in-progress
+story_key: E1-S1
+epic_key: E1
+risk_level: low
+files_touched:
+  - path: "test/fixtures/checkpoints/valid-checkpoint.yaml"
+    checksum: "sha256:placeholder_will_be_computed_at_runtime"
+    last_modified: "2026-03-24T10:00:00Z"
+variables:
+  story_key: E1-S1
+  epic_key: E1
+  risk_level: low
+  agent: typescript-dev
