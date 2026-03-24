@@ -1,0 +1,10 @@
+# Legacy checkpoint format — no files_touched field
+# Should resume via skip-validation path (backward compatibility)
+workflow: dev-story
+step: 2
+total_steps: 8
+status: in-progress
+variables:
+  story_key: E1-S2
+  epic_key: E1
+  risk_level: medium
