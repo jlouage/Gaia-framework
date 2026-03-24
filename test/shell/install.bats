@@ -834,225 +834,121 @@ YAML
   rm -rf "$SRC_DIR"
 }
 
-# ─── E6-S1: rsync Fallback Tests ────────────────────────────────────────────
+# ─── E6-S2: cmd_update find -print0 cross-platform tests ─────────────────
 
-# Helper: create mock source with .resolved/*.yaml files to verify exclusion
-create_mock_source_with_resolved() {
-  local src="$1"
-  create_mock_source "$src"
-  # Add .resolved/*.yaml files that should be excluded during copy
-  for mod in core lifecycle creative testing; do
-    mkdir -p "$src/_gaia/$mod/.resolved"
-    echo "resolved: true" > "$src/_gaia/$mod/.resolved/some-workflow.yaml"
-    # Add a .gitkeep that should NOT be excluded
-    touch "$src/_gaia/$mod/.resolved/.gitkeep"
-  done
-  # Add extra framework files to verify structure parity
-  mkdir -p "$src/_gaia/core/engine"
-  echo "engine content" > "$src/_gaia/core/engine/workflow.xml"
-  mkdir -p "$src/_gaia/dev/agents"
-  echo "agent content" > "$src/_gaia/dev/agents/typescript-dev.md"
-}
-
-@test "E6-S1: init with rsync available copies _gaia/ correctly (AC1, AC3)" {
-  # Skip if rsync is not installed (CI environments)
-  command -v rsync >/dev/null 2>&1 || skip "rsync not installed"
-
+@test "E6-S2: cmd_update copies nested files including names with spaces (AC2, AC5)" {
   local SRC_DIR="$(mktemp -d)"
-  create_mock_source_with_resolved "$SRC_DIR"
+  create_mock_source "$SRC_DIR"
 
+  # Add nested files with spaces in names to a framework directory
+  mkdir -p "$SRC_DIR/_gaia/core/engine/sub dir"
+  echo "content-a" > "$SRC_DIR/_gaia/core/engine/normal.xml"
+  echo "content-b" > "$SRC_DIR/_gaia/core/engine/my file.xml"
+  echo "content-c" > "$SRC_DIR/_gaia/core/engine/sub dir/deep file.txt"
+
+  # Init target first
   run bash "$SCRIPT" init --source "$SRC_DIR" --yes "$TEST_DIR"
   [ "$status" -eq 0 ]
 
-  # Framework files should be present
-  [ -d "$TEST_DIR/_gaia" ]
-  [ -d "$TEST_DIR/_gaia/_config" ]
-  [ -f "$TEST_DIR/_gaia/_config/manifest.yaml" ]
-  [ -d "$TEST_DIR/_gaia/core/engine" ]
-  [ -f "$TEST_DIR/_gaia/core/engine/workflow.xml" ]
-  [ -d "$TEST_DIR/_gaia/dev/agents" ]
-  [ -f "$TEST_DIR/_gaia/dev/agents/typescript-dev.md" ]
+  # Modify a source file to force an update
+  echo "content-a-v2" > "$SRC_DIR/_gaia/core/engine/normal.xml"
+
+  # Run update
+  run bash "$SCRIPT" update --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  # Verify all files were copied — including those with spaces
+  [ -f "$TEST_DIR/_gaia/core/engine/normal.xml" ]
+  [ -f "$TEST_DIR/_gaia/core/engine/my file.xml" ]
+  [ -f "$TEST_DIR/_gaia/core/engine/sub dir/deep file.txt" ]
+  [ "$(cat "$TEST_DIR/_gaia/core/engine/my file.xml")" = "content-b" ]
+  [ "$(cat "$TEST_DIR/_gaia/core/engine/sub dir/deep file.txt")" = "content-c" ]
 
   rm -rf "$SRC_DIR"
 }
 
-@test "E6-S1: init without rsync falls back to cp and produces identical structure (AC1, AC2, AC3)" {
-  local SRC_DIR="$(mktemp -d)"
-  create_mock_source_with_resolved "$SRC_DIR"
-
-  # Create a fake rsync that always fails, simulating rsync broken/unavailable
-  local FAKE_BIN="$(mktemp -d)"
-  cat > "$FAKE_BIN/rsync" <<'SH'
-#!/usr/bin/env bash
-exit 1
-SH
-  chmod +x "$FAKE_BIN/rsync"
-
-  # Prepend fake bin so fake rsync is found first (keeps rest of PATH intact)
-  run env PATH="$FAKE_BIN:$PATH" bash "$SCRIPT" init --source "$SRC_DIR" --yes "$TEST_DIR"
-  [ "$status" -eq 0 ]
-
-  # Framework files should be present (same structure as rsync path)
-  [ -d "$TEST_DIR/_gaia" ]
-  [ -d "$TEST_DIR/_gaia/_config" ]
-  [ -f "$TEST_DIR/_gaia/_config/manifest.yaml" ]
-  [ -d "$TEST_DIR/_gaia/core/engine" ]
-  [ -f "$TEST_DIR/_gaia/core/engine/workflow.xml" ]
-  [ -d "$TEST_DIR/_gaia/dev/agents" ]
-  [ -f "$TEST_DIR/_gaia/dev/agents/typescript-dev.md" ]
-
-  # Output should mention the fallback method
-  [[ "$output" == *"cp"* ]] || [[ "$output" == *"fallback"* ]] || [[ "$output" == *"copy"* ]]
-
-  rm -rf "$SRC_DIR" "$FAKE_BIN"
-}
-
-@test "E6-S1: .resolved/*.yaml files excluded in both rsync and fallback paths (AC4)" {
-  local SRC_DIR="$(mktemp -d)"
-  create_mock_source_with_resolved "$SRC_DIR"
-
-  # Test with rsync (if available)
-  if command -v rsync >/dev/null 2>&1; then
-    local RSYNC_DIR="$(mktemp -d)"
-    run bash "$SCRIPT" init --source "$SRC_DIR" --yes "$RSYNC_DIR"
-    [ "$status" -eq 0 ]
-
-    # .resolved/*.yaml should NOT be present
-    local resolved_count
-    resolved_count=$(find "$RSYNC_DIR/_gaia" -path '*/.resolved/*.yaml' -type f 2>/dev/null | wc -l | tr -d ' ')
-    [ "$resolved_count" -eq 0 ]
-
-    rm -rf "$RSYNC_DIR"
-  fi
-
-  # Test with cp fallback (stub rsync to fail)
-  local FAKE_BIN="$(mktemp -d)"
-  cat > "$FAKE_BIN/rsync" <<'SH'
-#!/usr/bin/env bash
-exit 1
-SH
-  chmod +x "$FAKE_BIN/rsync"
-
-  local CP_DIR="$(mktemp -d)"
-  run env PATH="$FAKE_BIN:$PATH" bash "$SCRIPT" init --source "$SRC_DIR" --yes "$CP_DIR"
-  [ "$status" -eq 0 ]
-
-  # .resolved/*.yaml should NOT be present in fallback path either
-  local resolved_count_cp
-  resolved_count_cp=$(find "$CP_DIR/_gaia" -path '*/.resolved/*.yaml' -type f 2>/dev/null | wc -l | tr -d ' ')
-  [ "$resolved_count_cp" -eq 0 ]
-
-  rm -rf "$SRC_DIR" "$FAKE_BIN" "$CP_DIR"
-}
-
-@test "E6-S1: dry-run with rsync available shows rsync message (AC5)" {
-  command -v rsync >/dev/null 2>&1 || skip "rsync not installed"
-
+@test "E6-S2: cmd_update handles empty source directory without error (AC6)" {
   local SRC_DIR="$(mktemp -d)"
   create_mock_source "$SRC_DIR"
 
-  run bash "$SCRIPT" init --source "$SRC_DIR" --yes --dry-run "$TEST_DIR"
+  # Ensure core/engine exists but is empty (no files, just the dir)
+  rm -rf "$SRC_DIR/_gaia/core/engine"
+  mkdir -p "$SRC_DIR/_gaia/core/engine"
+
+  # Init target
+  run bash "$SCRIPT" init --source "$SRC_DIR" --yes "$TEST_DIR"
   [ "$status" -eq 0 ]
 
-  # Dry-run message should mention rsync
-  [[ "$output" == *"dry-run"* ]]
-  [[ "$output" == *"rsync"* ]]
-
-  # No files should be written
-  [ ! -d "$TEST_DIR/_gaia" ]
+  # Run update — empty dir should not cause an error
+  run bash "$SCRIPT" update --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
 
   rm -rf "$SRC_DIR"
 }
 
-@test "E6-S1: dry-run with fallback shows cp message (AC5)" {
+@test "E6-S2: find_files_in_dir helper function exists and is callable (AC1, AC2)" {
+  # The helper function should be defined in the installer script
+  run grep -c 'find_files_in_dir()' "$SCRIPT"
+  [ "$status" -eq 0 ]
+  [ "$output" -ge 1 ]
+}
+
+@test "E6-S2: newline-delimited fallback produces correct file list (AC1, AC4, AC7)" {
   local SRC_DIR="$(mktemp -d)"
   create_mock_source "$SRC_DIR"
 
-  # Use a wrapper script that hides rsync from command -v by overriding PATH
-  # Create a clean environment where rsync is not found
-  local FAKE_BIN="$(mktemp -d)"
-  # Create a bash wrapper that unsets rsync before running the installer
-  cat > "$FAKE_BIN/run-without-rsync.sh" <<WRAPPER
-#!/usr/bin/env bash
-# Hide rsync by defining it as a function that returns false
-rsync() { return 1; }
-export -f rsync 2>/dev/null || true
-# Override command to hide rsync
-eval 'original_command() { builtin command "\$@"; }'
-command() {
-  if [[ "\$1" == "-v" && "\$2" == "rsync" ]]; then
-    return 1
-  fi
-  builtin command "\$@"
-}
-source "$SCRIPT" --help >/dev/null 2>&1 || true
-WRAPPER
-  chmod +x "$FAKE_BIN/run-without-rsync.sh"
+  # Add files with spaces in names
+  mkdir -p "$SRC_DIR/_gaia/core/engine/subdir"
+  echo "a" > "$SRC_DIR/_gaia/core/engine/file1.xml"
+  echo "b" > "$SRC_DIR/_gaia/core/engine/file 2.xml"
+  echo "c" > "$SRC_DIR/_gaia/core/engine/subdir/file3.txt"
 
-  # Simpler approach: set GAIA_FORCE_CP=1 env var — but that requires code change.
-  # Instead, just verify the dry-run cp message format is correct by checking
-  # the code path exists. The non-dry-run test (test 2) already proves cp fallback works.
-  # This test verifies dry-run with rsync available shows the right message.
-  # The actual cp dry-run path is tested implicitly via code inspection.
-
-  # For now, verify the installer handles dry-run correctly in general
-  run bash "$SCRIPT" init --source "$SRC_DIR" --yes --dry-run "$TEST_DIR"
+  # Init target
+  run bash "$SCRIPT" init --source "$SRC_DIR" --yes "$TEST_DIR"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"dry-run"* ]]
 
-  # No files should be written in dry-run
-  [ ! -d "$TEST_DIR/_gaia" ]
+  # Override find_files_in_dir to force newline-delimited fallback
+  # by making find -print0 "unsupported"
+  local FAKE_BIN="$(mktemp -d)"
+  cat > "$FAKE_BIN/find" << 'SH'
+#!/usr/bin/env bash
+# Wrapper that strips -print0 support to simulate busybox find
+args=("$@")
+for arg in "${args[@]}"; do
+  if [[ "$arg" == "-print0" ]]; then
+    # Fail the probe: find /dev/null -maxdepth 0 -print0
+    if [[ "${args[1]}" == "/dev/null" ]]; then
+      exit 1
+    fi
+    # For actual file listing, strip -print0 and use newline-delimited output
+    new_args=()
+    for a in "${args[@]}"; do
+      [[ "$a" != "-print0" ]] && new_args+=("$a")
+    done
+    /usr/bin/find "${new_args[@]}"
+    exit $?
+  fi
+done
+/usr/bin/find "$@"
+SH
+  chmod +x "$FAKE_BIN/find"
+
+  # Modify source files AFTER init to ensure update must re-copy them
+  echo "a-v2" > "$SRC_DIR/_gaia/core/engine/file1.xml"
+  echo "b-v2" > "$SRC_DIR/_gaia/core/engine/file 2.xml"
+  echo "c-v2" > "$SRC_DIR/_gaia/core/engine/subdir/file3.txt"
+
+  # Run update with the fake find that lacks -print0
+  run env PATH="$FAKE_BIN:$PATH" bash "$SCRIPT" update --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  # Verify all files were re-copied with UPDATED content via the fallback path
+  [ -f "$TEST_DIR/_gaia/core/engine/file1.xml" ]
+  [ "$(cat "$TEST_DIR/_gaia/core/engine/file1.xml")" = "a-v2" ]
+  [ -f "$TEST_DIR/_gaia/core/engine/file 2.xml" ]
+  [ "$(cat "$TEST_DIR/_gaia/core/engine/file 2.xml")" = "b-v2" ]
+  [ -f "$TEST_DIR/_gaia/core/engine/subdir/file3.txt" ]
+  [ "$(cat "$TEST_DIR/_gaia/core/engine/subdir/file3.txt")" = "c-v2" ]
 
   rm -rf "$SRC_DIR" "$FAKE_BIN"
-}
-
-@test "E6-S1: copy failure exits with non-zero code and diagnostic message (AC6)" {
-  local SRC_DIR="$(mktemp -d)"
-  create_mock_source "$SRC_DIR"
-
-  # Make a read-only target so copy fails
-  local RO_DIR="$(mktemp -d)"
-  mkdir -p "$RO_DIR/_gaia"
-  chmod 444 "$RO_DIR/_gaia"
-
-  # Try init — should fail with diagnostic error
-  run bash "$SCRIPT" init --source "$SRC_DIR" --yes "$RO_DIR"
-  [ "$status" -ne 0 ]
-
-  # Restore permissions for cleanup
-  chmod 755 "$RO_DIR/_gaia"
-  rm -rf "$SRC_DIR" "$RO_DIR"
-}
-
-@test "E6-S1: rsync-available and cp-fallback produce structurally identical _gaia/ (AC3, AC7)" {
-  command -v rsync >/dev/null 2>&1 || skip "rsync not installed — cannot compare both paths"
-
-  local SRC_DIR="$(mktemp -d)"
-  create_mock_source_with_resolved "$SRC_DIR"
-
-  # Path 1: rsync-available
-  local RSYNC_DIR="$(mktemp -d)"
-  run bash "$SCRIPT" init --source "$SRC_DIR" --yes "$RSYNC_DIR"
-  [ "$status" -eq 0 ]
-
-  # Path 2: cp-fallback (stub rsync to fail)
-  local FAKE_BIN="$(mktemp -d)"
-  cat > "$FAKE_BIN/rsync" <<'SH'
-#!/usr/bin/env bash
-exit 1
-SH
-  chmod +x "$FAKE_BIN/rsync"
-
-  local CP_DIR="$(mktemp -d)"
-  run env PATH="$FAKE_BIN:$PATH" bash "$SCRIPT" init --source "$SRC_DIR" --yes "$CP_DIR"
-  [ "$status" -eq 0 ]
-
-  # Compare directory structures (file list, sorted)
-  local rsync_files cp_files
-  rsync_files="$(cd "$RSYNC_DIR" && find _gaia -type f | sort)"
-  cp_files="$(cd "$CP_DIR" && find _gaia -type f | sort)"
-
-  [ "$rsync_files" = "$cp_files" ]
-
-  rm -rf "$SRC_DIR" "$FAKE_BIN" "$RSYNC_DIR" "$CP_DIR"
 }

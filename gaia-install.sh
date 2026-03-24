@@ -505,6 +505,21 @@ GITIGNORE
   echo ""
 }
 
+# ─── find_files_in_dir ──────────────────────────────────────────────────────
+# Lists all files in a directory tree. Uses null-delimited output (find -print0)
+# when supported, falls back to newline-delimited output on systems where -print0
+# is unavailable (e.g., Windows Git Bash with busybox find).
+# GAIA file paths never contain newlines, so the newline-delimited fallback is safe.
+
+find_files_in_dir() {
+  local dir="$1"
+  if find /dev/null -maxdepth 0 -print0 2>/dev/null | head -c0 2>/dev/null; then
+    find "$dir" -type f -print0
+  else
+    find "$dir" -type f
+  fi
+}
+
 # ─── cmd_update ─────────────────────────────────────────────────────────────
 
 cmd_update() {
@@ -572,6 +587,12 @@ cmd_update() {
   step "Updating framework files..."
   local updated=0 skipped=0 changed=0
 
+  # Feature-detect find -print0 support once before the loop (E6-S2)
+  local use_print0=false
+  if find /dev/null -maxdepth 0 -print0 2>/dev/null | head -c0 2>/dev/null; then
+    use_print0=true
+  fi
+
   for entry in "${update_targets[@]}"; do
     local src_path="$source/_gaia/$entry"
     local dst_path="$TARGET/_gaia/$entry"
@@ -590,12 +611,24 @@ cmd_update() {
       copy_with_backup "$src_path" "$dst_path" "$backup_dir"
       updated=$((updated + 1))
     elif [[ -d "$src_path" ]]; then
-      # Directory — update each file
-      while IFS= read -r -d '' file; do
-        local rel="${file#$src_path/}"
-        copy_with_backup "$file" "$dst_path/$rel" "$backup_dir"
-        updated=$((updated + 1))
-      done < <(find "$src_path" -type f -print0) || true
+      # Directory — update each file via find_files_in_dir helper
+      if [[ "$use_print0" == true ]]; then
+        # Null-delimited path (macOS/Linux with GNU or BSD find)
+        while IFS= read -r -d '' file; do
+          local rel="${file#$src_path/}"
+          copy_with_backup "$file" "$dst_path/$rel" "$backup_dir"
+          updated=$((updated + 1))
+        done < <(find_files_in_dir "$src_path") || true
+      else
+        # Newline-delimited fallback (Windows Git Bash / busybox find)
+        # Safe because GAIA file paths never contain newlines
+        while IFS= read -r file; do
+          [[ -z "$file" ]] && continue
+          local rel="${file#$src_path/}"
+          copy_with_backup "$file" "$dst_path/$rel" "$backup_dir"
+          updated=$((updated + 1))
+        done < <(find_files_in_dir "$src_path") || true
+      fi
     fi
   done
 
