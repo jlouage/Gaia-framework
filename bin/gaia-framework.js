@@ -15,25 +15,25 @@ const SCRIPT_NAME = "gaia-install.sh";
 const IS_WINDOWS = process.platform === "win32";
 
 let tempDir = null;
+let bashType = "native"; // "native" (mac/linux), "gitbash", or "wsl"
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
 function toPosixPath(p) {
   if (!IS_WINDOWS) return p;
-  // Convert C:\foo\bar to /c/foo/bar for Git Bash
-  return p.replace(/\\/g, "/").replace(/^([A-Za-z]):/, (_, letter) => "/" + letter.toLowerCase());
+  const forward = p.replace(/\\/g, "/");
+  if (bashType === "wsl") {
+    // WSL: C:\foo\bar → /mnt/c/foo/bar
+    return forward.replace(/^([A-Za-z]):/, (_, letter) => "/mnt/" + letter.toLowerCase());
+  }
+  // Git Bash: C:\foo\bar → /c/foo/bar
+  return forward.replace(/^([A-Za-z]):/, (_, letter) => "/" + letter.toLowerCase());
 }
 
 function findBash() {
   if (!IS_WINDOWS) return "bash";
 
-  // Try bash in PATH first (WSL, Git Bash in PATH, etc.)
-  try {
-    execSync("bash --version", { stdio: "ignore" });
-    return "bash";
-  } catch {}
-
-  // Try Git for Windows default locations
+  // 1. Try Git for Windows FIRST (preferred — simpler path mapping)
   const gitBashPaths = [
     join(process.env.ProgramFiles || "C:\\Program Files", "Git", "bin", "bash.exe"),
     join(process.env["ProgramFiles(x86)"] || "C:\\Program Files (x86)", "Git", "bin", "bash.exe"),
@@ -41,8 +41,34 @@ function findBash() {
   ];
 
   for (const p of gitBashPaths) {
-    if (existsSync(p)) return p;
+    if (existsSync(p)) {
+      bashType = "gitbash";
+      return p;
+    }
   }
+
+  // 2. Try bash in PATH — detect if it's WSL or Git Bash
+  try {
+    execSync("bash --version", { stdio: "ignore" });
+    // Detect WSL vs Git Bash by checking uname
+    try {
+      const uname = execSync('bash -c "uname -r"', { encoding: "utf8", stdio: ["pipe", "pipe", "ignore"] }).trim();
+      if (/microsoft|wsl/i.test(uname)) {
+        bashType = "wsl";
+      } else {
+        bashType = "gitbash";
+      }
+    } catch {
+      // Can't detect — try MSYSTEM env which Git Bash sets
+      try {
+        const msys = execSync('bash -c "echo $MSYSTEM"', { encoding: "utf8", stdio: ["pipe", "pipe", "ignore"] }).trim();
+        bashType = msys ? "gitbash" : "wsl";
+      } catch {
+        bashType = "wsl"; // Assume WSL if detection fails — safer path mapping
+      }
+    }
+    return "bash";
+  } catch {}
 
   return null;
 }
@@ -205,7 +231,7 @@ function main() {
 
     // Debug: on Windows, log the resolved paths if --verbose is passed
     if (IS_WINDOWS && args.includes("--verbose")) {
-      info(`Bash: ${bashPath}`);
+      info(`Bash: ${bashPath} (${bashType})`);
       info(`Script (Windows): ${scriptPath}`);
       info(`Script (POSIX): ${posixScript}`);
       info(`Temp dir: ${tempDir}`);
