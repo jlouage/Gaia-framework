@@ -6,9 +6,9 @@
 </critical>
 <step n="1" title="Load Epics, Stories, Action Items, and Previous Retro">
   <action>Read {implementation_artifacts}/action-items.yaml if it exists. Check for HIGH priority items open for 2+ sprints (escalation_count >= 2 AND priority == "high" AND status == "open").
-    If any found: HALT — "Cannot start sprint planning. {count} HIGH priority action items have been open for {escalation_count}+ sprints:
-    {for each: A-{NNN}: {title} (open since {source_sprint})}
-    Run /gaia action to resolve them first."
+    If any found: HALT — "Cannot start sprint planning. {count} HIGH priority action item(s) have been open for {escalation_count}+ sprints:
+    {for each: A-{NNN}: {title} (open since {source_sprint}) → Run: /gaia action A-{NNN}}
+    Resolve each item using the command shown above before re-running sprint planning."
     For MEDIUM/LOW open items: display warning but do NOT halt: "Note: {count} action items still open (non-blocking)."</action>
   <action>Read {planning_artifacts}/epics-and-stories.md</action>
   <action>Parse all stories with their priorities, sizes, dependencies</action>
