@@ -6,7 +6,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 const { execSync, execFileSync } = require("child_process");
-const { mkdtempSync, rmSync, existsSync, realpathSync } = require("fs");
+const { mkdtempSync, rmSync, existsSync, readFileSync, realpathSync } = require("fs");
 const { join } = require("path");
 const { tmpdir } = require("os");
 
@@ -83,9 +83,9 @@ function info(message) {
 }
 
 function cleanup() {
-  if (tempDir && fs.existsSync(tempDir)) {
+  if (tempDir && existsSync(tempDir)) {
     try {
-      fs.rmSync(tempDir, { recursive: true, force: true });
+      rmSync(tempDir, { recursive: true, force: true });
     } catch {
       // Best-effort cleanup
     }
@@ -94,7 +94,7 @@ function cleanup() {
 
 function ensureGit() {
   try {
-    childProcess.execSync("git --version", { stdio: "ignore" });
+    execSync("git --version", { stdio: "ignore" });
   } catch {
     fail(
       "git is required but was not found.\n" +
@@ -104,7 +104,7 @@ function ensureGit() {
 }
 
 function readPackageVersion(pkgPath) {
-  const raw = fs.readFileSync(pkgPath, "utf8");
+  const raw = readFileSync(pkgPath, "utf8");
   const pkg = JSON.parse(raw);
   if (!pkg.version) {
     throw new Error(`No version field found in ${pkgPath}`);

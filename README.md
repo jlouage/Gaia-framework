@@ -460,7 +460,7 @@ The single source of truth is `_gaia/_config/global.yaml`:
 
 ```yaml
 framework_name: "GAIA"
-framework_version: "1.54.2"
+framework_version: "1.54.3"
 user_name: "your-name"
 project_name: "your-project"
 ```
