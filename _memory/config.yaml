@@ -20,7 +20,7 @@ tiers:
     files: 1  # decision-log.md
     session_budget: null  # no budget enforcement
     has_ground_truth: false
-    agents: [typescript-dev, angular-dev, flutter-dev, java-dev, python-dev, mobile-dev, storyteller, tech-writer, qa]
+    agents: [typescript-dev, angular-dev, flutter-dev, java-dev, python-dev, mobile-dev, storyteller, tech-writer, qa, analyst, brainstorming-coach, data-engineer, design-thinking-coach, innovation-strategist, performance, presentation-designer, problem-solver, ux-designer]
 
 # Per-agent ground truth budgets (Tier 1 only)
 agents:
@@ -62,6 +62,24 @@ agents:
     sidecar: mobile-dev-sidecar
   qa:
     sidecar: qa-sidecar
+  analyst:
+    sidecar: analyst-sidecar
+  brainstorming-coach:
+    sidecar: brainstorming-coach-sidecar
+  data-engineer:
+    sidecar: data-engineer-sidecar
+  design-thinking-coach:
+    sidecar: design-thinking-coach-sidecar
+  innovation-strategist:
+    sidecar: innovation-strategist-sidecar
+  performance:
+    sidecar: performance-sidecar
+  presentation-designer:
+    sidecar: presentation-designer-sidecar
+  problem-solver:
+    sidecar: problem-solver-sidecar
+  ux-designer:
+    sidecar: ux-designer-sidecar
 
 # Cross-agent read access matrix (ADR-015)
 # All cross-references are read-only, loaded JIT
