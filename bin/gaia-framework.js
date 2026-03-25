@@ -178,8 +178,11 @@ Examples:
 function main(deps) {
   // Dependency injection for testability — defaults to real modules
   const _exec = (deps && deps.execSync) || execSync;
+  const _execFile = (deps && deps.execFileSync) || execFileSync;
   const _exists = (deps && deps.existsSync) || existsSync;
   const _join = (deps && deps.join) || join;
+  const _mkdtemp = (deps && deps.mkdtempSync) || mkdtempSync;
+  const _tmpdir = (deps && deps.tmpdir) || tmpdir;
 
   const args = process.argv.slice(2);
 
@@ -206,7 +209,7 @@ function main(deps) {
   ensureGit();
 
   // Clone the repo to a temp directory
-  tempDir = mkdtempSync(join(tmpdir(), "gaia-framework-"));
+  tempDir = _mkdtemp(_join(_tmpdir(), "gaia-framework-"));
   // Resolve 8.3 short names to long paths on Windows (e.g., ELIASN~1 → Elias Nasser)
   // Node's realpathSync doesn't expand 8.3 names, so use PowerShell
   if (IS_WINDOWS) {
@@ -282,7 +285,7 @@ function main(deps) {
       info(`Temp dir: ${tempDir}`);
     }
 
-    execFileSync(bashPath, [posixScript, ...posixArgs], {
+    _execFile(bashPath, [posixScript, ...posixArgs], {
       stdio: "inherit",
       env: { ...process.env, GAIA_SOURCE: toPosixPath(tempDir) },
     });
@@ -295,4 +298,15 @@ if (require.main === module) {
   main();
 }
 
-module.exports = { checkNodeVersion, getNodeVersionWarning, findBash, ensureGit, showUsage, fail, info, cleanup, readPackageVersion, main };
+module.exports = {
+  checkNodeVersion,
+  getNodeVersionWarning,
+  findBash,
+  ensureGit,
+  showUsage,
+  fail,
+  info,
+  cleanup,
+  readPackageVersion,
+  main,
+};

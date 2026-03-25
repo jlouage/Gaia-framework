@@ -23,8 +23,15 @@ const FORMERLY_UNTIERED_AGENTS = [
 const EXISTING_TIER_1 = ["validator", "architect", "pm", "sm"];
 const EXISTING_TIER_2 = ["orchestrator", "security", "devops", "test-architect"];
 const EXISTING_TIER_3_ORIGINAL = [
-  "typescript-dev", "angular-dev", "flutter-dev", "java-dev",
-  "python-dev", "mobile-dev", "storyteller", "tech-writer", "qa",
+  "typescript-dev",
+  "angular-dev",
+  "flutter-dev",
+  "java-dev",
+  "python-dev",
+  "mobile-dev",
+  "storyteller",
+  "tech-writer",
+  "qa",
 ];
 
 /**
@@ -35,7 +42,10 @@ function parseTierAgents(content, tierName) {
   const tierPattern = new RegExp(`${tierName}:[\\s\\S]*?agents:\\s*\\[([^\\]]+)\\]`);
   const match = content.match(tierPattern);
   if (!match) return [];
-  return match[1].split(",").map((a) => a.trim()).filter(Boolean);
+  return match[1]
+    .split(",")
+    .map((a) => a.trim())
+    .filter(Boolean);
 }
 
 /**

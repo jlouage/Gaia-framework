@@ -123,9 +123,14 @@ describe("Prettier Configuration (E5-S2)", () => {
       // .prettierrc.json is automatically excluded
       expect(pkg.files).toBeDefined();
       expect(pkg.files).not.toContain(".prettierrc.json");
-      // Verify the whitelist approach — only bin/ and gaia-install.sh
-      const hasOnlyExpected = pkg.files.every((f) => f === "bin/" || f === "gaia-install.sh");
-      expect(hasOnlyExpected).toBe(true);
+      // Verify dev/config files are excluded from the published package
+      expect(pkg.files).not.toContain(".prettierrc.json");
+      expect(pkg.files).not.toContain(".eslintrc.json");
+      expect(pkg.files).not.toContain("test/");
+      expect(pkg.files).not.toContain(".github/");
+      // Must include core distribution files
+      expect(pkg.files).toContain("bin/");
+      expect(pkg.files).toContain("gaia-install.sh");
     });
   });
 

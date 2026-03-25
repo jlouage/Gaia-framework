@@ -28,7 +28,7 @@ quality_gates:
     - check: "story_file_exists({implementation_artifacts}/{story_key}-*.md)"
       on_fail: "HALT: Story file not found. Expected {implementation_artifacts}/{story_key}-*.md. Run /gaia-create-story first."
     - check: "story_status in ['ready-for-dev', 'in-progress']"
-      on_fail: "HALT: Story must be in ready-for-dev or in-progress status."
+      on_fail: "HALT: Story must be in ready-for-dev or in-progress status. Check {implementation_artifacts}/{story_key}-*.md frontmatter or run /gaia-sprint-status to verify."
   post_complete:
     - check: "all_tests_pass == true"
       on_fail: "HALT: All tests must pass before marking complete. Run test suite in {project-path}/ and fix failing tests."

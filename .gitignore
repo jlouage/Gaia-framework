@@ -9,5 +9,9 @@ docs/phases/
 node_modules/
 coverage/
 
+# Memory — checkpoints are ephemeral, archive is pruned
+_memory/checkpoints/
+_memory/*-sidecar/archive/
+
 # BATS test helpers (downloaded by test/shell/setup-bats.sh)
 test/shell/test_helper/

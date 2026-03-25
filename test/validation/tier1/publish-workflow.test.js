@@ -12,10 +12,7 @@ import { resolve } from "path";
 import yaml from "js-yaml";
 
 const PROJECT_ROOT = resolve(import.meta.dirname, "../../..");
-const PUBLISH_WORKFLOW_PATH = resolve(
-  PROJECT_ROOT,
-  ".github/workflows/publish.yml",
-);
+const PUBLISH_WORKFLOW_PATH = resolve(PROJECT_ROOT, ".github/workflows/publish.yml");
 
 describe("Publish Workflow Validation (E4-S2)", () => {
   let publishConfig;
@@ -56,9 +53,7 @@ describe("Publish Workflow Validation (E4-S2)", () => {
       const jobs = publishConfig.jobs;
       const publishJob = jobs.publish || jobs["publish-and-verify"];
       const steps = publishJob.steps;
-      const testStep = steps.find(
-        (s) => s.run && s.run.includes("npm test"),
-      );
+      const testStep = steps.find((s) => s.run && s.run.includes("npm test"));
       expect(testStep).toBeDefined();
     });
 
@@ -66,9 +61,7 @@ describe("Publish Workflow Validation (E4-S2)", () => {
       const jobs = publishConfig.jobs;
       const publishJob = jobs.publish || jobs["publish-and-verify"];
       const steps = publishJob.steps;
-      const setupNode = steps.find(
-        (s) => s.uses && s.uses.startsWith("actions/setup-node@v4"),
-      );
+      const setupNode = steps.find((s) => s.uses && s.uses.startsWith("actions/setup-node@v4"));
       expect(setupNode).toBeDefined();
       expect(setupNode.with["node-version"]).toBe(20);
     });
@@ -77,9 +70,7 @@ describe("Publish Workflow Validation (E4-S2)", () => {
       const jobs = publishConfig.jobs;
       const publishJob = jobs.publish || jobs["publish-and-verify"];
       const steps = publishJob.steps;
-      const npmCi = steps.find(
-        (s) => s.run && s.run.trim() === "npm ci",
-      );
+      const npmCi = steps.find((s) => s.run && s.run.trim() === "npm ci");
       expect(npmCi).toBeDefined();
     });
   });
@@ -90,9 +81,7 @@ describe("Publish Workflow Validation (E4-S2)", () => {
       const jobs = publishConfig.jobs;
       const publishJob = jobs.publish || jobs["publish-and-verify"];
       const steps = publishJob.steps;
-      const publishStep = steps.find(
-        (s) => s.run && s.run.includes("npm publish --provenance"),
-      );
+      const publishStep = steps.find((s) => s.run && s.run.includes("npm publish --provenance"));
       expect(publishStep).toBeDefined();
     });
 
@@ -100,9 +89,7 @@ describe("Publish Workflow Validation (E4-S2)", () => {
       const jobs = publishConfig.jobs;
       const publishJob = jobs.publish || jobs["publish-and-verify"];
       const steps = publishJob.steps;
-      const publishStep = steps.find(
-        (s) => s.run && s.run.includes("npm publish"),
-      );
+      const publishStep = steps.find((s) => s.run && s.run.includes("npm publish"));
       expect(publishStep).toBeDefined();
       expect(publishStep.env).toBeDefined();
       expect(publishStep.env.NODE_AUTH_TOKEN).toContain("NPM_TOKEN");
@@ -112,12 +99,8 @@ describe("Publish Workflow Validation (E4-S2)", () => {
       const jobs = publishConfig.jobs;
       const publishJob = jobs.publish || jobs["publish-and-verify"];
       const steps = publishJob.steps;
-      const setupNode = steps.find(
-        (s) => s.uses && s.uses.startsWith("actions/setup-node@v4"),
-      );
-      expect(setupNode.with["registry-url"]).toBe(
-        "https://registry.npmjs.org",
-      );
+      const setupNode = steps.find((s) => s.uses && s.uses.startsWith("actions/setup-node@v4"));
+      expect(setupNode.with["registry-url"]).toBe("https://registry.npmjs.org");
     });
   });
 
@@ -129,9 +112,8 @@ describe("Publish Workflow Validation (E4-S2)", () => {
       const steps = publishJob.steps;
       const stalenessStep = steps.find(
         (s) =>
-          s.name &&
-          s.name.toLowerCase().includes("staleness") ||
-          (s.name && s.name.toLowerCase().includes("tier") && s.name.toLowerCase().includes("2")),
+          (s.name && s.name.toLowerCase().includes("staleness")) ||
+          (s.name && s.name.toLowerCase().includes("tier") && s.name.toLowerCase().includes("2"))
       );
       expect(stalenessStep).toBeDefined();
     });
@@ -140,9 +122,7 @@ describe("Publish Workflow Validation (E4-S2)", () => {
       const jobs = publishConfig.jobs;
       const publishJob = jobs.publish || jobs["publish-and-verify"];
       const steps = publishJob.steps;
-      const stalenessStep = steps.find(
-        (s) => s.run && s.run.includes("tier2-results"),
-      );
+      const stalenessStep = steps.find((s) => s.run && s.run.includes("tier2-results"));
       expect(stalenessStep).toBeDefined();
     });
 
@@ -150,9 +130,7 @@ describe("Publish Workflow Validation (E4-S2)", () => {
       const jobs = publishConfig.jobs;
       const publishJob = jobs.publish || jobs["publish-and-verify"];
       const steps = publishJob.steps;
-      const stalenessStep = steps.find(
-        (s) => s.run && s.run.includes("git log"),
-      );
+      const stalenessStep = steps.find((s) => s.run && s.run.includes("git log"));
       expect(stalenessStep).toBeDefined();
     });
 
@@ -160,9 +138,7 @@ describe("Publish Workflow Validation (E4-S2)", () => {
       const jobs = publishConfig.jobs;
       const publishJob = jobs.publish || jobs["publish-and-verify"];
       const steps = publishJob.steps;
-      const checkout = steps.find(
-        (s) => s.uses && s.uses.startsWith("actions/checkout@v4"),
-      );
+      const checkout = steps.find((s) => s.uses && s.uses.startsWith("actions/checkout@v4"));
       expect(checkout).toBeDefined();
       expect(checkout.with).toBeDefined();
       expect(checkout.with["fetch-depth"]).toBe(0);
@@ -181,7 +157,7 @@ describe("Publish Workflow Validation (E4-S2)", () => {
           s.name.toLowerCase().includes("verify") &&
           s.name.toLowerCase().includes("publish") &&
           s.run &&
-          s.run.includes("npm view gaia-framework version"),
+          s.run.includes("npm view gaia-framework version")
       );
       expect(verifyStep).toBeDefined();
     });
@@ -196,7 +172,7 @@ describe("Publish Workflow Validation (E4-S2)", () => {
           s.name.toLowerCase().includes("verify") &&
           s.name.toLowerCase().includes("publish") &&
           s.run &&
-          s.run.includes("npm view gaia-framework version"),
+          s.run.includes("npm view gaia-framework version")
       );
       expect(verifyStep).toBeDefined();
       // Should have retry/loop logic (sleep or retry keyword)
@@ -212,9 +188,7 @@ describe("Publish Workflow Validation (E4-S2)", () => {
       for (const job of Object.values(jobs)) {
         if (job.steps) allSteps.push(...job.steps);
       }
-      const checksumStep = allSteps.find(
-        (s) => s.run && s.run.includes("sha256sum"),
-      );
+      const checksumStep = allSteps.find((s) => s.run && s.run.includes("sha256sum"));
       expect(checksumStep).toBeDefined();
     });
 
@@ -226,7 +200,7 @@ describe("Publish Workflow Validation (E4-S2)", () => {
       }
       // Find step that packs and checksums
       const packStep = allSteps.find(
-        (s) => s.run && s.run.includes("npm pack") && !s.run.includes("--dry-run"),
+        (s) => s.run && s.run.includes("npm pack") && !s.run.includes("--dry-run")
       );
       expect(packStep).toBeDefined();
     });
@@ -237,9 +211,7 @@ describe("Publish Workflow Validation (E4-S2)", () => {
       for (const job of Object.values(jobs)) {
         if (job.steps) allSteps.push(...job.steps);
       }
-      const uploadStep = allSteps.find(
-        (s) => s.run && s.run.includes("gh release upload"),
-      );
+      const uploadStep = allSteps.find((s) => s.run && s.run.includes("gh release upload"));
       expect(uploadStep).toBeDefined();
     });
 
@@ -249,9 +221,7 @@ describe("Publish Workflow Validation (E4-S2)", () => {
       for (const job of Object.values(jobs)) {
         if (job.steps) allSteps.push(...job.steps);
       }
-      const uploadStep = allSteps.find(
-        (s) => s.run && s.run.includes("gh release upload"),
-      );
+      const uploadStep = allSteps.find((s) => s.run && s.run.includes("gh release upload"));
       expect(uploadStep).toBeDefined();
       // Should have continue-on-error or || true or warning handling
       const hasWarningHandling =
@@ -309,7 +279,7 @@ describe("Publish Workflow Validation (E4-S2)", () => {
         if (job.steps) allSteps.push(...job.steps);
       }
       const versionCheck = allSteps.find(
-        (s) => s.run && s.run.includes("package.json") && s.run.includes("version"),
+        (s) => s.run && s.run.includes("package.json") && s.run.includes("version")
       );
       expect(versionCheck).toBeDefined();
     });

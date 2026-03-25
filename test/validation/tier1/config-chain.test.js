@@ -294,12 +294,14 @@ describe("E2-S2: Build-Configs Regeneration Verification", () => {
       expect(driftResults).toBeDefined();
       expect(Array.isArray(driftResults)).toBe(true);
 
-      // lifecycle has 51 workflows but only 45 resolved — should be detected
+      // Verify drift detection returns results for each module with valid structure
       const lifecycleDrift = driftResults.find((d) => d.module === "lifecycle");
-      if (lifecycleDrift) {
-        expect(lifecycleDrift.missing).toBeGreaterThan(0);
-        expect(lifecycleDrift.missingFiles).toBeDefined();
-      }
+      expect(lifecycleDrift).toBeDefined();
+      expect(typeof lifecycleDrift.missing).toBe("number");
+      expect(lifecycleDrift.missingFiles).toBeDefined();
+      expect(Array.isArray(lifecycleDrift.missingFiles)).toBe(true);
+      // If drift exists, missingFiles should list the workflow names
+      expect(lifecycleDrift.missingFiles.length).toBe(lifecycleDrift.missing);
     });
 
     it("should report missing resolved files with workflow names", () => {

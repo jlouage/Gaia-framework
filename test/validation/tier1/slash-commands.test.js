@@ -69,6 +69,8 @@ const REFERENCE_PATTERNS = [
   ["utility", /\{project-root\}(\/_gaia\/[^\s,)]+\.(?:yaml|xml|md|csv))/],
   // Utility dir: inline {project-root}/_gaia/.../ directory reference
   ["utility-dir", /\{project-root\}(\/_gaia\/[^\s,)]+\/)/],
+  // Memory dir: inline {project-root}/_memory/.../ directory reference (ADR-013)
+  ["memory-dir", /\{project-root\}(\/_memory\/[^\s,)]+\/)/],
 ];
 
 /**

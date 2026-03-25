@@ -7,7 +7,7 @@ model: sonnet
 IT IS CRITICAL THAT YOU FOLLOW THESE STEPS:
 
 <steps CRITICAL="TRUE">
-1. SCAN {project-root}/_gaia/_memory/checkpoints/ for .yaml files (exclude completed/)
+1. SCAN {project-root}/_memory/checkpoints/ for .yaml files (exclude completed/)
 2. If no checkpoints found: report "No active workflows to resume" and suggest /gaia
 3. If one checkpoint: display its summary and offer Resume / Restart / Discard
 4. If multiple checkpoints: list all with timestamps, ask user which to resume

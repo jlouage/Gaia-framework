@@ -37,7 +37,7 @@ jobs:
         run: npm run lint
 
       - name: Prettier check
-        run: npm run format:check
+        run: npm run format:check && npx prettier --check "bin/**/*.js" "test/**/*.js"
 
       # ShellCheck — shell script linting (E5-S3)
       # Requires ShellCheck >= 0.9.0. Only errors block the pipeline (--severity=error).
@@ -140,10 +140,14 @@ jobs:
         timeout-minutes: 5
         run: npm audit --omit=dev
 
+      - name: Audit moderate production vulnerabilities (hard gate)
+        timeout-minutes: 5
+        run: npm audit --omit=dev --audit-level=moderate
+
       - name: Audit dev dependencies (soft gate)
         continue-on-error: true
         run: |
-          OUTPUT=$(npm audit --json 2>/dev/null || true)
+          OUTPUT=$(npm audit --audit-level=high --json 2>/dev/null || true)
           echo "$OUTPUT" | node -e "
             const data = require('fs').readFileSync('/dev/stdin', 'utf8');
             try {
@@ -159,7 +163,6 @@ jobs:
               if (hasCritical) {
                 console.log('::warning::CRITICAL dev dependency vulnerabilities detected — see audit output above');
               }
-              // Log summary
               const meta = report.metadata || {};
               const total = meta.vulnerabilities || {};
               console.log('Audit summary: ' + JSON.stringify(total));
@@ -168,6 +171,7 @@ jobs:
               console.log(data.substring(0, 500));
             }
           "
+          npm audit --audit-level=high || true
 
       - name: Dependency budget check (soft gate)
         continue-on-error: true

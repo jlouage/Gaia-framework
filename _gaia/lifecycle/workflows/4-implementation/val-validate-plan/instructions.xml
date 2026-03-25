@@ -131,8 +131,6 @@
   <template-output file="{plan_artifact_path}">
     Append Plan Validation Findings section with approved findings table, validation metadata, and summary counts.
   </template-output>
-</step>
-<step n="8" title="Save to Val Memory">
   <action>Auto-save all validation results to Val's memory sidecar (no user prompt required):
 
   1. Append to {project-root}/{memory_path}/validator-sidecar/decision-log.md using standardized format:

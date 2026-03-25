@@ -82,16 +82,23 @@ execution modes (normal/yolo/planning), checkpoints, and quality gates.
     <action>Check workflow.yaml for 'execution_mode' field — default to 'normal' if absent</action>
     <action if="execution_mode != 'planning'">Skip this step — proceed to Process Instructions</action>
     <action if="mode was explicitly set by caller (subagent prompt) AND mode is NOT yolo">Skip this step — use the caller-requested mode</action>
-    <action if="mode was explicitly set by caller as yolo">Still execute the Planning Gate to generate the plan. After generating, check if workflow.yaml declares val_auto_in_yolo: true and the planning step number (5) is in val_auto_in_yolo_steps. If so, auto-invoke val-validate-artifact to validate the plan. If Val returns CRITICAL/WARNING findings: auto-fix the plan, re-invoke Val, repeat up to 3 iterations. If resolved: auto-approve the plan and set runtime mode to yolo. If unresolved after 3 iterations: HALT with findings list. If Val prerequisites not met or val_auto_in_yolo is false: auto-approve the plan without Val and set runtime mode to yolo. Do NOT present the [a]/[y]/[r]/[x] prompt — the plan is auto-approved after Val passes.</action>
+    <action if="mode was explicitly set by caller as yolo">Still execute the Planning Gate to generate the plan. After generating, check if workflow.yaml declares val_auto_in_yolo: true and the planning step number (5) is in val_auto_in_yolo_steps. If so, auto-invoke val-validate-plan to validate the plan. If Val returns CRITICAL/WARNING findings: auto-fix the plan, re-invoke Val, repeat up to 3 iterations. If resolved: auto-approve the plan and set runtime mode to yolo. If unresolved after 3 iterations: HALT with findings list. If Val prerequisites not met or val_auto_in_yolo is false: auto-approve the plan without Val and set runtime mode to yolo. Do NOT present the [a]/[y]/[r]/[x] prompt — the plan is auto-approved after Val passes.</action>
     <action>Invoke discover-inputs protocol to load all declared input files</action>
     <action>Parse the loaded instructions to extract: step titles, action summaries, template-output paths, optional steps, skill references, subagent invocations</action>
     <action>For input files: extract brief context (key metadata, not full content)</action>
     <action>Present structured execution plan to user using the planning-output format: Context, Files to Modify, Detailed Edits, Version Bumps (if applicable), Implementation Order, Verification. Omit empty sections.</action>
-    <action>Prompt: "[a] Approve (normal) | [y] Approve (YOLO) | [r] Revise plan | [x] Abort"</action>
+    <action>Check if Val integration is available for the planning gate: read {project-root}/_gaia/_config/global.yaml and check if val_integration.template_output_review is true. Check if {project-root}/_gaia/lifecycle/agents/validator.md exists AND {project-root}/_memory/validator-sidecar/ exists. Set val_review_available = true only if all three conditions pass. If any condition fails, set val_review_available = false.</action>
+    <action if="val_review_available == true">Prompt: "[a] Approve (normal) | [y] Approve (YOLO) | [r] Revise plan | [v] Review with Val (recommended) | [x] Abort"</action>
+    <action if="val_review_available == false">Prompt: "[a] Approve (normal) | [y] Approve (YOLO) | [r] Revise plan | [x] Abort"</action>
     <action if="[a]">Set runtime mode to normal — proceed to Process Instructions</action>
     <action if="[y]">Set runtime mode to yolo — proceed to Process Instructions</action>
-    <action if="[r]">Ask for feedback, regenerate plan, re-prompt</action>
+    <action if="[r]">Ask for feedback, regenerate plan. Previous findings are discarded — each [v] press triggers fresh validation with no caching. Re-prompt with the same options.</action>
     <action if="[x]">HALT — write checkpoint noting user abort</action>
+    <action if="[v] and plan has zero steps">Display "Plan contains no steps to validate." and return to the planning gate prompt without invoking Val.</action>
+    <action if="[v]">Invoke val-validate-plan as a subagent, passing the execution plan and the source_workflow (current workflow name). Each [v] press runs fresh validation — previous findings are discarded after plan revision, no caching. The discussion loop allows the user to discuss findings with Val, selectively accept or dismiss individual findings, and re-validate after making changes.</action>
+    <action if="Val returns zero findings">Display "Validation complete: no issues found." and return to the planning gate prompt with options [a] | [y] | [r] | [v] | [x].</action>
+    <action if="Val returns findings">Present findings to the user. Enter the discussion loop: user can selectively accept, dismiss, or discuss individual findings. After the user finishes reviewing, return to the planning gate prompt with all options [a] | [y] | [r] | [v] | [x].</action>
+    <action if="Val subagent fails (model unavailable, crash, timeout, context too large)">Display "Val validation could not complete: {reason}. Continuing without validation." and return to the planning gate prompt with [a] | [y] | [r] | [x] options (no [v]).</action>
     <action>Write checkpoint: planning gate approved, selected runtime mode</action>
   </step>
 

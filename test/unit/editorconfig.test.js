@@ -63,9 +63,7 @@ describe("EditorConfig", () => {
       const globalSection = extractSection(content, "[*]");
 
       if (prettierConfig.tabWidth !== undefined) {
-        expect(globalSection).toContain(
-          `indent_size = ${prettierConfig.tabWidth}`,
-        );
+        expect(globalSection).toContain(`indent_size = ${prettierConfig.tabWidth}`);
       }
       if (prettierConfig.useTabs !== undefined) {
         const expectedStyle = prettierConfig.useTabs ? "tab" : "space";
@@ -79,7 +77,7 @@ describe("EditorConfig", () => {
       const content = readFileSync(EDITORCONFIG_PATH, "utf-8");
       const lines = content.split("\n");
       const firstSignificantLine = lines.find(
-        (line) => line.trim() !== "" && !line.trim().startsWith("#"),
+        (line) => line.trim() !== "" && !line.trim().startsWith("#")
       );
       expect(firstSignificantLine?.trim()).toBe("root = true");
     });
@@ -93,8 +91,7 @@ describe("EditorConfig", () => {
       // .editorconfig should NOT be listed
       const filesField = pkg.files || [];
       const includesEditorconfig = filesField.some(
-        (entry) =>
-          entry === ".editorconfig" || entry.includes(".editorconfig"),
+        (entry) => entry === ".editorconfig" || entry.includes(".editorconfig")
       );
       expect(includesEditorconfig).toBe(false);
     });

@@ -1,18 +1,11 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import { readFileSync, existsSync } from "fs";
 import { resolve } from "path";
-import { execSync } from "child_process";
 import yaml from "js-yaml";
 
 const PROJECT_ROOT = resolve(import.meta.dirname, "../../..");
-const CI_WORKFLOW_PATH = resolve(
-  PROJECT_ROOT,
-  ".github/workflows/ci.yml",
-);
-const DEP_BUDGET_SCRIPT_PATH = resolve(
-  PROJECT_ROOT,
-  "scripts/check-dep-budget.sh",
-);
+const CI_WORKFLOW_PATH = resolve(PROJECT_ROOT, ".github/workflows/ci.yml");
+const DEP_BUDGET_SCRIPT_PATH = resolve(PROJECT_ROOT, "scripts/check-dep-budget.sh");
 
 describe("Supply Chain Management (E4-S4)", () => {
   let ciConfig;
@@ -44,7 +37,7 @@ describe("Supply Chain Management (E4-S4)", () => {
         (s) =>
           s.name &&
           s.name.toLowerCase().includes("lock") &&
-          (s.run || "").includes("package-lock.json"),
+          (s.run || "").includes("package-lock.json")
       );
       expect(lockCheck).toBeDefined();
     });
@@ -55,18 +48,12 @@ describe("Supply Chain Management (E4-S4)", () => {
     it("all jobs should use npm ci (not npm install)", () => {
       for (const [jobName, job] of Object.entries(ciConfig.jobs)) {
         const steps = job.steps || [];
-        const installStep = steps.find(
-          (s) => s.run && /npm (ci|install)/.test(s.run),
-        );
+        const installStep = steps.find((s) => s.run && /npm (ci|install)/.test(s.run));
         if (installStep) {
-          expect(
-            installStep.run,
-            `Job '${jobName}' should use npm ci`,
-          ).toContain("npm ci");
-          expect(
-            installStep.run,
-            `Job '${jobName}' should not use npm install`,
-          ).not.toMatch(/npm install(?!\s*#)/);
+          expect(installStep.run, `Job '${jobName}' should use npm ci`).toContain("npm ci");
+          expect(installStep.run, `Job '${jobName}' should not use npm install`).not.toMatch(
+            /npm install(?!\s*#)/
+          );
         }
       }
     });
@@ -74,7 +61,7 @@ describe("Supply Chain Management (E4-S4)", () => {
     it("setup-node should use npm cache", () => {
       for (const [, job] of Object.entries(ciConfig.jobs)) {
         const setupNode = (job.steps || []).find(
-          (s) => s.uses && s.uses.startsWith("actions/setup-node"),
+          (s) => s.uses && s.uses.startsWith("actions/setup-node")
         );
         if (setupNode) {
           expect(setupNode.with.cache).toBe("npm");
@@ -92,7 +79,7 @@ describe("Supply Chain Management (E4-S4)", () => {
           s.name &&
           s.name.toLowerCase().includes("production") &&
           s.run &&
-          s.run.includes("--omit=dev"),
+          s.run.includes("--omit=dev")
       );
       expect(prodAudit).toBeDefined();
       // Should NOT have --audit-level flag — any finding must fail
@@ -106,7 +93,7 @@ describe("Supply Chain Management (E4-S4)", () => {
           s.name &&
           s.name.toLowerCase().includes("production") &&
           s.run &&
-          s.run.includes("--omit=dev"),
+          s.run.includes("--omit=dev")
       );
       expect(prodAudit).toBeDefined();
       expect(prodAudit["timeout-minutes"]).toBeDefined();
@@ -120,7 +107,7 @@ describe("Supply Chain Management (E4-S4)", () => {
           s.name &&
           s.name.toLowerCase().includes("production") &&
           s.run &&
-          s.run.includes("--omit=dev"),
+          s.run.includes("--omit=dev")
       );
       expect(prodAudit).toBeDefined();
       expect(prodAudit.run).not.toContain("|| true");
@@ -133,9 +120,7 @@ describe("Supply Chain Management (E4-S4)", () => {
       const securitySteps = ciConfig.jobs.security.steps;
       const devAudit = securitySteps.find(
         (s) =>
-          s.name &&
-          s.name.toLowerCase().includes("dev") &&
-          s.name.toLowerCase().includes("audit"),
+          s.name && s.name.toLowerCase().includes("dev") && s.name.toLowerCase().includes("audit")
       );
       expect(devAudit).toBeDefined();
       expect(devAudit["continue-on-error"]).toBe(true);
@@ -145,9 +130,7 @@ describe("Supply Chain Management (E4-S4)", () => {
       const securitySteps = ciConfig.jobs.security.steps;
       const devAudit = securitySteps.find(
         (s) =>
-          s.name &&
-          s.name.toLowerCase().includes("dev") &&
-          s.name.toLowerCase().includes("audit"),
+          s.name && s.name.toLowerCase().includes("dev") && s.name.toLowerCase().includes("audit")
       );
       expect(devAudit).toBeDefined();
       // Must parse for CRITICAL/critical severity and create annotation
@@ -191,7 +174,7 @@ describe("Supply Chain Management (E4-S4)", () => {
           s.name &&
           s.name.toLowerCase().includes("budget") &&
           s.run &&
-          s.run.includes("check-dep-budget"),
+          s.run.includes("check-dep-budget")
       );
       expect(budgetStep).toBeDefined();
     });
@@ -203,7 +186,7 @@ describe("Supply Chain Management (E4-S4)", () => {
           s.name &&
           s.name.toLowerCase().includes("budget") &&
           s.run &&
-          s.run.includes("check-dep-budget"),
+          s.run.includes("check-dep-budget")
       );
       expect(budgetStep).toBeDefined();
       expect(budgetStep["continue-on-error"]).toBe(true);

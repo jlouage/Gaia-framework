@@ -60,7 +60,7 @@ function parseLifecycleSequenceKeys(filePath) {
       continue;
     }
     if (inSequence) {
-      const match = line.match(/^  ([a-z][a-z0-9-]*):\s*$/);
+      const match = line.match(/^ {2}([a-z][a-z0-9-]*):\s*$/);
       if (match) {
         keys.push(match[1]);
       }
@@ -114,10 +114,7 @@ describe("Manifest and Config Gap Cleanup (E9-S14)", () => {
 
   // AC2: Single val_integration block in global.yaml, no stale commented-out duplicates
   describe("AC2: val_integration consolidation in global.yaml", () => {
-    const globalContent = readFileSync(
-      join(CONFIG_PATH, "global.yaml"),
-      "utf8",
-    );
+    const globalContent = readFileSync(join(CONFIG_PATH, "global.yaml"), "utf8");
 
     it("should have exactly one val_integration key (no commented-out duplicates)", () => {
       // Count lines that have commented-out val_integration
@@ -126,7 +123,7 @@ describe("Manifest and Config Gap Cleanup (E9-S14)", () => {
         .filter((line) => line.match(/^\s*#\s*val_integration\s*:/));
       expect(
         commentedOutLines,
-        `Found stale commented-out val_integration lines: ${commentedOutLines.join(", ")}`,
+        `Found stale commented-out val_integration lines: ${commentedOutLines.join(", ")}`
       ).toHaveLength(0);
     });
 
@@ -138,49 +135,35 @@ describe("Manifest and Config Gap Cleanup (E9-S14)", () => {
     });
 
     it("should have template_output_review under val_integration", () => {
-      expect(globalContent).toMatch(
-        /val_integration:\s*\n\s+template_output_review:\s*true/,
-      );
+      expect(globalContent).toMatch(/val_integration:\s*\n\s+template_output_review:\s*true/);
     });
   });
 
   // AC3: lifecycle-sequence.yaml has entry for val-refresh-ground-truth
   describe("AC3: lifecycle-sequence.yaml entries", () => {
-    const sequenceKeys = parseLifecycleSequenceKeys(
-      join(CONFIG_PATH, "lifecycle-sequence.yaml"),
-    );
+    const sequenceKeys = parseLifecycleSequenceKeys(join(CONFIG_PATH, "lifecycle-sequence.yaml"));
 
     it("should have val-refresh-ground-truth in lifecycle-sequence.yaml", () => {
       expect(sequenceKeys).toContain("val-refresh-ground-truth");
     });
 
     it("val-refresh-ground-truth entry should have a command field", () => {
-      const content = readFileSync(
-        join(CONFIG_PATH, "lifecycle-sequence.yaml"),
-        "utf8",
-      );
+      const content = readFileSync(join(CONFIG_PATH, "lifecycle-sequence.yaml"), "utf8");
       expect(content).toMatch(
-        /val-refresh-ground-truth:[\s\S]*?command:\s*\/gaia-refresh-ground-truth/,
+        /val-refresh-ground-truth:[\s\S]*?command:\s*\/gaia-refresh-ground-truth/
       );
     });
 
     it("val-refresh-ground-truth entry should have a next field", () => {
-      const content = readFileSync(
-        join(CONFIG_PATH, "lifecycle-sequence.yaml"),
-        "utf8",
-      );
-      expect(content).toMatch(
-        /val-refresh-ground-truth:[\s\S]*?next:/,
-      );
+      const content = readFileSync(join(CONFIG_PATH, "lifecycle-sequence.yaml"), "utf8");
+      expect(content).toMatch(/val-refresh-ground-truth:[\s\S]*?next:/);
     });
   });
 
   // Cross-manifest consistency: every workflow-manifest entry should have a lifecycle-sequence entry
   describe("Cross-manifest consistency", () => {
     const manifest = parseCSV(join(CONFIG_PATH, "workflow-manifest.csv"));
-    const sequenceKeys = parseLifecycleSequenceKeys(
-      join(CONFIG_PATH, "lifecycle-sequence.yaml"),
-    );
+    const sequenceKeys = parseLifecycleSequenceKeys(join(CONFIG_PATH, "lifecycle-sequence.yaml"));
     const sequenceSet = new Set(sequenceKeys);
 
     const missingFromSequence = manifest
@@ -190,7 +173,7 @@ describe("Manifest and Config Gap Cleanup (E9-S14)", () => {
     it("every workflow in workflow-manifest.csv should have a lifecycle-sequence.yaml entry", () => {
       expect(
         missingFromSequence,
-        `Workflows in manifest but missing from lifecycle-sequence.yaml: ${missingFromSequence.join(", ")}`,
+        `Workflows in manifest but missing from lifecycle-sequence.yaml: ${missingFromSequence.join(", ")}`
       ).toHaveLength(0);
     });
   });

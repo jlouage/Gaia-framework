@@ -340,6 +340,12 @@ sequence:
         - command: /gaia-create-story
           context: "To create individual stories from triaged findings"
 
+  action-items:
+    phase: 4-implementation
+    command: /gaia-action-items
+    next:
+      standalone: true
+
   retrospective:
     phase: 4-implementation
     command: /gaia-retro
