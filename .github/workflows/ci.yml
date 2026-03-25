@@ -1,5 +1,7 @@
 # CI Pipeline — runs on PRs and pushes to main
 # Job topology: lint → test → package (sequential), security (parallel)
+# E4-S1: Base pipeline structure (lint, test, security, package)
+# E4-S4: Supply chain gates (audit hard/soft, dep budget, lock-file detection)
 # See docs/planning-artifacts/architecture.md Section 10.4
 
 name: CI
@@ -93,6 +95,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -103,11 +107,53 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Audit production dependencies (hard gate)
-        run: npm audit --omit=dev --audit-level=moderate
+      - name: Check lock-file-only changes
+        if: github.event_name == 'pull_request'
+        run: |
+          # Detect PRs that modify package-lock.json without a corresponding package.json change
+          CHANGED_FILES=$(git diff --name-only ${{ github.event.pull_request.base.sha }}..HEAD 2>/dev/null || echo "")
+          if echo "$CHANGED_FILES" | grep -q "^package-lock.json$"; then
+            if ! echo "$CHANGED_FILES" | grep -q "^package.json$"; then
+              echo "::warning::package-lock.json changed without a package.json change — verify this is intentional"
+            fi
+          fi
 
-      - name: Audit dev dependencies (informational)
-        run: npm audit --audit-level=high || true
+      - name: Audit production dependencies (hard gate)
+        timeout-minutes: 5
+        run: npm audit --omit=dev
+
+      - name: Audit dev dependencies (soft gate)
+        continue-on-error: true
+        run: |
+          OUTPUT=$(npm audit --json 2>/dev/null || true)
+          echo "$OUTPUT" | node -e "
+            const data = require('fs').readFileSync('/dev/stdin', 'utf8');
+            try {
+              const report = JSON.parse(data);
+              const vulns = report.vulnerabilities || {};
+              let hasCritical = false;
+              for (const [name, info] of Object.entries(vulns)) {
+                if (info.severity === 'critical') {
+                  hasCritical = true;
+                  console.log('CRITICAL vulnerability: ' + name + ' — ' + (info.via?.[0]?.title || 'no details'));
+                }
+              }
+              if (hasCritical) {
+                console.log('::warning::CRITICAL dev dependency vulnerabilities detected — see audit output above');
+              }
+              // Log summary
+              const meta = report.metadata || {};
+              const total = meta.vulnerabilities || {};
+              console.log('Audit summary: ' + JSON.stringify(total));
+            } catch (e) {
+              console.log('Could not parse audit JSON — raw output logged above');
+              console.log(data.substring(0, 500));
+            }
+          "
+
+      - name: Dependency budget check (soft gate)
+        continue-on-error: true
+        run: bash scripts/check-dep-budget.sh
 
   package:
     name: Package Validation
@@ -126,22 +172,42 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Guard against .npmignore
+        run: |
+          if [ -f ".npmignore" ]; then
+            echo "::error::Remove .npmignore — use package.json files field as the canonical whitelist. .npmignore silently overrides the files field."
+            exit 1
+          fi
+          echo ".npmignore guard passed — no .npmignore file found"
+
       - name: Verify package contents
         run: |
           echo "=== npm pack dry run ==="
           PACK_OUTPUT=$(npm pack --dry-run 2>&1)
           echo "$PACK_OUTPUT"
 
-          # Check that test/ and .github/ are excluded
-          if echo "$PACK_OUTPUT" | grep -q "test/"; then
-            echo "::error::Package includes test/ directory — should be excluded"
+          VIOLATIONS=""
+
+          # Full exclusion matrix per architecture Section 10.6 and E4-S3 story
+          EXCLUDED_PATTERNS="test/ .github/ .eslintrc .prettierrc .editorconfig .husky/ docs/"
+
+          for PATTERN in $EXCLUDED_PATTERNS; do
+            if echo "$PACK_OUTPUT" | grep -q "$PATTERN"; then
+              echo "::error::Package includes $PATTERN — should be excluded by files whitelist"
+              VIOLATIONS="${VIOLATIONS}  - $PATTERN\n"
+            fi
+          done
+
+          if [ -n "$VIOLATIONS" ]; then
+            echo ""
+            echo "::error::Package content verification FAILED — unexpected files detected:"
+            echo -e "$VIOLATIONS"
+            echo "Fix: ensure package.json 'files' field only includes production files."
             exit 1
           fi
-          if echo "$PACK_OUTPUT" | grep -q ".github/"; then
-            echo "::error::Package includes .github/ directory — should be excluded"
-            exit 1
-          fi
-          echo "Package contents verified — test/ and .github/ excluded"
+
+          FILE_COUNT=$(echo "$PACK_OUTPUT" | grep -c "│" || true)
+          echo "Package contents verified — $FILE_COUNT files match whitelist, no excluded patterns found"
 
       - name: Check transitive dependency count
         run: |
