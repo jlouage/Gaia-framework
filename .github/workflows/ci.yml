@@ -1,0 +1,165 @@
+# CI Pipeline — runs on PRs and pushes to main
+# Job topology: lint → test → package (sequential), security (parallel)
+# See docs/planning-artifacts/architecture.md Section 10.4
+
+name: CI
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  checks: write
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: ESLint
+        run: npx eslint .
+
+      - name: Prettier check
+        run: npx prettier --check .
+
+      - name: ShellCheck
+        if: runner.os != 'Windows'
+        run: |
+          sudo apt-get install -y shellcheck
+          find . -name "*.sh" -not -path "./node_modules/*" -exec shellcheck {} +
+
+  test:
+    name: Test (${{ matrix.os }})
+    needs: [lint]
+    runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.os == 'windows-latest' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Vitest
+        run: npm test
+
+      - name: Setup BATS
+        if: runner.os != 'Windows'
+        run: bash test/shell/setup-bats.sh
+
+      - name: Run BATS shell tests
+        if: runner.os != 'Windows'
+        run: npm run test:shell
+
+      - name: Windows validation
+        if: runner.os == 'Windows'
+        run: bash test/shell/windows-validate.sh
+
+      - name: Upload coverage report
+        if: matrix.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/
+
+  security:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Audit production dependencies (hard gate)
+        run: npm audit --omit=dev --audit-level=moderate
+
+      - name: Audit dev dependencies (informational)
+        run: npm audit --audit-level=high || true
+
+  package:
+    name: Package Validation
+    needs: [test]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify package contents
+        run: |
+          echo "=== npm pack dry run ==="
+          PACK_OUTPUT=$(npm pack --dry-run 2>&1)
+          echo "$PACK_OUTPUT"
+
+          # Check that test/ and .github/ are excluded
+          if echo "$PACK_OUTPUT" | grep -q "test/"; then
+            echo "::error::Package includes test/ directory — should be excluded"
+            exit 1
+          fi
+          if echo "$PACK_OUTPUT" | grep -q ".github/"; then
+            echo "::error::Package includes .github/ directory — should be excluded"
+            exit 1
+          fi
+          echo "Package contents verified — test/ and .github/ excluded"
+
+      - name: Check transitive dependency count
+        run: |
+          DEP_COUNT=$(npm ls --all --json 2>/dev/null | node -e "
+            const data = require('fs').readFileSync('/dev/stdin', 'utf8');
+            const tree = JSON.parse(data);
+            function countDeps(obj) {
+              let count = 0;
+              if (obj.dependencies) {
+                for (const [name, dep] of Object.entries(obj.dependencies)) {
+                  count += 1 + countDeps(dep);
+                }
+              }
+              return count;
+            }
+            console.log(countDeps(tree));
+          ")
+          echo "Transitive dependency count: $DEP_COUNT"
+          if [ "$DEP_COUNT" -gt 400 ]; then
+            echo "::warning::Transitive dependency count ($DEP_COUNT) exceeds budget of 400"
+          fi

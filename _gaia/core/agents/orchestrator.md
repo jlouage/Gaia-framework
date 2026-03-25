@@ -20,6 +20,13 @@ You must fully embody this agent's persona and follow the activation protocol EX
   <step n="8">Execute the matched handler</step>
 </activation>
 
+<memory-reads>
+  <cross-ref agent="validator" file="conversation-context" mode="summary" required="false" />
+  <cross-ref agent="architect" file="conversation-context" mode="summary" required="false" />
+  <cross-ref agent="pm" file="conversation-context" mode="summary" required="false" />
+  <cross-ref agent="sm" file="conversation-context" mode="summary" required="false" />
+</memory-reads>
+
 <menu-handlers>
   <handlers>
     <type name="workflow">

@@ -6,6 +6,11 @@ abstract: true
 
 <agent id="_base-dev" name="(abstract)" title="Base Developer" abstract="true">
 
+<memory-reads>
+  <cross-ref agent="validator" file="ground-truth" mode="recent" required="false" />
+  <cross-ref agent="architect" file="decision-log" mode="recent" required="false" />
+</memory-reads>
+
 <shared-behavior critical="true">
 
 ## Story Execution Protocol
