@@ -50,32 +50,17 @@ describe("AC1: Every template referenced by at least one workflow", () => {
     expect(colocated.length, "Expected at least 1 co-located template").toBeGreaterThan(0);
   });
 
-  it("should report orphaned templates that are not referenced by any workflow", () => {
+  it("should have zero orphaned templates (all referenced by workflows)", () => {
     const orphans = findOrphans(templates, references);
-    // Known orphans: templates only used via <template-output> (output destinations),
-    // not via workflow.yaml template: field or instructions.xml <action> references.
-    // These are: deployment-template, review-template, sprint-plan-template,
-    // test-plan-template, product-brief-template.
-    // The validator correctly detects these — the framework should add proper references.
     const orphanNames = orphans.map((o) => basename(o));
-    const knownOrphans = [
-      "deployment-template.md",
-      "review-template.md",
-      "sprint-plan-template.md",
-      "test-plan-template.md",
-      "product-brief-template.md",
-    ];
-    // Verify all detected orphans are known — no unexpected orphans
-    for (const name of orphanNames) {
-      expect(
-        knownOrphans,
-        `Unexpected orphan detected: ${name}. If this is intentional, add it to knownOrphans.`
-      ).toContain(name);
-    }
-    // Verify known orphans are detected
-    for (const known of knownOrphans) {
-      expect(orphanNames, `Expected orphan not detected: ${known}`).toContain(known);
-    }
+    // E9-S15: All formerly orphaned templates now have workflow.yaml template: references.
+    // deployment-template -> deployment-checklist, review-template -> code-review,
+    // sprint-plan-template -> sprint-planning, test-plan-template -> test-design,
+    // product-brief-template -> create-product-brief.
+    expect(
+      orphanNames,
+      `Orphaned templates detected: ${orphanNames.join(", ")}. Every template must be referenced by at least one workflow.`
+    ).toHaveLength(0);
   });
 
   it("should find references from workflow.yaml template: fields", () => {

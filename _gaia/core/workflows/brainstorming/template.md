@@ -1,3 +1,9 @@
+---
+template: 'brainstorming'
+version: 1.0.0
+used_by: ['brainstorming']
+---
+
 # Brainstorming Session: {topic}
 
 **Date:** {date}

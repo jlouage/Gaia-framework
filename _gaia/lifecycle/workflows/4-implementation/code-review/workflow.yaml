@@ -7,6 +7,7 @@ config_source: "{project-root}/_gaia/lifecycle/config.yaml"
 installed_path: "{project-root}/_gaia/lifecycle/workflows/4-implementation/code-review"
 instructions: "{installed_path}/instructions.xml"
 validation: "{installed_path}/checklist.md"
+template: "{project-root}/_gaia/lifecycle/templates/review-template.md"
 input_file_patterns:
   architecture:
     whole: "{planning_artifacts}/architecture.md"

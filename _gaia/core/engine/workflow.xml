@@ -171,7 +171,10 @@ execution modes (normal/yolo/planning), checkpoints, and quality gates.
 <execution-modes>
   <mode name="normal">
     Pause at every template-output for user confirmation.
-    Prompt: "[c] Continue | [y] Switch to YOLO | [e] Edit output"
+    Prompt: "[c] Continue | [y] Switch to YOLO | [e] Edit output | [v] Review with Val"
+    The [v] option is shown when Val integration is enabled (val_integration.template_output_review: true in global.yaml,
+    validator.md exists, and validator-sidecar/ exists). When [v] is selected, the engine invokes val-validate-artifact
+    as a subagent to validate the saved artifact. If Val is not enabled, only [c]/[y]/[e] are shown.
     Pause at every ask tag — present the question and WAIT for user response.
     NEVER infer or skip an ask, even if the answer appears available from context.
     Pause when a subagent returns — show results summary and wait for [c]ontinue.

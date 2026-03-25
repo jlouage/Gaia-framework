@@ -8,6 +8,7 @@ config_source: "{project-root}/_gaia/lifecycle/config.yaml"
 installed_path: "{project-root}/_gaia/lifecycle/workflows/4-implementation/sprint-planning"
 instructions: "{installed_path}/instructions.xml"
 validation: "{installed_path}/checklist.md"
+template: "{project-root}/_gaia/lifecycle/templates/sprint-plan-template.md"
 input_file_patterns:
   epics:
     whole: "{planning_artifacts}/epics-and-stories.md"

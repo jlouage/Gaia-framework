@@ -7,5 +7,6 @@ config_source: "{project-root}/_gaia/testing/config.yaml"
 installed_path: "{project-root}/_gaia/testing/workflows/test-design"
 instructions: "{installed_path}/instructions.xml"
 validation: "{installed_path}/checklist.md"
+template: "{project-root}/_gaia/lifecycle/templates/test-plan-template.md"
 output:
   primary: "{test_artifacts}/test-plan.md"
