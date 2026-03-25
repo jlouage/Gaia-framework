@@ -1,0 +1,14 @@
+# CODEOWNERS — GAIA Framework
+# Requires maintainer review for critical infrastructure files (SR-10, E4-S5)
+# See: docs/test-artifacts/ci-setup.md Section 7.4
+
+# CI/CD workflows require maintainer review
+.github/workflows/    @gaia-framework/maintainers
+
+# Package manifests require maintainer review
+package.json          @gaia-framework/maintainers
+package-lock.json     @gaia-framework/maintainers
+
+# Installer and CLI require maintainer review
+gaia-install.sh       @gaia-framework/maintainers
+bin/                  @gaia-framework/maintainers
