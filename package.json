@@ -36,11 +36,16 @@
   },
   "license": "AGPL-3.0",
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
   },
   "files": [
     "bin/",
-    "gaia-install.sh"
+    "gaia-install.sh",
+    "_gaia/",
+    ".claude/",
+    "CLAUDE.md",
+    "README.md",
+    "LICENSE"
   ],
   "devDependencies": {
     "@eslint/js": "^9.39.4",

@@ -1,0 +1,141 @@
+# Publish Pipeline — triggers on GitHub Release creation
+# E4-S2: Automated npm publish with provenance attestation
+# ADR-008: GitHub Actions for CI/CD
+# ADR-009: Release-triggered publish (not tag-triggered)
+# ADR-011: Tier 2 staleness enforcement
+# See docs/planning-artifacts/architecture.md Section 10.4
+
+name: Publish
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  publish:
+    name: Publish to npm
+    runs-on: ubuntu-latest
+    if: github.event.release.draft == false
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run full test suite
+        run: npm test
+
+      - name: Verify version matches release tag
+        run: |
+          TAG_VERSION="${{ github.event.release.tag_name }}"
+          TAG_VERSION="${TAG_VERSION#v}"
+          PKG_VERSION=$(node -p "require('./package.json').version")
+
+          echo "Release tag version: $TAG_VERSION"
+          echo "package.json version: $PKG_VERSION"
+
+          if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
+            echo "::error::Version mismatch — release tag ($TAG_VERSION) does not match package.json ($PKG_VERSION)"
+            exit 1
+          fi
+
+          echo "Version match confirmed: $TAG_VERSION"
+
+      - name: Tier 2 staleness check
+        run: |
+          TIER2_DIR="_gaia/_memory/tier2-results"
+
+          # Gate 1: Directory must exist and be non-empty
+          if [ ! -d "$TIER2_DIR" ] || [ -z "$(ls -A "$TIER2_DIR" 2>/dev/null)" ]; then
+            echo "::error::Tier 2 results directory ($TIER2_DIR) is missing or empty — treated as stale"
+            exit 1
+          fi
+
+          # Gate 2: Compare result timestamps against latest relevant commit
+          LATEST_COMMIT_TS=$(git log -1 --format=%ct -- _gaia/core/engine/ _gaia/_memory/)
+          if [ -z "$LATEST_COMMIT_TS" ]; then
+            echo "No commits found for _gaia/core/engine/ or _gaia/_memory/ — skipping staleness comparison"
+            exit 0
+          fi
+
+          echo "Latest relevant commit timestamp: $LATEST_COMMIT_TS"
+
+          STALE_COUNT=0
+          STALE_LIST=""
+          for result_file in "$TIER2_DIR"/*; do
+            [ -f "$result_file" ] || continue
+            FILE_TS=$(stat -c %Y "$result_file" 2>/dev/null || stat -f %m "$result_file" 2>/dev/null)
+            if [ "$FILE_TS" -lt "$LATEST_COMMIT_TS" ]; then
+              STALE_COUNT=$((STALE_COUNT + 1))
+              STALE_LIST="$STALE_LIST\n  - $result_file (file: $FILE_TS, commit: $LATEST_COMMIT_TS)"
+            fi
+          done
+
+          if [ "$STALE_COUNT" -gt 0 ]; then
+            echo "::error::$STALE_COUNT stale Tier 2 result(s) detected:$STALE_LIST"
+            exit 1
+          fi
+
+          echo "All Tier 2 results are fresh"
+
+      - name: Publish to npm with provenance
+        run: |
+          npm publish --provenance 2>&1 || {
+            EXIT_CODE=$?
+            # Detect duplicate publish (HTTP 403)
+            if npm view gaia-framework version 2>/dev/null | grep -q "$(node -p 'require("./package.json").version')"; then
+              echo "::error::Package version already exists on npm registry (duplicate publish). Bump the version in package.json before creating a new release."
+              exit 1
+            fi
+            echo "::error::npm publish failed with exit code $EXIT_CODE"
+            exit $EXIT_CODE
+          }
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Verify published version
+        run: |
+          EXPECTED_VERSION=$(node -p "require('./package.json').version")
+          echo "Verifying npm registry has version $EXPECTED_VERSION..."
+
+          for attempt in 1 2 3; do
+            echo "Attempt $attempt of 3..."
+            PUBLISHED=$(npm view gaia-framework version 2>/dev/null || echo "")
+            if [ "$PUBLISHED" = "$EXPECTED_VERSION" ]; then
+              echo "Verified: gaia-framework@$EXPECTED_VERSION is live on npm"
+              exit 0
+            fi
+            if [ "$attempt" -lt 3 ]; then
+              echo "Version not yet propagated, waiting 15s..."
+              sleep 15
+            fi
+          done
+
+          echo "::warning::Published version ($EXPECTED_VERSION) not yet visible on npm registry after 3 attempts. Package was published successfully — CDN propagation may be delayed."
+
+      - name: Generate checksums
+        run: |
+          npm pack
+          TGZ_FILE=$(ls gaia-framework-*.tgz)
+          sha256sum "$TGZ_FILE" > checksums.txt
+          echo "Generated checksums:"
+          cat checksums.txt
+
+      - name: Attach checksums to release
+        continue-on-error: true
+        run: |
+          gh release upload "${{ github.event.release.tag_name }}" checksums.txt --clobber || echo "::warning::Failed to attach checksums.txt to release — package is already published"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

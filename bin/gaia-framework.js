@@ -10,6 +10,36 @@ const { mkdtempSync, rmSync, existsSync, readFileSync } = require("fs");
 const { join } = require("path");
 const { tmpdir } = require("os");
 
+// ─── Node.js Version Guard (E7-S2) ─────────────────────────────────────────
+
+const MIN_NODE_MAJOR = 20;
+
+function stripPrefix(version) {
+  return (version || "").replace(/^v/, "");
+}
+
+function checkNodeVersion(version) {
+  const major = parseInt(stripPrefix(version).split(".")[0], 10);
+  return major >= MIN_NODE_MAJOR;
+}
+
+function getNodeVersionWarning(version) {
+  const current = stripPrefix(version);
+  return (
+    `\x1b[31m✖\x1b[0m  Node.js ${current} is not supported.\n` +
+    `   GAIA Framework requires Node.js >= ${MIN_NODE_MAJOR}.\n` +
+    `   Download the latest version: https://nodejs.org/en/download\n` +
+    `   Current: ${current} | Required: >= ${MIN_NODE_MAJOR}`
+  );
+}
+
+if (require.main === module && !checkNodeVersion(process.version)) {
+  console.error(getNodeVersionWarning(process.version));
+  process.exit(1);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 const REPO_URL = "https://github.com/jlouage/Gaia-framework.git";
 const SCRIPT_NAME = "gaia-install.sh";
 const IS_WINDOWS = process.platform === "win32";
@@ -265,4 +295,4 @@ if (require.main === module) {
   main();
 }
 
-module.exports = { findBash, ensureGit, showUsage, fail, info, cleanup, readPackageVersion, main };
+module.exports = { checkNodeVersion, getNodeVersionWarning, findBash, ensureGit, showUsage, fail, info, cleanup, readPackageVersion, main };

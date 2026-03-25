@@ -79,9 +79,9 @@ describe("package.json scripts (AC3, AC4)", () => {
     expect(Object.keys(deps).length).toBe(0);
   });
 
-  it("should require Node.js >= 18", () => {
+  it("should require Node.js >= 20", () => {
     expect(pkg.engines).toBeDefined();
-    expect(pkg.engines.node).toBe(">=18");
+    expect(pkg.engines.node).toBe(">=20");
   });
 });
 
