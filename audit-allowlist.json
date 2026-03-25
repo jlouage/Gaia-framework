@@ -1,0 +1,12 @@
+{
+  "description": "Known npm audit advisories that are acceptable. Each entry documents why the advisory is allowlisted and when the exception expires.",
+  "format": {
+    "id": "npm advisory ID (number)",
+    "package": "affected package name",
+    "reason": "why this advisory is acceptable",
+    "expires": "ISO 8601 date when this exception should be reviewed",
+    "added_by": "who added this exception",
+    "added_date": "ISO 8601 date when added"
+  },
+  "allowlist": []
+}
