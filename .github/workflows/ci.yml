@@ -37,11 +37,16 @@ jobs:
       - name: Prettier check
         run: npx prettier --check .
 
+      # ShellCheck — shell script linting (E5-S3)
+      # Requires ShellCheck >= 0.9.0. Only errors block the pipeline (--severity=error).
+      # Install locally: macOS: brew install shellcheck | Linux: sudo apt-get install shellcheck
+      # Skipped on Windows runners (ADR-004: best-effort Windows support).
       - name: ShellCheck
         if: runner.os != 'Windows'
         run: |
-          sudo apt-get install -y shellcheck
-          find . -name "*.sh" -not -path "./node_modules/*" -exec shellcheck {} +
+          sudo apt-get install -y shellcheck=0.9.0*
+          shellcheck --version
+          find . -name "*.sh" -not -path "./node_modules/*" -exec shellcheck --severity=error {} +
 
   test:
     name: Test (${{ matrix.os }})
@@ -67,6 +72,19 @@ jobs:
 
       - name: Vitest
         run: npm test
+
+      # ShellCheck in test matrix — runs on Ubuntu and macOS, skipped on Windows (E5-S3)
+      # Ubuntu: apt-get install shellcheck | macOS: pre-installed or brew install shellcheck
+      - name: ShellCheck
+        if: runner.os != 'Windows'
+        run: |
+          if [ "$RUNNER_OS" = "Linux" ]; then
+            sudo apt-get install -y shellcheck=0.9.0*
+          elif [ "$RUNNER_OS" = "macOS" ]; then
+            brew install shellcheck
+          fi
+          shellcheck --version
+          find . -name "*.sh" -not -path "./node_modules/*" -exec shellcheck --severity=error {} +
 
       - name: Setup BATS
         if: runner.os != 'Windows'
