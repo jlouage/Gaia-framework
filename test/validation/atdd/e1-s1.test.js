@@ -50,7 +50,7 @@ const VALID_VARIABLE_REFS = [
 function findWorkflowFiles() {
   const result = execSync(
     `find -L "${GAIA_ROOT}" -name "workflow.yaml" -not -path "*/node_modules/*" -not -path "*/_backups/*"`,
-    { encoding: "utf8" },
+    { encoding: "utf8" }
   );
   return result
     .trim()
@@ -66,10 +66,7 @@ function parseWorkflow(filePath) {
 function resolveVariable(value, workflowPath, config) {
   let installedPath = join(PROJECT_ROOT, "_gaia");
   if (config?.installed_path) {
-    installedPath = config.installed_path.replace(
-      /\{project-root\}/g,
-      PROJECT_ROOT,
-    );
+    installedPath = config.installed_path.replace(/\{project-root\}/g, PROJECT_ROOT);
   }
   return value
     .replace(/\{installed_path\}/g, installedPath)
@@ -96,14 +93,10 @@ describe("ATDD E1-S1: Workflow Definition Validation", () => {
       it("instructions path resolves to an existing file", () => {
         expect(config).not.toBeNull();
         expect(config.instructions).toBeTruthy();
-        const resolved = resolveVariable(
-          config.instructions,
-          workflowPath,
-          config,
-        );
+        const resolved = resolveVariable(config.instructions, workflowPath, config);
         expect(
           existsSync(resolved),
-          `Instructions file not found: ${resolved} (workflow: ${workflowPath})`,
+          `Instructions file not found: ${resolved} (workflow: ${workflowPath})`
         ).toBe(true);
       });
 
@@ -112,42 +105,28 @@ describe("ATDD E1-S1: Workflow Definition Validation", () => {
         if (config.agent === "dev-*") return;
 
         const module = config.module || "lifecycle";
-        const agentPath = join(
-          PROJECT_ROOT,
-          "_gaia",
-          module,
-          "agents",
-          `${config.agent}.md`,
-        );
+        const agentPath = join(PROJECT_ROOT, "_gaia", module, "agents", `${config.agent}.md`);
         expect(
           existsSync(agentPath),
-          `Agent file not found: ${agentPath} (workflow: ${workflowPath})`,
+          `Agent file not found: ${agentPath} (workflow: ${workflowPath})`
         ).toBe(true);
       });
 
       it("config_source path exists (if declared)", () => {
         if (!config?.config_source) return;
-        const resolved = resolveVariable(
-          config.config_source,
-          workflowPath,
-          config,
-        );
+        const resolved = resolveVariable(config.config_source, workflowPath, config);
         expect(
           existsSync(resolved),
-          `config_source not found: ${resolved} (workflow: ${workflowPath})`,
+          `config_source not found: ${resolved} (workflow: ${workflowPath})`
         ).toBe(true);
       });
 
       it("validation/checklist paths exist (if declared)", () => {
         if (!config?.validation) return;
-        const resolved = resolveVariable(
-          config.validation,
-          workflowPath,
-          config,
-        );
+        const resolved = resolveVariable(config.validation, workflowPath, config);
         expect(
           existsSync(resolved),
-          `Validation file not found: ${resolved} (workflow: ${workflowPath})`,
+          `Validation file not found: ${resolved} (workflow: ${workflowPath})`
         ).toBe(true);
       });
     });
@@ -166,40 +145,27 @@ describe("ATDD E1-S1: Workflow Definition Validation", () => {
       .filter(
         (w) =>
           w?.config?.quality_gates &&
-          (w.config.quality_gates.pre_start ||
-            w.config.quality_gates.post_complete),
+          (w.config.quality_gates.pre_start || w.config.quality_gates.post_complete)
       );
 
     it("should find workflows with quality gates", () => {
       expect(
         workflowsWithGates.length,
-        "No workflows with quality_gates found — expected at least 1",
+        "No workflows with quality_gates found — expected at least 1"
       ).toBeGreaterThan(0);
     });
 
-    describe.each(workflowsWithGates.map((w) => [w.path, w.config]))(
-      "%s",
-      (wPath, wConfig) => {
-        const gates = [
-          ...(wConfig.quality_gates?.pre_start || []),
-          ...(wConfig.quality_gates?.post_complete || []),
-        ];
+    describe.each(workflowsWithGates.map((w) => [w.path, w.config]))("%s", (wPath, wConfig) => {
+      const gates = [
+        ...(wConfig.quality_gates?.pre_start || []),
+        ...(wConfig.quality_gates?.post_complete || []),
+      ];
 
-        it.each(gates)(
-          "gate '%s' has a verifiable check and on_fail message",
-          (gate) => {
-            expect(
-              gate.check,
-              `Gate missing 'check' field in ${wPath}`,
-            ).toBeTruthy();
-            expect(
-              gate.on_fail,
-              `Gate missing 'on_fail' field in ${wPath}`,
-            ).toBeTruthy();
-          },
-        );
-      },
-    );
+      it.each(gates)("gate '%s' has a verifiable check and on_fail message", (gate) => {
+        expect(gate.check, `Gate missing 'check' field in ${wPath}`).toBeTruthy();
+        expect(gate.on_fail, `Gate missing 'on_fail' field in ${wPath}`).toBeTruthy();
+      });
+    });
   });
 
   // ── AC3: Output artifact variable references ──────────────────────
@@ -215,39 +181,32 @@ describe("ATDD E1-S1: Workflow Definition Validation", () => {
       .filter((w) => w?.config?.output);
 
     it("should find workflows with output declarations", () => {
-      expect(
-        workflowsWithOutput.length,
-        "No workflows with output fields found",
-      ).toBeGreaterThan(0);
+      expect(workflowsWithOutput.length, "No workflows with output fields found").toBeGreaterThan(
+        0
+      );
     });
 
-    describe.each(workflowsWithOutput.map((w) => [w.path, w.config]))(
-      "%s",
-      (wPath, wConfig) => {
-        const outputPaths = [];
-        if (wConfig.output?.primary) outputPaths.push(wConfig.output.primary);
-        if (wConfig.output?.artifacts) {
-          if (Array.isArray(wConfig.output.artifacts)) {
-            outputPaths.push(...wConfig.output.artifacts);
-          } else if (typeof wConfig.output.artifacts === "string") {
-            outputPaths.push(wConfig.output.artifacts);
-          }
+    describe.each(workflowsWithOutput.map((w) => [w.path, w.config]))("%s", (wPath, wConfig) => {
+      const outputPaths = [];
+      if (wConfig.output?.primary) outputPaths.push(wConfig.output.primary);
+      if (wConfig.output?.artifacts) {
+        if (Array.isArray(wConfig.output.artifacts)) {
+          outputPaths.push(...wConfig.output.artifacts);
+        } else if (typeof wConfig.output.artifacts === "string") {
+          outputPaths.push(wConfig.output.artifacts);
         }
+      }
 
-        it.each(outputPaths)(
-          "output path '%s' uses only valid variable references",
-          (outputPath) => {
-            const varRefs = outputPath.match(/\{[^}]+\}/g) || [];
-            for (const ref of varRefs) {
-              expect(
-                VALID_VARIABLE_REFS,
-                `Invalid variable reference '${ref}' in output path of ${wPath}`,
-              ).toContain(ref);
-            }
-          },
-        );
-      },
-    );
+      it.each(outputPaths)("output path '%s' uses only valid variable references", (outputPath) => {
+        const varRefs = outputPath.match(/\{[^}]+\}/g) || [];
+        for (const ref of varRefs) {
+          expect(
+            VALID_VARIABLE_REFS,
+            `Invalid variable reference '${ref}' in output path of ${wPath}`
+          ).toContain(ref);
+        }
+      });
+    });
   });
 
   // ── AC4: YAML parsing without error ───────────────────────────────
@@ -261,10 +220,7 @@ describe("ATDD E1-S1: Workflow Definition Validation", () => {
       } catch (e) {
         parseError = e;
       }
-      expect(
-        parseError,
-        `YAML parse error in ${workflowPath}: ${parseError?.message}`,
-      ).toBeNull();
+      expect(parseError, `YAML parse error in ${workflowPath}: ${parseError?.message}`).toBeNull();
       expect(parsed).toBeTruthy();
     });
   });
@@ -273,12 +229,10 @@ describe("ATDD E1-S1: Workflow Definition Validation", () => {
   describe("AC5: Validation produces clear error messages identifying specific workflow and failing check", () => {
     it("test file contains workflow-identifying error messages in assertions", () => {
       const thisFile = readFileSync(import.meta.filename, "utf8");
-      const assertionsWithContext = (
-        thisFile.match(/\$\{w(?:orkflow)?Path\}/g) || []
-      ).length;
+      const assertionsWithContext = (thisFile.match(/\$\{w(?:orkflow)?Path\}/g) || []).length;
       expect(
         assertionsWithContext,
-        "Too few assertions include workflow-identifying error messages",
+        "Too few assertions include workflow-identifying error messages"
       ).toBeGreaterThanOrEqual(5);
     });
 
@@ -293,79 +247,41 @@ describe("ATDD E1-S1: Workflow Definition Validation", () => {
   // ── AC6: Test file location ───────────────────────────────────────
   describe("AC6: Test file at test/validation/tier1/workflows.test.js", () => {
     it("workflows.test.js exists at the declared path", () => {
-      const targetPath = join(
-        PROJECT_ROOT,
-        "test",
-        "validation",
-        "tier1",
-        "workflows.test.js",
-      );
-      expect(
-        existsSync(targetPath),
-        `Expected test file at ${targetPath}`,
-      ).toBe(true);
+      const targetPath = join(PROJECT_ROOT, "test", "validation", "tier1", "workflows.test.js");
+      expect(existsSync(targetPath), `Expected test file at ${targetPath}`).toBe(true);
     });
 
     it("workflows.test.js uses js-yaml for proper YAML parsing", () => {
-      const targetPath = join(
-        PROJECT_ROOT,
-        "test",
-        "validation",
-        "tier1",
-        "workflows.test.js",
-      );
+      const targetPath = join(PROJECT_ROOT, "test", "validation", "tier1", "workflows.test.js");
       if (!existsSync(targetPath)) return;
       const content = readFileSync(targetPath, "utf8");
-      expect(
-        content,
-        "workflows.test.js should import js-yaml for proper YAML parsing",
-      ).toContain("js-yaml");
+      expect(content, "workflows.test.js should import js-yaml for proper YAML parsing").toContain(
+        "js-yaml"
+      );
     });
 
     it("workflows.test.js validates config_source paths", () => {
-      const targetPath = join(
-        PROJECT_ROOT,
-        "test",
-        "validation",
-        "tier1",
-        "workflows.test.js",
-      );
+      const targetPath = join(PROJECT_ROOT, "test", "validation", "tier1", "workflows.test.js");
       if (!existsSync(targetPath)) return;
       const content = readFileSync(targetPath, "utf8");
-      expect(
-        content,
-        "workflows.test.js should validate config_source field",
-      ).toContain("config_source");
+      expect(content, "workflows.test.js should validate config_source field").toContain(
+        "config_source"
+      );
     });
 
     it("workflows.test.js validates quality_gates", () => {
-      const targetPath = join(
-        PROJECT_ROOT,
-        "test",
-        "validation",
-        "tier1",
-        "workflows.test.js",
-      );
+      const targetPath = join(PROJECT_ROOT, "test", "validation", "tier1", "workflows.test.js");
       if (!existsSync(targetPath)) return;
       const content = readFileSync(targetPath, "utf8");
-      expect(
-        content,
-        "workflows.test.js should validate quality_gates",
-      ).toContain("quality_gates");
+      expect(content, "workflows.test.js should validate quality_gates").toContain("quality_gates");
     });
 
     it("workflows.test.js validates output artifact paths", () => {
-      const targetPath = join(
-        PROJECT_ROOT,
-        "test",
-        "validation",
-        "tier1",
-        "workflows.test.js",
-      );
+      const targetPath = join(PROJECT_ROOT, "test", "validation", "tier1", "workflows.test.js");
       if (!existsSync(targetPath)) return;
       const content = readFileSync(targetPath, "utf8");
       expect(content, "workflows.test.js should validate output paths").toMatch(
-        /output.*artifact|output.*primary/i,
+        /output.*artifact|output.*primary/i
       );
     });
   });

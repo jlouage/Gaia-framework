@@ -27,9 +27,16 @@ function withMockedGlobals(argv, fn) {
   let stderr = "";
 
   process.argv = argv;
-  console.log = (msg) => { stdout += msg; };
-  console.error = (msg) => { stderr += msg; };
-  process.exit = (code) => { exitCode = code; throw new Error("exit"); };
+  console.log = (msg) => {
+    stdout += msg;
+  };
+  console.error = (msg) => {
+    stderr += msg;
+  };
+  process.exit = (code) => {
+    exitCode = code;
+    throw new Error("exit");
+  };
   process.on = () => {};
 
   try {
@@ -69,7 +76,7 @@ describe("E3-S6: Code Coverage Enforcement", () => {
 
     it("should scope coverage to bin/**/*.js", () => {
       const configSource = readFileSync(VITEST_CONFIG_PATH, "utf8");
-      expect(configSource).toContain('bin/**/*.js');
+      expect(configSource).toContain("bin/**/*.js");
     });
   });
 
@@ -147,7 +154,9 @@ describe("E3-S6: Code Coverage Enforcement", () => {
     it("showUsage outputs usage text", () => {
       const originalLog = console.log;
       let output = "";
-      console.log = (msg) => { output += msg; };
+      console.log = (msg) => {
+        output += msg;
+      };
       mod.showUsage();
       console.log = originalLog;
       expect(output).toContain("gaia-framework");
@@ -158,7 +167,9 @@ describe("E3-S6: Code Coverage Enforcement", () => {
     it("info outputs formatted info message", () => {
       const originalLog = console.log;
       let output = "";
-      console.log = (msg) => { output += msg; };
+      console.log = (msg) => {
+        output += msg;
+      };
       mod.info("test message");
       console.log = originalLog;
       expect(output).toContain("test message");
@@ -184,30 +195,42 @@ describe("E3-S6: Code Coverage Enforcement", () => {
     });
 
     it("main shows usage and exits 0 when no args", () => {
-      const { exitCode, stdout } = withMockedGlobals(["node", "gaia-framework.js"], () => mod.main());
+      const { exitCode, stdout } = withMockedGlobals(["node", "gaia-framework.js"], () =>
+        mod.main()
+      );
       expect(exitCode).toBe(0);
       expect(stdout).toContain("gaia-framework");
     });
 
     it("main shows usage when --help flag is passed", () => {
-      const { exitCode } = withMockedGlobals(["node", "gaia-framework.js", "--help"], () => mod.main());
+      const { exitCode } = withMockedGlobals(["node", "gaia-framework.js", "--help"], () =>
+        mod.main()
+      );
       expect(exitCode).toBe(0);
     });
 
     it("main shows version when --version flag is passed", () => {
-      const { exitCode, stdout } = withMockedGlobals(["node", "gaia-framework.js", "--version"], () => mod.main());
+      const { exitCode, stdout } = withMockedGlobals(
+        ["node", "gaia-framework.js", "--version"],
+        () => mod.main()
+      );
       expect(exitCode).toBe(0);
       expect(stdout).toContain("gaia-framework v");
     });
 
     it("main rejects unknown commands", () => {
-      const { exitCode, stderr } = withMockedGlobals(["node", "gaia-framework.js", "badcommand"], () => mod.main());
+      const { exitCode, stderr } = withMockedGlobals(
+        ["node", "gaia-framework.js", "badcommand"],
+        () => mod.main()
+      );
       expect(exitCode).toBe(1);
       expect(stderr).toContain("Unknown command");
     });
 
     it("main with -v flag shows version and exits", () => {
-      const { exitCode, stdout } = withMockedGlobals(["node", "gaia-framework.js", "-v"], () => mod.main());
+      const { exitCode, stdout } = withMockedGlobals(["node", "gaia-framework.js", "-v"], () =>
+        mod.main()
+      );
       expect(exitCode).toBe(0);
       expect(stdout).toContain("gaia-framework v");
     });
@@ -252,15 +275,26 @@ describe("E3-S6: Code Coverage Enforcement", () => {
 
     it("init exercises clone-through-exec flow", () => {
       // Exercises the full main() body: ensureGit, mkdtempSync, process.on, info, execSync, existsSync, passthrough, findBash, execFileSync
-      const { exitCode } = withMockedGlobals(["node", "gaia-framework.js", "init", "/tmp/target"], () => mod.main(mockDeps()));
+      const { exitCode } = withMockedGlobals(
+        ["node", "gaia-framework.js", "init", "/tmp/target"],
+        () => mod.main(mockDeps())
+      );
       expect(exitCode).toBe(null); // No exit on success
     });
 
     it("init handles clone failure with stderr", () => {
-      const { exitCode, stderr } = withMockedGlobals(["node", "gaia-framework.js", "init", "/tmp/target"], () =>
-        mod.main(mockDeps({
-          execSync: () => { const err = new Error("clone failed"); err.stderr = Buffer.from("fatal: repo not found"); throw err; },
-        }))
+      const { exitCode, stderr } = withMockedGlobals(
+        ["node", "gaia-framework.js", "init", "/tmp/target"],
+        () =>
+          mod.main(
+            mockDeps({
+              execSync: () => {
+                const err = new Error("clone failed");
+                err.stderr = Buffer.from("fatal: repo not found");
+                throw err;
+              },
+            })
+          )
       );
       expect(exitCode).toBe(1);
       expect(stderr).toContain("Failed to clone");
@@ -268,24 +302,39 @@ describe("E3-S6: Code Coverage Enforcement", () => {
 
     it("init handles clone failure without stderr", () => {
       const { stderr } = withMockedGlobals(["node", "gaia-framework.js", "init", "."], () =>
-        mod.main(mockDeps({ execSync: () => { throw new Error("network error"); } }))
+        mod.main(
+          mockDeps({
+            execSync: () => {
+              throw new Error("network error");
+            },
+          })
+        )
       );
       expect(stderr).toContain("Check your network connection");
     });
 
     it("init handles missing installer script", () => {
-      const { exitCode, stderr } = withMockedGlobals(["node", "gaia-framework.js", "init", "/tmp/target"], () =>
-        mod.main(mockDeps({ existsSync: () => false }))
+      const { exitCode, stderr } = withMockedGlobals(
+        ["node", "gaia-framework.js", "init", "/tmp/target"],
+        () => mod.main(mockDeps({ existsSync: () => false }))
       );
       expect(exitCode).toBe(1);
       expect(stderr).toContain("Installer script not found");
     });
 
     it("init handles execFileSync failure with status code", () => {
-      const { exitCode } = withMockedGlobals(["node", "gaia-framework.js", "init", "/tmp/target"], () =>
-        mod.main(mockDeps({
-          execFileSync: () => { const err = new Error("failed"); err.status = 42; throw err; },
-        }))
+      const { exitCode } = withMockedGlobals(
+        ["node", "gaia-framework.js", "init", "/tmp/target"],
+        () =>
+          mod.main(
+            mockDeps({
+              execFileSync: () => {
+                const err = new Error("failed");
+                err.status = 42;
+                throw err;
+              },
+            })
+          )
       );
       expect(exitCode).toBe(42);
     });

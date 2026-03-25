@@ -13,19 +13,12 @@ describe("ATDD E7-S1: Remove eval Usage", () => {
   describe("AC1: eval replaced in cmd_validate", () => {
     it("should not contain eval in gaia-install.sh cmd_validate function", () => {
       const installScript = join(PROJECT_ROOT, "gaia-install.sh");
-      expect(existsSync(installScript), "gaia-install.sh must exist").toBe(
-        true,
-      );
+      expect(existsSync(installScript), "gaia-install.sh must exist").toBe(true);
 
       const content = readFileSync(installScript, "utf8");
       // Extract cmd_validate function body
-      const validateMatch = content.match(
-        /cmd_validate\s*\(\)\s*\{([\s\S]*?)\n\}/,
-      );
-      expect(
-        validateMatch,
-        "cmd_validate function must exist in gaia-install.sh",
-      ).not.toBeNull();
+      const validateMatch = content.match(/cmd_validate\s*\(\)\s*\{([\s\S]*?)\n\}/);
+      expect(validateMatch, "cmd_validate function must exist in gaia-install.sh").not.toBeNull();
 
       if (validateMatch) {
         const funcBody = validateMatch[1];
@@ -33,24 +26,18 @@ describe("ATDD E7-S1: Remove eval Usage", () => {
         const lines = funcBody.split("\n");
         const evalLines = lines.filter((line) => {
           const trimmed = line.trim();
-          return (
-            !trimmed.startsWith("#") &&
-            /\beval\b/.test(trimmed)
-          );
+          return !trimmed.startsWith("#") && /\beval\b/.test(trimmed);
         });
-        expect(
-          evalLines.length,
-          `cmd_validate still contains eval:\n${evalLines.join("\n")}`,
-        ).toBe(0);
+        expect(evalLines.length, `cmd_validate still contains eval:\n${evalLines.join("\n")}`).toBe(
+          0
+        );
       }
     });
 
     it("should use direct test commands instead of eval", () => {
       const installScript = join(PROJECT_ROOT, "gaia-install.sh");
       const content = readFileSync(installScript, "utf8");
-      const validateMatch = content.match(
-        /cmd_validate\s*\(\)\s*\{([\s\S]*?)\n\}/,
-      );
+      const validateMatch = content.match(/cmd_validate\s*\(\)\s*\{([\s\S]*?)\n\}/);
       expect(validateMatch, "cmd_validate must exist").not.toBeNull();
 
       if (validateMatch) {
@@ -58,7 +45,7 @@ describe("ATDD E7-S1: Remove eval Usage", () => {
         // Should use [[ ]] or test directly, and pass $? to check()
         expect(
           funcBody.includes("$?"),
-          "check() should receive exit status ($?) instead of condition string",
+          "check() should receive exit status ($?) instead of condition string"
         ).toBe(true);
       }
     });
@@ -72,15 +59,9 @@ describe("ATDD E7-S1: Remove eval Usage", () => {
       // Check that $TARGET is not used inside eval
       const lines = content.split("\n");
       const evalTargetLines = lines.filter(
-        (line) =>
-          !line.trim().startsWith("#") &&
-          /\beval\b/.test(line) &&
-          line.includes("TARGET"),
+        (line) => !line.trim().startsWith("#") && /\beval\b/.test(line) && line.includes("TARGET")
       );
-      expect(
-        evalTargetLines.length,
-        `$TARGET used in eval: ${evalTargetLines.join("; ")}`,
-      ).toBe(0);
+      expect(evalTargetLines.length, `$TARGET used in eval: ${evalTargetLines.join("; ")}`).toBe(0);
     });
   });
 
@@ -95,7 +76,7 @@ describe("ATDD E7-S1: Remove eval Usage", () => {
       const markerFile = join(tmpDir, "injection_marker");
       const result = execSync(
         `bash "${join(PROJECT_ROOT, "gaia-install.sh")}" validate '; touch ${markerFile} ;' 2>&1 || true`,
-        { encoding: "utf8" },
+        { encoding: "utf8" }
       );
       // Script should exit with error (non-zero already handled by || true)
       expect(result).toContain("No GAIA installation found");
@@ -109,7 +90,7 @@ describe("ATDD E7-S1: Remove eval Usage", () => {
       const markerFile = join(tmpDir, "backtick_marker");
       execSync(
         `bash "${join(PROJECT_ROOT, "gaia-install.sh")}" validate '\`touch ${markerFile}\`' 2>&1 || true`,
-        { encoding: "utf8" },
+        { encoding: "utf8" }
       );
       expect(existsSync(markerFile)).toBe(false);
       execSync(`rm -rf "${tmpDir}"`);
@@ -120,7 +101,7 @@ describe("ATDD E7-S1: Remove eval Usage", () => {
       const markerFile = join(tmpDir, "subshell_marker");
       execSync(
         `bash "${join(PROJECT_ROOT, "gaia-install.sh")}" validate '$(touch ${markerFile})' 2>&1 || true`,
-        { encoding: "utf8" },
+        { encoding: "utf8" }
       );
       expect(existsSync(markerFile)).toBe(false);
       execSync(`rm -rf "${tmpDir}"`);
@@ -137,29 +118,22 @@ describe("ATDD E7-S1: Remove eval Usage", () => {
         const trimmed = line.trim();
         return !trimmed.startsWith("#") && /\beval\b/.test(trimmed);
       });
-      expect(
-        evalLines.length,
-        `Found eval in production code:\n${evalLines.join("\n")}`,
-      ).toBe(0);
+      expect(evalLines.length, `Found eval in production code:\n${evalLines.join("\n")}`).toBe(0);
     });
 
     it("should have zero eval matches in bin/ JavaScript files", () => {
       try {
         const result = execSync(
           `grep -rn '\\beval\\b' "${join(PROJECT_ROOT, "bin")}" --include="*.js" 2>/dev/null || true`,
-          { encoding: "utf8" },
+          { encoding: "utf8" }
         );
         const evalLines = result
           .trim()
           .split("\n")
-          .filter(
-            (l) =>
-              l.length > 0 && !l.includes("//") && !l.includes("*"),
-          );
-        expect(
-          evalLines.length,
-          `Found eval in JS production code:\n${evalLines.join("\n")}`,
-        ).toBe(0);
+          .filter((l) => l.length > 0 && !l.includes("//") && !l.includes("*"));
+        expect(evalLines.length, `Found eval in JS production code:\n${evalLines.join("\n")}`).toBe(
+          0
+        );
       } catch {
         // If grep finds nothing, that's a pass
       }

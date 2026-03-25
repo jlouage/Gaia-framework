@@ -128,9 +128,7 @@ describe("E2-S1: Config Resolution Unit Tests", () => {
       const config = {
         path: "{undefined_setting}/output",
       };
-      expect(() => resolveVariables(config, PROJECT_ROOT)).toThrow(
-        /undefined_setting/,
-      );
+      expect(() => resolveVariables(config, PROJECT_ROOT)).toThrow(/undefined_setting/);
     });
   });
 

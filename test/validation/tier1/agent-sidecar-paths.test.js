@@ -52,19 +52,25 @@ describe("E8-S2: Agent Persona Sidecar Path Updates", () => {
           violations.push(file);
         }
       }
-      expect(violations, `Files still referencing _gaia/_memory: ${violations.join(", ")}`).toEqual([]);
+      expect(violations, `Files still referencing _gaia/_memory: ${violations.join(", ")}`).toEqual(
+        []
+      );
     });
 
     it("should have zero _gaia/_memory references in _base-dev.md", () => {
       const baseDev = `${AGENT_DIRS.dev}/_base-dev.md`;
       const content = readFileSync(baseDev, "utf8");
-      expect(content.includes("_gaia/_memory"), "_base-dev.md still references _gaia/_memory").toBe(false);
+      expect(content.includes("_gaia/_memory"), "_base-dev.md still references _gaia/_memory").toBe(
+        false
+      );
     });
 
     it("should have zero _gaia/_memory references in CLAUDE.md", () => {
       const claudeMd = `${PROJECT_ROOT}/CLAUDE.md`;
       const content = readFileSync(claudeMd, "utf8");
-      expect(content.includes("_gaia/_memory"), "CLAUDE.md still references _gaia/_memory").toBe(false);
+      expect(content.includes("_gaia/_memory"), "CLAUDE.md still references _gaia/_memory").toBe(
+        false
+      );
     });
   });
 
@@ -82,7 +88,10 @@ describe("E8-S2: Agent Persona Sidecar Path Updates", () => {
           yamlMemoryAgents.push(file);
         }
       }
-      expect(yamlMemoryAgents, `Agents using YAML frontmatter memory instead of XML: ${yamlMemoryAgents.join(", ")}`).toEqual([]);
+      expect(
+        yamlMemoryAgents,
+        `Agents using YAML frontmatter memory instead of XML: ${yamlMemoryAgents.join(", ")}`
+      ).toEqual([]);
     });
 
     it("should have every <memory sidecar> path follow _memory/{id}-sidecar/{filename}.md pattern", () => {
@@ -127,9 +136,10 @@ describe("E8-S2: Agent Persona Sidecar Path Updates", () => {
 
     for (const agentId of TIER_1_AGENTS) {
       it(`should have 3 sidecar files for Tier 1 agent: ${agentId}`, () => {
-        const dir = agentId === "architect" || agentId === "pm" || agentId === "sm" || agentId === "validator"
-          ? AGENT_DIRS.lifecycle
-          : AGENT_DIRS.core;
+        const dir =
+          agentId === "architect" || agentId === "pm" || agentId === "sm" || agentId === "validator"
+            ? AGENT_DIRS.lifecycle
+            : AGENT_DIRS.core;
         const filePath = join(dir, `${agentId}.md`);
         expect(existsSync(filePath), `${agentId}.md not found`).toBe(true);
         expect(countSidecarTags(filePath)).toBe(3);
@@ -153,12 +163,11 @@ describe("E8-S2: Agent Persona Sidecar Path Updates", () => {
     it("should have exactly 1 sidecar file for all Tier 3 agents", () => {
       const agentFiles = findAllAgentFiles();
       const tier1and2 = [...TIER_1_AGENTS, ...TIER_2_AGENTS];
-      const tier3Agents = agentFiles.filter(
-        ({ file }) => !tier1and2.includes(getAgentId(file)),
-      );
+      const tier3Agents = agentFiles.filter(({ file }) => !tier1and2.includes(getAgentId(file)));
       const wrong = [];
       for (const { path, file } of tier3Agents) {
-        const count = (readFileSync(path, "utf8").match(/<memory\s+sidecar="[^"]+"\s*\/>/g) || []).length;
+        const count = (readFileSync(path, "utf8").match(/<memory\s+sidecar="[^"]+"\s*\/>/g) || [])
+          .length;
         if (count !== 1) {
           wrong.push(`${file}: ${count} sidecars (expected 1)`);
         }
@@ -178,7 +187,9 @@ describe("E8-S2: Agent Persona Sidecar Path Updates", () => {
       const missingDirs = [];
       for (const { path, file } of agentFiles) {
         const content = readFileSync(path, "utf8");
-        const matches = content.matchAll(/<memory\s+sidecar="(_memory\/[\w-]+-sidecar)\/[\w-]+\.md"\s*\/>/g);
+        const matches = content.matchAll(
+          /<memory\s+sidecar="(_memory\/[\w-]+-sidecar)\/[\w-]+\.md"\s*\/>/g
+        );
         for (const match of matches) {
           const dirPath = join(PROJECT_ROOT, match[1]);
           if (!existsSync(dirPath)) {

@@ -24,13 +24,7 @@ const GAIA_ROOT = join(PROJECT_ROOT, "_gaia");
 const ENGINE_PATH = join(GAIA_ROOT, "core", "engine", "workflow.xml");
 const GLOBAL_CONFIG = join(GAIA_ROOT, "_config", "global.yaml");
 const TIER2_RESULTS = join(GAIA_ROOT, "_memory", "tier2-results");
-const DEV_STORY_DIR = join(
-  GAIA_ROOT,
-  "lifecycle",
-  "workflows",
-  "4-implementation",
-  "dev-story",
-);
+const DEV_STORY_DIR = join(GAIA_ROOT, "lifecycle", "workflows", "4-implementation", "dev-story");
 
 // ─── Validation patterns ─────────────────────────────────────────
 /** Valid severity prefixes for quality gate on_fail messages */
@@ -142,12 +136,8 @@ function findWorkflowFiles(rootDir) {
  */
 function assertGateStructure(gates, contextLabel) {
   for (const gate of gates) {
-    expect(gate, `${contextLabel}: gate missing 'check'`).toHaveProperty(
-      "check",
-    );
-    expect(gate, `${contextLabel}: gate missing 'on_fail'`).toHaveProperty(
-      "on_fail",
-    );
+    expect(gate, `${contextLabel}: gate missing 'check'`).toHaveProperty("check");
+    expect(gate, `${contextLabel}: gate missing 'on_fail'`).toHaveProperty("on_fail");
     expect(typeof gate.check).toBe("string");
     expect(typeof gate.on_fail).toBe("string");
     expect(gate.on_fail).toMatch(GATE_SEVERITY_PATTERN);
@@ -219,13 +209,11 @@ describe("ATDD E2-S3: Workflow Engine Scenario Tests", () => {
         epic_key: "E2",
         risk_level: "high",
       },
-      output_file_path:
-        "docs/implementation-artifacts/E2-S3-workflow-engine-scenario-tests.md",
+      output_file_path: "docs/implementation-artifacts/E2-S3-workflow-engine-scenario-tests.md",
       files_touched: [
         {
           path: "test/validation/tier2/engine-scenarios.test.js",
-          checksum:
-            "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          checksum: "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
           last_modified: "2026-03-22T00:00:00Z",
         },
       ],
@@ -297,15 +285,11 @@ describe("ATDD E2-S3: Workflow Engine Scenario Tests", () => {
     });
 
     it("should have descriptive halt messages in dev-story quality gates", () => {
-      const devStoryConfig = yaml.load(
-        readFileSync(join(DEV_STORY_DIR, "workflow.yaml"), "utf8"),
-      );
+      const devStoryConfig = yaml.load(readFileSync(join(DEV_STORY_DIR, "workflow.yaml"), "utf8"));
 
       for (const gate of devStoryConfig.quality_gates.pre_start) {
         expect(gate.on_fail.length).toBeGreaterThan(10);
-        expect(gate.on_fail).toMatch(
-          /HALT:.*\.(.*Run|.*first|.*must|.*required)/i,
-        );
+        expect(gate.on_fail).toMatch(/HALT:.*\.(.*Run|.*first|.*must|.*required)/i);
       }
 
       for (const gate of devStoryConfig.quality_gates.post_complete) {
@@ -340,10 +324,9 @@ describe("ATDD E2-S3: Workflow Engine Scenario Tests", () => {
         const content = readFileSync(wfPath, "utf8");
         let match;
         while ((match = singleBraceVar.exec(content)) !== null) {
-          expect(
-            KNOWN_VARIABLES.has(match[1]),
-            `Unknown variable {${match[1]}} in ${wfPath}`,
-          ).toBe(true);
+          expect(KNOWN_VARIABLES.has(match[1]), `Unknown variable {${match[1]}} in ${wfPath}`).toBe(
+            true
+          );
         }
       }
     });
@@ -351,9 +334,7 @@ describe("ATDD E2-S3: Workflow Engine Scenario Tests", () => {
     it("should require global.yaml reading for variable resolution in engine", () => {
       expect(engineContent).toContain("global.yaml");
       expect(engineContent).toMatch(/unresolved/i);
-      expect(engineContent).toContain(
-        "ASK user for any remaining unknown variables",
-      );
+      expect(engineContent).toContain("ASK user for any remaining unknown variables");
     });
   });
 
@@ -403,9 +384,7 @@ describe("ATDD E2-S3: Workflow Engine Scenario Tests", () => {
       const parsed = yaml.load(yaml.dump(sampleResult));
 
       for (const field of RESULT_REQUIRED_FIELDS) {
-        expect(parsed, `Missing required field: ${field}`).toHaveProperty(
-          field,
-        );
+        expect(parsed, `Missing required field: ${field}`).toHaveProperty(field);
         expect(parsed[field]).toBeTruthy();
       }
 

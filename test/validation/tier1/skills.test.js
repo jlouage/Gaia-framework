@@ -30,7 +30,10 @@ function getProseLines(content) {
   const result = [];
   let inFence = false;
   for (let i = 0; i < lines.length; i++) {
-    if (lines[i].match(/^```/)) { inFence = !inFence; continue; }
+    if (lines[i].match(/^```/)) {
+      inFence = !inFence;
+      continue;
+    }
     if (!inFence) result.push({ text: lines[i], lineNum: i + 1 });
   }
   return result;
@@ -141,7 +144,7 @@ function parseSkillIndex(content) {
     }
     if (inSections && current) {
       const sectionMatch = line.match(
-        /^\s*-\s*\{\s*id:\s*([\w-]+)\s*,\s*line_range:\s*\[(\d+)\s*,\s*(\d+)\]\s*,\s*description:\s*"([^"]*)"\s*\}/,
+        /^\s*-\s*\{\s*id:\s*([\w-]+)\s*,\s*line_range:\s*\[(\d+)\s*,\s*(\d+)\]\s*,\s*description:\s*"([^"]*)"\s*\}/
       );
       if (sectionMatch) {
         current.sections.push({
@@ -206,10 +209,9 @@ describe("Skill File Validation (E1-S3, FR-32)", () => {
   // AC1: Line count validation
   describe("AC1: Line count within 500-line limit", () => {
     it("should discover skill files via glob (auto-discovery)", () => {
-      expect(
-        skillFiles.length,
-        "No skill files discovered in _gaia/dev/skills/",
-      ).toBeGreaterThan(0);
+      expect(skillFiles.length, "No skill files discovered in _gaia/dev/skills/").toBeGreaterThan(
+        0
+      );
     });
 
     describe.each(skillFiles)("%s", (filePath) => {
@@ -218,7 +220,7 @@ describe("Skill File Validation (E1-S3, FR-32)", () => {
         const lineCount = content.split("\n").length;
         expect(
           lineCount,
-          `${basename(filePath)} is ${lineCount} lines — exceeds 500-line limit`,
+          `${basename(filePath)} is ${lineCount} lines — exceeds 500-line limit`
         ).toBeLessThanOrEqual(500);
       });
     });
@@ -232,17 +234,14 @@ describe("Skill File Validation (E1-S3, FR-32)", () => {
       const rawLines = content.split("\n");
 
       it("should have proper markdown heading hierarchy (H2 for sections, H3 for subsections)", () => {
-        expect(
-          headings.length,
-          `${basename(filePath)} has no H2 sections`,
-        ).toBeGreaterThan(0);
+        expect(headings.length, `${basename(filePath)} has no H2 sections`).toBeGreaterThan(0);
 
         const firstH2Line = headings[0]?.line ?? Infinity;
         for (const { text, lineNum } of getProseLines(content)) {
           if (text.match(/^### /)) {
             expect(
               lineNum,
-              `${basename(filePath)}: H3 at line ${lineNum} appears before first H2 at line ${firstH2Line}`,
+              `${basename(filePath)}: H3 at line ${lineNum} appears before first H2 at line ${firstH2Line}`
             ).toBeGreaterThan(firstH2Line);
           }
         }
@@ -254,7 +253,7 @@ describe("Skill File Validation (E1-S3, FR-32)", () => {
           if (markerLine >= 0) {
             expect(
               rawLines[markerLine],
-              `${basename(filePath)}: H2 "${heading.text}" at line ${heading.line} has no <!-- SECTION: xxx --> marker on line ${markerLine + 1}`,
+              `${basename(filePath)}: H2 "${heading.text}" at line ${heading.line} has no <!-- SECTION: xxx --> marker on line ${markerLine + 1}`
             ).toMatch(/<!--\s*SECTION:\s*[\w-]+\s*-->/);
           }
         }
@@ -274,7 +273,7 @@ describe("Skill File Validation (E1-S3, FR-32)", () => {
           const targetPath = resolve(SKILLS_DIR, ref.target.split("#")[0]);
           expect(
             existsSync(targetPath),
-            `${basename(filePath)}: broken cross-reference to "${ref.target}" (link text: "${ref.text}")`,
+            `${basename(filePath)}: broken cross-reference to "${ref.target}" (link text: "${ref.text}")`
           ).toBe(true);
 
           // If section reference, verify section exists in target
@@ -285,13 +284,10 @@ describe("Skill File Validation (E1-S3, FR-32)", () => {
             const targetHeadings = extractH2Headings(targetContent);
             const sectionExists =
               targetMarkers.some((m) => m.id === sectionId) ||
-              targetHeadings.some(
-                (h) =>
-                  h.text.toLowerCase().replace(/\s+/g, "-") === sectionId,
-              );
+              targetHeadings.some((h) => h.text.toLowerCase().replace(/\s+/g, "-") === sectionId);
             expect(
               sectionExists,
-              `${basename(filePath)}: broken section reference "${sectionId}" in ${basename(targetPath)}`,
+              `${basename(filePath)}: broken section reference "${sectionId}" in ${basename(targetPath)}`
             ).toBe(true);
           }
         }
@@ -304,10 +300,7 @@ describe("Skill File Validation (E1-S3, FR-32)", () => {
     describe.each(skillFiles)("%s", (filePath) => {
       it("should not be empty", () => {
         const content = readCached(filePath);
-        expect(
-          content.trim().length,
-          `${basename(filePath)} is empty`,
-        ).toBeGreaterThan(0);
+        expect(content.trim().length, `${basename(filePath)} is empty`).toBeGreaterThan(0);
       });
 
       it("should contain at least one H2 section", () => {
@@ -315,7 +308,7 @@ describe("Skill File Validation (E1-S3, FR-32)", () => {
         const headings = extractH2Headings(content);
         expect(
           headings.length,
-          `${basename(filePath)} has no H2 sections — no loadable sections for JIT extraction`,
+          `${basename(filePath)} has no H2 sections — no loadable sections for JIT extraction`
         ).toBeGreaterThan(0);
       });
     });
@@ -328,12 +321,10 @@ describe("Skill File Validation (E1-S3, FR-32)", () => {
         const content = readCached(filePath);
         const headings = extractH2Headings(content);
         const names = headings.map((h) => h.text);
-        const duplicates = names.filter(
-          (name, idx) => names.indexOf(name) !== idx,
-        );
+        const duplicates = names.filter((name, idx) => names.indexOf(name) !== idx);
         expect(
           duplicates,
-          `${basename(filePath)} has duplicate H2 sections: ${duplicates.join(", ")} — breaks sectioned loading by name`,
+          `${basename(filePath)} has duplicate H2 sections: ${duplicates.join(", ")} — breaks sectioned loading by name`
         ).toHaveLength(0);
       });
     });
@@ -345,20 +336,16 @@ describe("Skill File Validation (E1-S3, FR-32)", () => {
     const indexEntries = parseSkillIndex(indexContent);
 
     it("should have entries in _skill-index.yaml", () => {
-      expect(
-        indexEntries.length,
-        "_skill-index.yaml has no entries",
-      ).toBeGreaterThan(0);
+      expect(indexEntries.length, "_skill-index.yaml has no entries").toBeGreaterThan(0);
     });
 
     describe.each(indexEntries)("Index entry: $file", (entry) => {
       const entryPath = join(SKILLS_DIR, entry.file);
 
       it("should reference an existing skill file", () => {
-        expect(
-          existsSync(entryPath),
-          `Index references non-existent file: ${entry.file}`,
-        ).toBe(true);
+        expect(existsSync(entryPath), `Index references non-existent file: ${entry.file}`).toBe(
+          true
+        );
       });
 
       it("should have section IDs matching actual <!-- SECTION: xxx --> markers", () => {
@@ -370,7 +357,7 @@ describe("Skill File Validation (E1-S3, FR-32)", () => {
         for (const section of entry.sections) {
           expect(
             markerIds,
-            `Index section "${section.id}" not found as <!-- SECTION: ${section.id} --> in ${entry.file}. Available markers: ${markerIds.join(", ")}`,
+            `Index section "${section.id}" not found as <!-- SECTION: ${section.id} --> in ${entry.file}. Available markers: ${markerIds.join(", ")}`
           ).toContain(section.id);
         }
       });
@@ -390,13 +377,13 @@ describe("Skill File Validation (E1-S3, FR-32)", () => {
           // Verify the section marker is at or near the declared start line
           expect(
             marker.line,
-            `Index declares section "${section.id}" starts at line ${declaredStart}, but <!-- SECTION: ${section.id} --> is at line ${marker.line} in ${entry.file}`,
+            `Index declares section "${section.id}" starts at line ${declaredStart}, but <!-- SECTION: ${section.id} --> is at line ${marker.line} in ${entry.file}`
           ).toBe(declaredStart);
 
           // Verify the declared end line is within the file
           expect(
             declaredEnd,
-            `Index declares section "${section.id}" ends at line ${declaredEnd}, but ${entry.file} only has ${lines.length} lines`,
+            `Index declares section "${section.id}" ends at line ${declaredEnd}, but ${entry.file} only has ${lines.length} lines`
           ).toBeLessThanOrEqual(lines.length);
 
           // Verify content actually exists at the declared range
@@ -406,7 +393,7 @@ describe("Skill File Validation (E1-S3, FR-32)", () => {
             .trim();
           expect(
             rangeContent.length,
-            `Index declares section "${section.id}" at lines [${declaredStart}, ${declaredEnd}] in ${entry.file}, but that range is empty`,
+            `Index declares section "${section.id}" at lines [${declaredStart}, ${declaredEnd}] in ${entry.file}, but that range is empty`
           ).toBeGreaterThan(0);
         }
       });
@@ -430,7 +417,7 @@ describe("Skill File Validation (E1-S3, FR-32)", () => {
           for (const marker of markers) {
             expect(
               indexedIds,
-              `Orphaned section: <!-- SECTION: ${marker.id} --> in ${filename} is not listed in _skill-index.yaml`,
+              `Orphaned section: <!-- SECTION: ${marker.id} --> in ${filename} is not listed in _skill-index.yaml`
             ).toContain(marker.id);
           }
         });
@@ -446,30 +433,27 @@ describe("Skill File Validation (E1-S3, FR-32)", () => {
       const filename = basename(filePath, ".md");
 
       it("should have YAML frontmatter", () => {
-        expect(
-          frontmatter,
-          `${basename(filePath)} has no YAML frontmatter`,
-        ).not.toBeNull();
+        expect(frontmatter, `${basename(filePath)} has no YAML frontmatter`).not.toBeNull();
       });
 
       it("should have required field: name", () => {
         expect(
           frontmatter?.name,
-          `${basename(filePath)} frontmatter missing 'name' field`,
+          `${basename(filePath)} frontmatter missing 'name' field`
         ).toBeTruthy();
       });
 
       it("should have required field: version", () => {
         expect(
           frontmatter?.version,
-          `${basename(filePath)} frontmatter missing 'version' field`,
+          `${basename(filePath)} frontmatter missing 'version' field`
         ).toBeTruthy();
       });
 
       it("should have required field: applicable_agents", () => {
         expect(
           frontmatter?.applicable_agents,
-          `${basename(filePath)} frontmatter missing 'applicable_agents' field`,
+          `${basename(filePath)} frontmatter missing 'applicable_agents' field`
         ).toBeTruthy();
       });
 
@@ -477,7 +461,7 @@ describe("Skill File Validation (E1-S3, FR-32)", () => {
         if (!frontmatter?.name) return;
         expect(
           frontmatter.name,
-          `${basename(filePath)}: frontmatter name "${frontmatter.name}" doesn't match filename stem "${filename}"`,
+          `${basename(filePath)}: frontmatter name "${frontmatter.name}" doesn't match filename stem "${filename}"`
         ).toBe(filename);
       });
 
@@ -490,7 +474,7 @@ describe("Skill File Validation (E1-S3, FR-32)", () => {
         for (const agentId of agents) {
           expect(
             agentExists(agentId),
-            `${basename(filePath)}: applicable_agents references "${agentId}" but ${agentId}.md not found in any _gaia/*/agents/ directory`,
+            `${basename(filePath)}: applicable_agents references "${agentId}" but ${agentId}.md not found in any _gaia/*/agents/ directory`
           ).toBe(true);
         }
       });

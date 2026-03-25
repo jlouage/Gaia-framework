@@ -12,7 +12,7 @@ export function getWorkflowPaths(projectRoot) {
   const gaiaRoot = join(projectRoot, "_gaia");
   const result = execSync(
     `find -L "${gaiaRoot}" -name "workflow.yaml" -not -path "*/node_modules/*" -not -path "*/_backups/*"`,
-    { encoding: "utf8" },
+    { encoding: "utf8" }
   );
   return result
     .trim()
@@ -53,19 +53,11 @@ export const VALID_VARIABLE_REFS = [
  * {installed_path} resolves from the workflow.yaml's installed_path field,
  * falling back to {project-root}/_gaia if not declared.
  */
-export function resolveVariable(
-  value,
-  workflowPath,
-  parsedConfig,
-  projectRoot,
-) {
+export function resolveVariable(value, workflowPath, parsedConfig, projectRoot) {
   let installedPath = join(projectRoot, "_gaia");
 
   if (parsedConfig?.installed_path) {
-    installedPath = parsedConfig.installed_path.replace(
-      /\{project-root\}/g,
-      projectRoot,
-    );
+    installedPath = parsedConfig.installed_path.replace(/\{project-root\}/g, projectRoot);
   }
 
   return value

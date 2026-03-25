@@ -162,9 +162,7 @@ export function validateWellFormedness(filePath) {
     });
     if (validationResult !== true) {
       const err = validationResult.err;
-      errors.push(
-        `${filePath}: XML parse error — ${err.msg} (line ${err.line}, col ${err.col})`,
-      );
+      errors.push(`${filePath}: XML parse error — ${err.msg} (line ${err.line}, col ${err.col})`);
     }
   } catch (e) {
     errors.push(`${filePath}: XML parse error — ${e.message}`);
@@ -219,18 +217,14 @@ export function validateStepNumbering(filePath) {
 
   // Check sequential from 1
   if (sorted[0] !== 1) {
-    errors.push(
-      `${filePath}: Step numbering does not start at 1 (starts at ${sorted[0]})`,
-    );
+    errors.push(`${filePath}: Step numbering does not start at 1 (starts at ${sorted[0]})`);
   }
 
   // Check for gaps — a base number is covered if it exists as pure or interstitial
   for (let i = 1; i < sorted.length; i++) {
     if (sorted[i] !== sorted[i - 1] + 1) {
       for (let missing = sorted[i - 1] + 1; missing < sorted[i]; missing++) {
-        errors.push(
-          `${filePath}: Gap in step numbering: step ${missing} missing`,
-        );
+        errors.push(`${filePath}: Gap in step numbering: step ${missing} missing`);
       }
     }
   }
@@ -244,9 +238,7 @@ export function validateTemplateOutputVariables(filePath) {
   const errors = [];
   const { parsed, error } = parseXml(filePath);
   if (error) {
-    errors.push(
-      `${filePath}: Cannot check template-output variables — XML parse error`,
-    );
+    errors.push(`${filePath}: Cannot check template-output variables — XML parse error`);
     return { errors };
   }
 
@@ -263,7 +255,7 @@ export function validateTemplateOutputVariables(filePath) {
       const varName = match.slice(1, -1); // Remove { and }
       if (!VALID_VARIABLES.has(varName)) {
         errors.push(
-          `${filePath}: Unrecognized variable: {${varName}} in template-output file="${fileAttr}"`,
+          `${filePath}: Unrecognized variable: {${varName}} in template-output file="${fileAttr}"`
         );
       }
     }
@@ -278,9 +270,7 @@ export function validateSkillKnowledgeReferences(filePath) {
   const errors = [];
   const { error } = parseXml(filePath);
   if (error) {
-    errors.push(
-      `${filePath}: Cannot check skill/knowledge references — XML parse error`,
-    );
+    errors.push(`${filePath}: Cannot check skill/knowledge references — XML parse error`);
     return { errors };
   }
 
@@ -310,17 +300,14 @@ export function validateInvokeTaskReferences(filePath) {
   const errors = [];
   const { parsed, error } = parseXml(filePath);
   if (error) {
-    errors.push(
-      `${filePath}: Cannot check invoke-task references — XML parse error`,
-    );
+    errors.push(`${filePath}: Cannot check invoke-task references — XML parse error`);
     return { errors };
   }
 
   // Structured: <invoke-task> elements with file/reference attributes
   const invokeTasks = collectElements(parsed, "invoke-task");
   for (const it of invokeTasks) {
-    const ref =
-      it?.["@_file"] || it?.["@_reference"] || it?.["@_target"] || it?.["@_ref"];
+    const ref = it?.["@_file"] || it?.["@_reference"] || it?.["@_target"] || it?.["@_ref"];
     if (!ref) continue;
     const resolved = resolveRefPath(ref, filePath);
     if (resolved && !existsSync(resolved)) {
@@ -330,8 +317,7 @@ export function validateInvokeTaskReferences(filePath) {
 
   // Text-embedded: task paths inside <action> text content
   const content = readCached(filePath);
-  const taskPathPattern =
-    /\{project-root\}\/_gaia\/core\/tasks\/[^\s"<>]+\.xml/g;
+  const taskPathPattern = /\{project-root\}\/_gaia\/core\/tasks\/[^\s"<>]+\.xml/g;
   const matches = content.match(taskPathPattern) || [];
   for (const match of matches) {
     const resolved = match.replace(/\{project-root\}/g, PROJECT_ROOT);
@@ -349,9 +335,7 @@ export function validateInvokeWorkflowReferences(filePath) {
   const errors = [];
   const { parsed, error } = parseXml(filePath);
   if (error) {
-    errors.push(
-      `${filePath}: Cannot check invoke-workflow references — XML parse error`,
-    );
+    errors.push(`${filePath}: Cannot check invoke-workflow references — XML parse error`);
     return { errors };
   }
 
@@ -376,9 +360,7 @@ export function validateInvokeProtocolReferences(filePath) {
   const errors = [];
   const { parsed, error } = parseXml(filePath);
   if (error) {
-    errors.push(
-      `${filePath}: Cannot check invoke-protocol references — XML parse error`,
-    );
+    errors.push(`${filePath}: Cannot check invoke-protocol references — XML parse error`);
     return { errors };
   }
 
@@ -407,7 +389,7 @@ export function validateInvokeProtocolReferences(filePath) {
     const found = candidates.some((c) => existsSync(c));
     if (!found) {
       errors.push(
-        `${filePath}: Protocol file not found for ref="${ref}" (searched: ${candidates.join(", ")})`,
+        `${filePath}: Protocol file not found for ref="${ref}" (searched: ${candidates.join(", ")})`
       );
     }
   }
@@ -421,9 +403,7 @@ export function validateCheckElements(filePath) {
   const errors = [];
   const { parsed, error } = parseXml(filePath);
   if (error) {
-    errors.push(
-      `${filePath}: Cannot check <check> elements — XML parse error`,
-    );
+    errors.push(`${filePath}: Cannot check <check> elements — XML parse error`);
     return { errors };
   }
 

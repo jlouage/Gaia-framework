@@ -22,7 +22,7 @@ describe("Workflow Definition Validation (FR-30)", () => {
     const backupFiles = workflowFiles.filter((f) => f.includes("_backups"));
     expect(
       backupFiles,
-      "Backup workflow files should be excluded from validation scope",
+      "Backup workflow files should be excluded from validation scope"
     ).toHaveLength(0);
   });
 
@@ -37,37 +37,26 @@ describe("Workflow Definition Validation (FR-30)", () => {
     }
 
     it("should parse as valid YAML", () => {
-      expect(
-        config,
-        `YAML parse error (workflow: ${workflowPath})`,
-      ).not.toBeNull();
+      expect(config, `YAML parse error (workflow: ${workflowPath})`).not.toBeNull();
     });
 
     it("should have a name field", () => {
-      expect(
-        config?.name,
-        `Missing name field (workflow: ${workflowPath})`,
-      ).toBeTruthy();
+      expect(config?.name, `Missing name field (workflow: ${workflowPath})`).toBeTruthy();
     });
 
     it("should have an instructions field", () => {
       expect(
         config?.instructions,
-        `Missing instructions field (workflow: ${workflowPath})`,
+        `Missing instructions field (workflow: ${workflowPath})`
       ).toBeTruthy();
     });
 
     it("should reference an existing instructions file or directory", () => {
       if (!config?.instructions) return;
-      const resolvedPath = resolveVariable(
-        config.instructions,
-        workflowPath,
-        config,
-        PROJECT_ROOT,
-      );
+      const resolvedPath = resolveVariable(config.instructions, workflowPath, config, PROJECT_ROOT);
       expect(
         existsSync(resolvedPath),
-        `Instructions not found: ${resolvedPath} (workflow: ${workflowPath})`,
+        `Instructions not found: ${resolvedPath} (workflow: ${workflowPath})`
       ).toBe(true);
     });
 
@@ -76,16 +65,10 @@ describe("Workflow Definition Validation (FR-30)", () => {
       if (config.agent === "dev-*") return;
 
       const module = config.module || "lifecycle";
-      const agentPath = join(
-        PROJECT_ROOT,
-        "_gaia",
-        module,
-        "agents",
-        `${config.agent}.md`,
-      );
+      const agentPath = join(PROJECT_ROOT, "_gaia", module, "agents", `${config.agent}.md`);
       expect(
         existsSync(agentPath),
-        `Agent file not found: ${agentPath} (workflow: ${workflowPath})`,
+        `Agent file not found: ${agentPath} (workflow: ${workflowPath})`
       ).toBe(true);
     });
 
@@ -95,25 +78,20 @@ describe("Workflow Definition Validation (FR-30)", () => {
         config.config_source,
         workflowPath,
         config,
-        PROJECT_ROOT,
+        PROJECT_ROOT
       );
       expect(
         existsSync(resolvedPath),
-        `config_source not found: ${resolvedPath} (workflow: ${workflowPath})`,
+        `config_source not found: ${resolvedPath} (workflow: ${workflowPath})`
       ).toBe(true);
     });
 
     it("should reference an existing validation/checklist file (if declared)", () => {
       if (!config?.validation) return;
-      const resolvedPath = resolveVariable(
-        config.validation,
-        workflowPath,
-        config,
-        PROJECT_ROOT,
-      );
+      const resolvedPath = resolveVariable(config.validation, workflowPath, config, PROJECT_ROOT);
       expect(
         existsSync(resolvedPath),
-        `Validation file not found: ${resolvedPath} (workflow: ${workflowPath})`,
+        `Validation file not found: ${resolvedPath} (workflow: ${workflowPath})`
       ).toBe(true);
     });
 
@@ -128,11 +106,11 @@ describe("Workflow Definition Validation (FR-30)", () => {
       for (const gate of gates) {
         expect(
           gate.check,
-          `quality_gates entry missing 'check' field (workflow: ${workflowPath})`,
+          `quality_gates entry missing 'check' field (workflow: ${workflowPath})`
         ).toBeTruthy();
         expect(
           gate.on_fail,
-          `quality_gates entry missing 'on_fail' field (workflow: ${workflowPath})`,
+          `quality_gates entry missing 'on_fail' field (workflow: ${workflowPath})`
         ).toBeTruthy();
       }
     });
@@ -144,7 +122,7 @@ describe("Workflow Definition Validation (FR-30)", () => {
       for (const ref of varRefs) {
         expect(
           VALID_VARIABLE_REFS,
-          `Invalid variable reference '${ref}' in output.primary (workflow: ${workflowPath})`,
+          `Invalid variable reference '${ref}' in output.primary (workflow: ${workflowPath})`
         ).toContain(ref);
       }
     });

@@ -9,13 +9,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import {
-  existsSync,
-  mkdirSync,
-  writeFileSync,
-  readFileSync,
-  readdirSync,
-} from "fs";
+import { existsSync, mkdirSync, writeFileSync, readFileSync, readdirSync } from "fs";
 import { join } from "path";
 import {
   MOCK_FRAMEWORK,
@@ -41,13 +35,7 @@ describe("Update flow integration tests", () => {
       initFirst(tempDir);
       expect(existsSync(join(tempDir, "_gaia"))).toBe(true);
 
-      const result = runInstaller([
-        "update",
-        "--source",
-        MOCK_FRAMEWORK,
-        "--yes",
-        tempDir,
-      ]);
+      const result = runInstaller(["update", "--source", MOCK_FRAMEWORK, "--yes", tempDir]);
 
       expect(result.status).toBe(0);
       expect(result.stdout).toContain("Update complete");
@@ -57,21 +45,10 @@ describe("Update flow integration tests", () => {
       initFirst(tempDir);
 
       // Modify a framework file to force backup on update
-      const manifestPath = join(
-        tempDir,
-        "_gaia",
-        "_config",
-        "manifest.yaml"
-      );
+      const manifestPath = join(tempDir, "_gaia", "_config", "manifest.yaml");
       writeFileSync(manifestPath, "# Modified for test\nversion: old\n");
 
-      runInstaller([
-        "update",
-        "--source",
-        MOCK_FRAMEWORK,
-        "--yes",
-        tempDir,
-      ]);
+      runInstaller(["update", "--source", MOCK_FRAMEWORK, "--yes", tempDir]);
 
       const backupDir = join(tempDir, "_gaia", "_backups");
       expect(existsSync(backupDir)).toBe(true);
@@ -83,20 +60,9 @@ describe("Update flow integration tests", () => {
     it("should preserve protected files (_gaia/_config/global.yaml)", () => {
       initFirst(tempDir);
 
-      const globalPath = join(
-        tempDir,
-        "_gaia",
-        "_config",
-        "global.yaml"
-      );
+      const globalPath = join(tempDir, "_gaia", "_config", "global.yaml");
 
-      runInstaller([
-        "update",
-        "--source",
-        MOCK_FRAMEWORK,
-        "--yes",
-        tempDir,
-      ]);
+      runInstaller(["update", "--source", MOCK_FRAMEWORK, "--yes", tempDir]);
 
       // global.yaml is NOT in update_targets, so it should preserve project_name
       const afterContent = readFileSync(globalPath, "utf-8");
@@ -107,21 +73,10 @@ describe("Update flow integration tests", () => {
       initFirst(tempDir);
 
       // Create user data in _memory/ that should survive update
-      const memoryFile = join(
-        tempDir,
-        "_memory",
-        "checkpoints",
-        "test-data.yaml"
-      );
+      const memoryFile = join(tempDir, "_memory", "checkpoints", "test-data.yaml");
       writeFileSync(memoryFile, "test: data\n");
 
-      runInstaller([
-        "update",
-        "--source",
-        MOCK_FRAMEWORK,
-        "--yes",
-        tempDir,
-      ]);
+      runInstaller(["update", "--source", MOCK_FRAMEWORK, "--yes", tempDir]);
 
       expect(existsSync(memoryFile)).toBe(true);
       expect(readFileSync(memoryFile, "utf-8")).toContain("test: data");
@@ -130,13 +85,7 @@ describe("Update flow integration tests", () => {
     it("should refresh .claude/commands/ during update", () => {
       initFirst(tempDir);
 
-      runInstaller([
-        "update",
-        "--source",
-        MOCK_FRAMEWORK,
-        "--yes",
-        tempDir,
-      ]);
+      runInstaller(["update", "--source", MOCK_FRAMEWORK, "--yes", tempDir]);
 
       const cmdDir = join(tempDir, ".claude", "commands");
       expect(existsSync(cmdDir)).toBe(true);
@@ -145,26 +94,14 @@ describe("Update flow integration tests", () => {
 
   describe("AC6: Update without prior init", () => {
     it("should abort with error when no prior init exists", () => {
-      const result = runInstaller([
-        "update",
-        "--source",
-        MOCK_FRAMEWORK,
-        "--yes",
-        tempDir,
-      ]);
+      const result = runInstaller(["update", "--source", MOCK_FRAMEWORK, "--yes", tempDir]);
 
       expect(result.status).not.toBe(0);
       expect(result.stderr).toContain("No GAIA installation found");
     });
 
     it("should not create any files when aborting", () => {
-      runInstaller([
-        "update",
-        "--source",
-        MOCK_FRAMEWORK,
-        "--yes",
-        tempDir,
-      ]);
+      runInstaller(["update", "--source", MOCK_FRAMEWORK, "--yes", tempDir]);
 
       expect(existsSync(join(tempDir, "_gaia"))).toBe(false);
     });
@@ -175,12 +112,7 @@ describe("Update flow integration tests", () => {
       initFirst(tempDir);
 
       // Modify manifest to detect if update overwrites it
-      const manifestPath = join(
-        tempDir,
-        "_gaia",
-        "_config",
-        "manifest.yaml"
-      );
+      const manifestPath = join(tempDir, "_gaia", "_config", "manifest.yaml");
       writeFileSync(manifestPath, "# MODIFIED\nversion: modified\n");
       const beforeContent = readFileSync(manifestPath, "utf-8");
 

@@ -25,9 +25,7 @@ describe("ESLint Configuration (E5-S1)", () => {
       const configPath = path.join(ROOT, "eslint.config.js");
       const config = await import(configPath);
       const configs = config.default || config;
-      const binConfig = configs.find(
-        (c) => c.files && c.files.some((f) => f.includes("bin/"))
-      );
+      const binConfig = configs.find((c) => c.files && c.files.some((f) => f.includes("bin/")));
       expect(binConfig).toBeDefined();
       expect(binConfig.languageOptions.sourceType).toBe("commonjs");
     });
@@ -36,9 +34,7 @@ describe("ESLint Configuration (E5-S1)", () => {
       const configPath = path.join(ROOT, "eslint.config.js");
       const config = await import(configPath);
       const configs = config.default || config;
-      const testConfig = configs.find(
-        (c) => c.files && c.files.some((f) => f.includes("test/"))
-      );
+      const testConfig = configs.find((c) => c.files && c.files.some((f) => f.includes("test/")));
       expect(testConfig).toBeDefined();
       expect(testConfig.languageOptions.sourceType).toBe("module");
       // Vitest globals should be declared
@@ -52,30 +48,22 @@ describe("ESLint Configuration (E5-S1)", () => {
 
   describe("AC4: ESLint packages in devDependencies only", () => {
     it("should have eslint in devDependencies", () => {
-      const pkg = JSON.parse(
-        fs.readFileSync(path.join(ROOT, "package.json"), "utf8")
-      );
+      const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, "package.json"), "utf8"));
       expect(pkg.devDependencies).toHaveProperty("eslint");
     });
 
     it("should have @eslint/js in devDependencies", () => {
-      const pkg = JSON.parse(
-        fs.readFileSync(path.join(ROOT, "package.json"), "utf8")
-      );
+      const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, "package.json"), "utf8"));
       expect(pkg.devDependencies).toHaveProperty("@eslint/js");
     });
 
     it("should have globals in devDependencies", () => {
-      const pkg = JSON.parse(
-        fs.readFileSync(path.join(ROOT, "package.json"), "utf8")
-      );
+      const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, "package.json"), "utf8"));
       expect(pkg.devDependencies).toHaveProperty("globals");
     });
 
     it("should NOT have eslint packages in dependencies", () => {
-      const pkg = JSON.parse(
-        fs.readFileSync(path.join(ROOT, "package.json"), "utf8")
-      );
+      const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, "package.json"), "utf8"));
       const deps = pkg.dependencies || {};
       expect(deps).not.toHaveProperty("eslint");
       expect(deps).not.toHaveProperty("@eslint/js");
@@ -85,9 +73,7 @@ describe("ESLint Configuration (E5-S1)", () => {
 
   describe("AC5: lint and lint:fix scripts", () => {
     it("should have a lint script targeting bin and test", () => {
-      const pkg = JSON.parse(
-        fs.readFileSync(path.join(ROOT, "package.json"), "utf8")
-      );
+      const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, "package.json"), "utf8"));
       expect(pkg.scripts).toHaveProperty("lint");
       expect(pkg.scripts.lint).toContain("eslint");
       expect(pkg.scripts.lint).toMatch(/bin/);
@@ -95,9 +81,7 @@ describe("ESLint Configuration (E5-S1)", () => {
     });
 
     it("should have a lint:fix script", () => {
-      const pkg = JSON.parse(
-        fs.readFileSync(path.join(ROOT, "package.json"), "utf8")
-      );
+      const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, "package.json"), "utf8"));
       expect(pkg.scripts).toHaveProperty("lint:fix");
       expect(pkg.scripts["lint:fix"]).toContain("--fix");
     });

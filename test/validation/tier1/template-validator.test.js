@@ -45,7 +45,7 @@ describe("AC1: Every template referenced by at least one workflow", () => {
 
   it("should find co-located templates matching **/template.md", () => {
     const colocated = templates.filter(
-      (t) => !t.includes("lifecycle/templates/") && t.endsWith("template.md"),
+      (t) => !t.includes("lifecycle/templates/") && t.endsWith("template.md")
     );
     expect(colocated.length, "Expected at least 1 co-located template").toBeGreaterThan(0);
   });
@@ -69,22 +69,19 @@ describe("AC1: Every template referenced by at least one workflow", () => {
     for (const name of orphanNames) {
       expect(
         knownOrphans,
-        `Unexpected orphan detected: ${name}. If this is intentional, add it to knownOrphans.`,
+        `Unexpected orphan detected: ${name}. If this is intentional, add it to knownOrphans.`
       ).toContain(name);
     }
     // Verify known orphans are detected
     for (const known of knownOrphans) {
-      expect(
-        orphanNames,
-        `Expected orphan not detected: ${known}`,
-      ).toContain(known);
+      expect(orphanNames, `Expected orphan not detected: ${known}`).toContain(known);
     }
   });
 
   it("should find references from workflow.yaml template: fields", () => {
     const yamlRefs = references.filter((r) => r.source === "workflow.yaml");
     expect(yamlRefs.length, "Expected at least 1 workflow.yaml template reference").toBeGreaterThan(
-      0,
+      0
     );
   });
 
@@ -92,7 +89,7 @@ describe("AC1: Every template referenced by at least one workflow", () => {
     const xmlRefs = references.filter((r) => r.source === "instructions.xml");
     expect(
       xmlRefs.length,
-      "Expected at least 1 instructions.xml template reference",
+      "Expected at least 1 instructions.xml template reference"
     ).toBeGreaterThan(0);
   });
 
@@ -101,7 +98,7 @@ describe("AC1: Every template referenced by at least one workflow", () => {
     for (const ref of references) {
       expect(
         ref.rawMatch,
-        `Reference should not come from <template-output>: ${ref.rawMatch}`,
+        `Reference should not come from <template-output>: ${ref.rawMatch}`
       ).not.toMatch(/<template-output/);
     }
   });
@@ -146,9 +143,7 @@ describe("AC2: System/config variable placeholders validated", () => {
   });
 
   it("should classify inline choice patterns as inline-choice (skip)", () => {
-    const result = classifyPlaceholders(
-      "Choose {React / Angular / Vue} and priority {P0/P1/P2}",
-    );
+    const result = classifyPlaceholders("Choose {React / Angular / Vue} and priority {P0/P1/P2}");
     expect(result.inlineChoice).toHaveLength(2);
     expect(result.system).toHaveLength(0);
     expect(result.content).toHaveLength(0);
@@ -166,13 +161,12 @@ describe("AC2: System/config variable placeholders validated", () => {
     const formatted = unknowns
       .map(
         (r) =>
-          `  ${relative(FRAMEWORK_ROOT, r.file)}:\n${r.unknowns.map((u) => `    - {${u}}`).join("\n")}`,
+          `  ${relative(FRAMEWORK_ROOT, r.file)}:\n${r.unknowns.map((u) => `    - {${u}}`).join("\n")}`
       )
       .join("\n");
-    expect(
-      unknowns,
-      `Templates with unknown system/config variables:\n${formatted}`,
-    ).toHaveLength(0);
+    expect(unknowns, `Templates with unknown system/config variables:\n${formatted}`).toHaveLength(
+      0
+    );
   });
 
   it("should handle templates with no placeholders cleanly", () => {
@@ -221,7 +215,10 @@ describe("AC5: Unknown system/config variable detection", () => {
 
   it("should only report registry-known variables as system via classifyPlaceholders", () => {
     const fakeRegistry = new Set(["project_name"]);
-    const result = classifyPlaceholders("Use {unknown_system_var} and {project_name}", fakeRegistry);
+    const result = classifyPlaceholders(
+      "Use {unknown_system_var} and {project_name}",
+      fakeRegistry
+    );
     expect(result.system).toContain("project_name");
     expect(result.content).toContain("unknown_system_var");
   });
@@ -243,7 +240,10 @@ describe("AC6: used_by frontmatter bidirectional consistency", () => {
     const _missingFm = results.filter((r) => r.type === "missing-frontmatter");
     // Known: epic-status-template and tech-debt-dashboard-template lack frontmatter
     // But we auto-discover — just verify the check runs
-    expect(results.length, "Should have at least some results from cross-check").toBeGreaterThanOrEqual(0);
+    expect(
+      results.length,
+      "Should have at least some results from cross-check"
+    ).toBeGreaterThanOrEqual(0);
   });
 
   it("should detect when used_by declares a workflow that doesn't reference the template", () => {
@@ -252,7 +252,11 @@ describe("AC6: used_by frontmatter bidirectional consistency", () => {
     for (const r of results) {
       expect(r).toHaveProperty("type");
       expect(r).toHaveProperty("file");
-      expect(["missing-frontmatter", "used_by-not-referenced", "referenced-not-in-used_by"]).toContain(r.type);
+      expect([
+        "missing-frontmatter",
+        "used_by-not-referenced",
+        "referenced-not-in-used_by",
+      ]).toContain(r.type);
     }
   });
 
@@ -269,7 +273,7 @@ describe("AC6: used_by frontmatter bidirectional consistency", () => {
 describe("Edge cases: classifyPlaceholders deduplication", () => {
   it("should deduplicate repeated placeholders in the same content", () => {
     const result = classifyPlaceholders(
-      "Use {project_name} then {project_name} again and {goal} and {goal}",
+      "Use {project_name} then {project_name} again and {goal} and {goal}"
     );
     // Each placeholder should appear only once regardless of repetition
     expect(result.system.filter((v) => v === "project_name")).toHaveLength(1);
@@ -287,7 +291,7 @@ describe("Edge cases: classifyPlaceholders deduplication", () => {
     const registry = new Set(["project_name", "story_key"]);
     const result = classifyPlaceholders(
       "{project_name} {unknown_var} {decision} {React / Angular / Vue}",
-      registry,
+      registry
     );
     expect(result.system).toEqual(["project_name"]);
     expect(result.content).toContain("unknown_var");
@@ -333,7 +337,10 @@ describe("Edge cases: buildKnownVariableRegistry content", () => {
     expect(registry.has("user_name"), "user_name from global.yaml").toBe(true);
     expect(registry.has("output_folder"), "output_folder from global.yaml").toBe(true);
     expect(registry.has("planning_artifacts"), "planning_artifacts from global.yaml").toBe(true);
-    expect(registry.has("implementation_artifacts"), "implementation_artifacts from global.yaml").toBe(true);
+    expect(
+      registry.has("implementation_artifacts"),
+      "implementation_artifacts from global.yaml"
+    ).toBe(true);
     expect(registry.has("test_artifacts"), "test_artifacts from global.yaml").toBe(true);
   });
 

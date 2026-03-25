@@ -12,12 +12,7 @@ import { execFileSync } from "child_process";
 
 export const PROJECT_ROOT = resolve(import.meta.dirname, "../..");
 export const SCRIPT_PATH = join(PROJECT_ROOT, "gaia-install.sh");
-export const MOCK_FRAMEWORK = join(
-  PROJECT_ROOT,
-  "test",
-  "fixtures",
-  "mock-framework"
-);
+export const MOCK_FRAMEWORK = join(PROJECT_ROOT, "test", "fixtures", "mock-framework");
 
 /**
  * Create an isolated temp directory for a test.
@@ -73,17 +68,9 @@ export function runInstaller(args, options = {}) {
  * @returns {{ stdout: string, stderr: string, status: number }}
  */
 export function initFirst(targetDir) {
-  const result = runInstaller([
-    "init",
-    "--source",
-    MOCK_FRAMEWORK,
-    "--yes",
-    targetDir,
-  ]);
+  const result = runInstaller(["init", "--source", MOCK_FRAMEWORK, "--yes", targetDir]);
   if (result.status !== 0) {
-    throw new Error(
-      `Init prerequisite failed: ${result.stderr || result.stdout}`
-    );
+    throw new Error(`Init prerequisite failed: ${result.stderr || result.stdout}`);
   }
   return result;
 }

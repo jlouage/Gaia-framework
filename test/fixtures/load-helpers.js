@@ -32,7 +32,8 @@ export function loadMain(binDir, mocks = {}) {
 
   const mockRequire = (mod) => {
     if (mod === "child_process") return { execSync: mockExecSync, execFileSync: mockExecFileSync };
-    if (mod === "fs") return { mkdtempSync: mockMkdtempSync, rmSync: mockRmSync, existsSync: mockExistsSync };
+    if (mod === "fs")
+      return { mkdtempSync: mockMkdtempSync, rmSync: mockRmSync, existsSync: mockExistsSync };
     if (mod === "os") return { tmpdir: mockTmpdir };
     if (mod === "path") return { join: mockJoin };
     if (mod === "../package.json") return { version: "1.0.0-test" };
@@ -68,7 +69,7 @@ export function loadMain(binDir, mocks = {}) {
     const exports = module.exports;
     ${cleanedSource}
     return { main, findBash, ensureGit, showUsage, fail, info, cleanup };
-    `,
+    `
   );
 
   const exported = fn(
@@ -76,7 +77,7 @@ export function loadMain(binDir, mocks = {}) {
     mockProcess,
     mockConsole,
     binDir,
-    join(binDir, "gaia-framework.js"),
+    join(binDir, "gaia-framework.js")
   );
 
   return {

@@ -4,13 +4,7 @@ import { join, resolve } from "path";
 
 // Project root is where _gaia/ lives (4 levels up: test/validation/atdd/ -> Gaia-framework/ -> GAIA-Framework/)
 const PROJECT_ROOT = resolve(import.meta.dirname, "../../../..");
-const WORKFLOW_XML = join(
-  PROJECT_ROOT,
-  "_gaia",
-  "core",
-  "engine",
-  "workflow.xml",
-);
+const WORKFLOW_XML = join(PROJECT_ROOT, "_gaia", "core", "engine", "workflow.xml");
 
 // Helper: extract Step 5 content from workflow.xml
 function getStep5Content() {
@@ -124,7 +118,7 @@ describe("E8-S15 Coverage Expansion: Workflow Engine [v] at Planning Gate", () =
       // Extract the action scoped to val_review_available == false
       const step5 = getStep5Content();
       const falseAction = step5.match(
-        /<action\s+if="val_review_available == false"[^>]*>(.*?)<\/action>/is,
+        /<action\s+if="val_review_available == false"[^>]*>(.*?)<\/action>/is
       );
       expect(falseAction, "action for val_review_available==false must exist").not.toBeNull();
       const promptText = falseAction[1];
@@ -147,7 +141,7 @@ describe("E8-S15 Coverage Expansion: Workflow Engine [v] at Planning Gate", () =
       const step5 = getStep5Content();
       // After zero findings, all options including [v] must be re-presented
       const zeroFindingsAction = step5.match(
-        /<action\s+if="[^"]*Val returns zero findings[^"]*"[^>]*>(.*?)<\/action>/is,
+        /<action\s+if="[^"]*Val returns zero findings[^"]*"[^>]*>(.*?)<\/action>/is
       );
       expect(zeroFindingsAction, "action for Val returns zero findings must exist").not.toBeNull();
       const actionText = zeroFindingsAction[1];
@@ -160,7 +154,7 @@ describe("E8-S15 Coverage Expansion: Workflow Engine [v] at Planning Gate", () =
     it("Step 5 findings action returns to planning gate with all options including [v]", () => {
       const step5 = getStep5Content();
       const findingsAction = step5.match(
-        /<action\s+if="[^"]*Val returns findings[^"]*"[^>]*>(.*?)<\/action>/is,
+        /<action\s+if="[^"]*Val returns findings[^"]*"[^>]*>(.*?)<\/action>/is
       );
       expect(findingsAction, "action for Val returns findings must exist").not.toBeNull();
       const actionText = findingsAction[1];

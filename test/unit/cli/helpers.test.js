@@ -44,7 +44,9 @@ describe("findBash", () => {
   it("should find Git for Windows bash when PATH bash unavailable", async () => {
     Object.defineProperty(process, "platform", { value: "win32" });
 
-    const mockExecSync = vi.fn(() => { throw new Error("not found"); });
+    const mockExecSync = vi.fn(() => {
+      throw new Error("not found");
+    });
     // join() uses the host OS separator, so on macOS the path uses /
     const expectedPath = join("C:\\Program Files", "Git", "bin", "bash.exe");
     const mockExistsSync = vi.fn((p) => p === expectedPath);
@@ -65,7 +67,9 @@ describe("findBash", () => {
   it("should return null on Windows when no bash is available", async () => {
     Object.defineProperty(process, "platform", { value: "win32" });
 
-    const mockExecSync = vi.fn(() => { throw new Error("not found"); });
+    const mockExecSync = vi.fn(() => {
+      throw new Error("not found");
+    });
     const mockExistsSync = vi.fn(() => false);
 
     const { findBash } = await loadHelpers({
@@ -84,9 +88,14 @@ describe("findBash", () => {
   it("should use default paths when Windows env vars are absent", async () => {
     Object.defineProperty(process, "platform", { value: "win32" });
 
-    const mockExecSync = vi.fn(() => { throw new Error("not found"); });
+    const mockExecSync = vi.fn(() => {
+      throw new Error("not found");
+    });
     const calledPaths = [];
-    const mockExistsSync = vi.fn((p) => { calledPaths.push(p); return false; });
+    const mockExistsSync = vi.fn((p) => {
+      calledPaths.push(p);
+      return false;
+    });
 
     const { findBash } = await loadHelpers({
       execSync: mockExecSync,
@@ -97,7 +106,7 @@ describe("findBash", () => {
     findBash();
 
     // When env vars are empty, should fall back to default paths
-    expect(calledPaths.some(p => p.includes("C:\\Program Files"))).toBe(true);
+    expect(calledPaths.some((p) => p.includes("C:\\Program Files"))).toBe(true);
   });
 });
 
@@ -112,8 +121,12 @@ describe("ensureGit", () => {
   });
 
   it("should call process.exit(1) when git is not available", async () => {
-    const mockExecSync = vi.fn(() => { throw new Error("not found"); });
-    const mockExit = vi.fn(() => { throw new Error("exit"); });
+    const mockExecSync = vi.fn(() => {
+      throw new Error("not found");
+    });
+    const mockExit = vi.fn(() => {
+      throw new Error("exit");
+    });
     const mockConsole = {
       log: vi.fn(),
       error: vi.fn(),
@@ -204,7 +217,7 @@ async function loadHelpers(mocks = {}) {
     const exports = module.exports;
     ${wrappedSource}
     return { findBash, ensureGit, showUsage, fail, info, cleanup, readPackageVersion };
-  `,
+  `
   );
 
   const binDir = join(import.meta.dirname, "../../../bin");
@@ -232,23 +245,18 @@ async function loadHelpers(mocks = {}) {
   customRequire.resolve = require.resolve;
 
   // Build a custom process with optional overrides
-  const customProcess = mocks.processExit || mocks.env
-    ? new Proxy(process, {
-        get(target, prop) {
-          if (prop === "exit" && mocks.processExit) return mocks.processExit;
-          if (prop === "env" && mocks.env) return { ...target.env, ...mocks.env };
-          return target[prop];
-        },
-      })
-    : process;
+  const customProcess =
+    mocks.processExit || mocks.env
+      ? new Proxy(process, {
+          get(target, prop) {
+            if (prop === "exit" && mocks.processExit) return mocks.processExit;
+            if (prop === "env" && mocks.env) return { ...target.env, ...mocks.env };
+            return target[prop];
+          },
+        })
+      : process;
 
   const customConsole = mocks.console || console;
 
-  return fn(
-    customRequire,
-    customProcess,
-    customConsole,
-    binDir,
-    join(binDir, "gaia-framework.js"),
-  );
+  return fn(customRequire, customProcess, customConsole, binDir, join(binDir, "gaia-framework.js"));
 }

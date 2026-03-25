@@ -56,12 +56,7 @@ function loadCrossRefMatrix() {
 }
 
 // Memory-management skill path
-const MEMORY_SKILL_PATH = join(
-  GAIA_DIR,
-  "lifecycle",
-  "skills",
-  "memory-management.md",
-);
+const MEMORY_SKILL_PATH = join(GAIA_DIR, "lifecycle", "skills", "memory-management.md");
 
 // All tiered agents per config.yaml
 const TIER_1_AGENTS = ["validator", "architect", "pm", "sm"];
@@ -99,7 +94,7 @@ describe("E9-S6: Cross-Agent Read-Only Memory Access", () => {
         for (const ref of refs) {
           expect(
             ["recent", "full", "summary"].includes(ref.mode),
-            `${agentId}: invalid mode "${ref.mode}" — only recent, full, summary allowed`,
+            `${agentId}: invalid mode "${ref.mode}" — only recent, full, summary allowed`
           ).toBe(true);
         }
       }
@@ -114,7 +109,7 @@ describe("E9-S6: Cross-Agent Read-Only Memory Access", () => {
         expect(agentFile, `Agent file not found: ${agentId}.md`).not.toBeNull();
         expect(
           hasMemoryReads(agentFile.content),
-          `${agentId}.md missing <memory-reads> block`,
+          `${agentId}.md missing <memory-reads> block`
         ).toBe(true);
       }
     });
@@ -125,7 +120,7 @@ describe("E9-S6: Cross-Agent Read-Only Memory Access", () => {
         expect(agentFile, `Agent file not found: ${agentId}.md`).not.toBeNull();
         expect(
           hasMemoryReads(agentFile.content),
-          `${agentId}.md missing <memory-reads> block`,
+          `${agentId}.md missing <memory-reads> block`
         ).toBe(true);
       }
     });
@@ -133,10 +128,9 @@ describe("E9-S6: Cross-Agent Read-Only Memory Access", () => {
     it("_base-dev has <memory-reads> block (inherited by all dev agents)", () => {
       const agentFile = findAgentFile("_base-dev");
       expect(agentFile, "_base-dev.md not found").not.toBeNull();
-      expect(
-        hasMemoryReads(agentFile.content),
-        "_base-dev.md missing <memory-reads> block",
-      ).toBe(true);
+      expect(hasMemoryReads(agentFile.content), "_base-dev.md missing <memory-reads> block").toBe(
+        true
+      );
     });
 
     it("cross-ref tags have required agent, file, and mode attributes", () => {
@@ -147,21 +141,12 @@ describe("E9-S6: Cross-Agent Read-Only Memory Access", () => {
         const refs = parseCrossRefs(agentFile.content);
         expect(
           refs.length,
-          `${agentId}.md has <memory-reads> but no <cross-ref> tags`,
+          `${agentId}.md has <memory-reads> but no <cross-ref> tags`
         ).toBeGreaterThan(0);
         for (const ref of refs) {
-          expect(
-            ref.agent,
-            `${agentId}.md: <cross-ref> missing agent attribute`,
-          ).toBeDefined();
-          expect(
-            ref.file,
-            `${agentId}.md: <cross-ref> missing file attribute`,
-          ).toBeDefined();
-          expect(
-            ref.mode,
-            `${agentId}.md: <cross-ref> missing mode attribute`,
-          ).toBeDefined();
+          expect(ref.agent, `${agentId}.md: <cross-ref> missing agent attribute`).toBeDefined();
+          expect(ref.file, `${agentId}.md: <cross-ref> missing file attribute`).toBeDefined();
+          expect(ref.mode, `${agentId}.md: <cross-ref> missing mode attribute`).toBeDefined();
         }
       }
     });
@@ -180,14 +165,11 @@ describe("E9-S6: Cross-Agent Read-Only Memory Access", () => {
       ];
       for (const exp of expected) {
         const found = refs.find(
-          (r) =>
-            r.agent === exp.agent &&
-            r.file === exp.file &&
-            r.mode === exp.mode,
+          (r) => r.agent === exp.agent && r.file === exp.file && r.mode === exp.mode
         );
         expect(
           found,
-          `Val missing cross-ref: agent=${exp.agent} file=${exp.file} mode=${exp.mode}`,
+          `Val missing cross-ref: agent=${exp.agent} file=${exp.file} mode=${exp.mode}`
         ).toBeDefined();
       }
     });
@@ -200,20 +182,14 @@ describe("E9-S6: Cross-Agent Read-Only Memory Access", () => {
       expect(agentFile, "architect.md not found").not.toBeNull();
       const refs = parseCrossRefs(agentFile.content);
       expect(
-        refs.find(
-          (r) =>
-            r.agent === "pm" && r.file === "decision-log" && r.mode === "recent",
-        ),
-        "Theo missing: pm/decision-log/recent",
+        refs.find((r) => r.agent === "pm" && r.file === "decision-log" && r.mode === "recent"),
+        "Theo missing: pm/decision-log/recent"
       ).toBeDefined();
       expect(
         refs.find(
-          (r) =>
-            r.agent === "validator" &&
-            r.file === "ground-truth" &&
-            r.mode === "recent",
+          (r) => r.agent === "validator" && r.file === "ground-truth" && r.mode === "recent"
         ),
-        "Theo missing: validator/ground-truth/recent",
+        "Theo missing: validator/ground-truth/recent"
       ).toBeDefined();
     });
 
@@ -223,21 +199,13 @@ describe("E9-S6: Cross-Agent Read-Only Memory Access", () => {
       const refs = parseCrossRefs(agentFile.content);
       expect(
         refs.find(
-          (r) =>
-            r.agent === "architect" &&
-            r.file === "decision-log" &&
-            r.mode === "recent",
+          (r) => r.agent === "architect" && r.file === "decision-log" && r.mode === "recent"
         ),
-        "Derek missing: architect/decision-log/recent",
+        "Derek missing: architect/decision-log/recent"
       ).toBeDefined();
       expect(
-        refs.find(
-          (r) =>
-            r.agent === "sm" &&
-            r.file === "ground-truth" &&
-            r.mode === "recent",
-        ),
-        "Derek missing: sm/ground-truth/recent",
+        refs.find((r) => r.agent === "sm" && r.file === "ground-truth" && r.mode === "recent"),
+        "Derek missing: sm/ground-truth/recent"
       ).toBeDefined();
     });
 
@@ -247,30 +215,19 @@ describe("E9-S6: Cross-Agent Read-Only Memory Access", () => {
       const refs = parseCrossRefs(agentFile.content);
       expect(
         refs.find(
-          (r) =>
-            r.agent === "architect" &&
-            r.file === "decision-log" &&
-            r.mode === "recent",
+          (r) => r.agent === "architect" && r.file === "decision-log" && r.mode === "recent"
         ),
-        "Nate missing: architect/decision-log/recent",
+        "Nate missing: architect/decision-log/recent"
+      ).toBeDefined();
+      expect(
+        refs.find((r) => r.agent === "pm" && r.file === "decision-log" && r.mode === "recent"),
+        "Nate missing: pm/decision-log/recent"
       ).toBeDefined();
       expect(
         refs.find(
-          (r) =>
-            r.agent === "pm" &&
-            r.file === "decision-log" &&
-            r.mode === "recent",
+          (r) => r.agent === "validator" && r.file === "ground-truth" && r.mode === "recent"
         ),
-        "Nate missing: pm/decision-log/recent",
-      ).toBeDefined();
-      expect(
-        refs.find(
-          (r) =>
-            r.agent === "validator" &&
-            r.file === "ground-truth" &&
-            r.mode === "recent",
-        ),
-        "Nate missing: validator/ground-truth/recent",
+        "Nate missing: validator/ground-truth/recent"
       ).toBeDefined();
     });
   });
@@ -284,14 +241,11 @@ describe("E9-S6: Cross-Agent Read-Only Memory Access", () => {
       const tier1Agents = ["validator", "architect", "pm", "sm"];
       for (const agent of tier1Agents) {
         const found = refs.find(
-          (r) =>
-            r.agent === agent &&
-            r.file === "conversation-context" &&
-            r.mode === "summary",
+          (r) => r.agent === agent && r.file === "conversation-context" && r.mode === "summary"
         );
         expect(
           found,
-          `Gaia missing cross-ref: ${agent}/conversation-context/summary`,
+          `Gaia missing cross-ref: ${agent}/conversation-context/summary`
         ).toBeDefined();
       }
     });
@@ -305,21 +259,15 @@ describe("E9-S6: Cross-Agent Read-Only Memory Access", () => {
       const refs = parseCrossRefs(agentFile.content);
       expect(
         refs.find(
-          (r) =>
-            r.agent === "architect" &&
-            r.file === "decision-log" &&
-            r.mode === "recent",
+          (r) => r.agent === "architect" && r.file === "decision-log" && r.mode === "recent"
         ),
-        "Zara missing: architect/decision-log/recent",
+        "Zara missing: architect/decision-log/recent"
       ).toBeDefined();
       expect(
         refs.find(
-          (r) =>
-            r.agent === "validator" &&
-            r.file === "ground-truth" &&
-            r.mode === "recent",
+          (r) => r.agent === "validator" && r.file === "ground-truth" && r.mode === "recent"
         ),
-        "Zara missing: validator/ground-truth/recent",
+        "Zara missing: validator/ground-truth/recent"
       ).toBeDefined();
     });
 
@@ -329,12 +277,9 @@ describe("E9-S6: Cross-Agent Read-Only Memory Access", () => {
       const refs = parseCrossRefs(agentFile.content);
       expect(
         refs.find(
-          (r) =>
-            r.agent === "architect" &&
-            r.file === "decision-log" &&
-            r.mode === "recent",
+          (r) => r.agent === "architect" && r.file === "decision-log" && r.mode === "recent"
         ),
-        "Soren missing: architect/decision-log/recent",
+        "Soren missing: architect/decision-log/recent"
       ).toBeDefined();
     });
 
@@ -344,21 +289,15 @@ describe("E9-S6: Cross-Agent Read-Only Memory Access", () => {
       const refs = parseCrossRefs(agentFile.content);
       expect(
         refs.find(
-          (r) =>
-            r.agent === "architect" &&
-            r.file === "decision-log" &&
-            r.mode === "recent",
+          (r) => r.agent === "architect" && r.file === "decision-log" && r.mode === "recent"
         ),
-        "Sable missing: architect/decision-log/recent",
+        "Sable missing: architect/decision-log/recent"
       ).toBeDefined();
       expect(
         refs.find(
-          (r) =>
-            r.agent === "validator" &&
-            r.file === "ground-truth" &&
-            r.mode === "recent",
+          (r) => r.agent === "validator" && r.file === "ground-truth" && r.mode === "recent"
         ),
-        "Sable missing: validator/ground-truth/recent",
+        "Sable missing: validator/ground-truth/recent"
       ).toBeDefined();
     });
   });
@@ -371,21 +310,15 @@ describe("E9-S6: Cross-Agent Read-Only Memory Access", () => {
       const refs = parseCrossRefs(agentFile.content);
       expect(
         refs.find(
-          (r) =>
-            r.agent === "validator" &&
-            r.file === "ground-truth" &&
-            r.mode === "recent",
+          (r) => r.agent === "validator" && r.file === "ground-truth" && r.mode === "recent"
         ),
-        "_base-dev missing: validator/ground-truth/recent",
+        "_base-dev missing: validator/ground-truth/recent"
       ).toBeDefined();
       expect(
         refs.find(
-          (r) =>
-            r.agent === "architect" &&
-            r.file === "decision-log" &&
-            r.mode === "recent",
+          (r) => r.agent === "architect" && r.file === "decision-log" && r.mode === "recent"
         ),
-        "_base-dev missing: architect/decision-log/recent",
+        "_base-dev missing: architect/decision-log/recent"
       ).toBeDefined();
     });
   });
@@ -404,9 +337,7 @@ describe("E9-S6: Cross-Agent Read-Only Memory Access", () => {
     it("memory-management skill documents progressive downgrade chain", () => {
       const content = readFileSync(MEMORY_SKILL_PATH, "utf-8");
       // Must document the downgrade chain: full -> recent -> summary -> skip
-      expect(content).toMatch(
-        /full.*recent.*summary.*skip|progressive.*downgrade/i,
-      );
+      expect(content).toMatch(/full.*recent.*summary.*skip|progressive.*downgrade/i);
     });
 
     it("memory-management skill documents Val 50% cross-ref budget cap", () => {
@@ -476,13 +407,11 @@ describe("E9-S6: Cross-Agent Read-Only Memory Access", () => {
         for (const configRef of configRefs) {
           const found = personaRefs.find(
             (r) =>
-              r.agent === configRef.agent &&
-              r.file === configRef.file &&
-              r.mode === configRef.mode,
+              r.agent === configRef.agent && r.file === configRef.file && r.mode === configRef.mode
           );
           expect(
             found,
-            `Mismatch: ${agentId} persona missing cross-ref declared in config.yaml: agent=${configRef.agent} file=${configRef.file} mode=${configRef.mode}`,
+            `Mismatch: ${agentId} persona missing cross-ref declared in config.yaml: agent=${configRef.agent} file=${configRef.file} mode=${configRef.mode}`
           ).toBeDefined();
         }
       }

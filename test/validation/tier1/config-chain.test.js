@@ -30,7 +30,7 @@ function findResolvedFiles() {
     if (!existsSync(modDir)) continue;
     const result = execSync(
       `find -L "${modDir}" -path "*/.resolved/*.yaml" -not -path "*/_backups/*" -not -path "*/node_modules/*" 2>/dev/null || true`,
-      { encoding: "utf8" },
+      { encoding: "utf8" }
     ).trim();
     if (result) {
       for (const f of result.split("\n").filter(Boolean)) {
@@ -49,7 +49,7 @@ describe("E2-S1: Config Chain Tier 1 Validation", () => {
     it("should find resolved config files across modules", () => {
       expect(
         resolvedFiles.length,
-        "Should find at least one .resolved/*.yaml file",
+        "Should find at least one .resolved/*.yaml file"
       ).toBeGreaterThan(0);
     });
 
@@ -61,7 +61,7 @@ describe("E2-S1: Config Chain Tier 1 Validation", () => {
           const result = validateNoUnresolved(config);
           expect(
             result.valid,
-            `Unresolved variables found in ${fileName}: ${result.unresolvedVars.join(", ")}`,
+            `Unresolved variables found in ${fileName}: ${result.unresolvedVars.join(", ")}`
           ).toBe(true);
         });
 
@@ -73,7 +73,7 @@ describe("E2-S1: Config Chain Tier 1 Validation", () => {
           const workflowName = fileName.replace(".yaml", "");
           const searchResult = execSync(
             `find -L "${join(GAIA_DIR, mod)}" -name "workflow.yaml" -path "*/${workflowName}/*" -not -path "*/.resolved/*" -not -path "*/_backups/*" 2>/dev/null || true`,
-            { encoding: "utf8" },
+            { encoding: "utf8" }
           ).trim();
 
           if (!searchResult) return; // skip if source not found
@@ -87,7 +87,7 @@ describe("E2-S1: Config Chain Tier 1 Validation", () => {
           const runtimeResolved = resolveConfigChain(
             globalConfig,
             moduleConfig || {},
-            workflowConfig,
+            workflowConfig
           );
           const runtimeWithVars = resolveVariables(runtimeResolved, PROJECT_ROOT, {
             project_path: globalConfig.project_path,
@@ -96,16 +96,14 @@ describe("E2-S1: Config Chain Tier 1 Validation", () => {
 
           // Compare key fields — name and module should match
           if (resolvedConfig.name && runtimeWithVars.name) {
-            expect(
-              resolvedConfig.name,
-              `Mismatch on "name" in ${fileName}`,
-            ).toEqual(runtimeWithVars.name);
+            expect(resolvedConfig.name, `Mismatch on "name" in ${fileName}`).toEqual(
+              runtimeWithVars.name
+            );
           }
           if (resolvedConfig.module && runtimeWithVars.module) {
-            expect(
-              resolvedConfig.module,
-              `Mismatch on "module" in ${fileName}`,
-            ).toEqual(runtimeWithVars.module);
+            expect(resolvedConfig.module, `Mismatch on "module" in ${fileName}`).toEqual(
+              runtimeWithVars.module
+            );
           }
         });
       });
@@ -145,10 +143,9 @@ describe("E2-S1: Config Chain Tier 1 Validation", () => {
         const configPath = join(GAIA_DIR, mod, "config.yaml");
         if (existsSync(configPath)) {
           const config = loadYaml(configPath);
-          expect(
-            config.inherits,
-            `${mod}/config.yaml should declare inherits`,
-          ).toContain("global.yaml");
+          expect(config.inherits, `${mod}/config.yaml should declare inherits`).toContain(
+            "global.yaml"
+          );
         }
       }
     });
@@ -186,7 +183,7 @@ describe("E2-S2: Build-Configs Regeneration Verification", () => {
         // For each resolved file, verify no unresolved build-time variables remain
         const result = execSync(
           `find -L "${modDir}" -path "*/.resolved/*.yaml" -not -path "*/_backups/*" 2>/dev/null || true`,
-          { encoding: "utf8" },
+          { encoding: "utf8" }
         ).trim();
 
         if (!result) return;
@@ -197,7 +194,7 @@ describe("E2-S2: Build-Configs Regeneration Verification", () => {
           const validation = validateNoUnresolved(config);
           expect(
             validation.valid,
-            `Unresolved build-time variables in ${relative(GAIA_DIR, resolvedPath)}: ${validation.unresolvedVars.join(", ")}`,
+            `Unresolved build-time variables in ${relative(GAIA_DIR, resolvedPath)}: ${validation.unresolvedVars.join(", ")}`
           ).toBe(true);
         }
       });
@@ -209,13 +206,9 @@ describe("E2-S2: Build-Configs Regeneration Verification", () => {
     it("should resolve dev-story workflow config matching the resolved file field-by-field", () => {
       const workflowPath = join(
         GAIA_DIR,
-        "lifecycle/workflows/4-implementation/dev-story/workflow.yaml",
+        "lifecycle/workflows/4-implementation/dev-story/workflow.yaml"
       );
-      const resolvedResult = resolveWorkflowConfig(
-        workflowPath,
-        PROJECT_ROOT,
-        globalConfig,
-      );
+      const resolvedResult = resolveWorkflowConfig(workflowPath, PROJECT_ROOT, globalConfig);
 
       expect(resolvedResult).not.toBeNull();
       expect(resolvedResult.name).toBe("dev-story");
@@ -225,13 +218,9 @@ describe("E2-S2: Build-Configs Regeneration Verification", () => {
     it("should resolve {project-path} to {project-root}/Gaia-framework, not just {project-root}", () => {
       const workflowPath = join(
         GAIA_DIR,
-        "lifecycle/workflows/4-implementation/dev-story/workflow.yaml",
+        "lifecycle/workflows/4-implementation/dev-story/workflow.yaml"
       );
-      const resolvedResult = resolveWorkflowConfig(
-        workflowPath,
-        PROJECT_ROOT,
-        globalConfig,
-      );
+      const resolvedResult = resolveWorkflowConfig(workflowPath, PROJECT_ROOT, globalConfig);
 
       // The resolved config should contain the full project-path, not bare project-root
       // for fields that use {project-path}
@@ -242,20 +231,16 @@ describe("E2-S2: Build-Configs Regeneration Verification", () => {
     it("should resolve all four variable types correctly", () => {
       const workflowPath = join(
         GAIA_DIR,
-        "lifecycle/workflows/4-implementation/dev-story/workflow.yaml",
+        "lifecycle/workflows/4-implementation/dev-story/workflow.yaml"
       );
-      const resolvedResult = resolveWorkflowConfig(
-        workflowPath,
-        PROJECT_ROOT,
-        globalConfig,
-      );
+      const resolvedResult = resolveWorkflowConfig(workflowPath, PROJECT_ROOT, globalConfig);
 
       // Validate using the standard unresolved-variable checker which
       // correctly excludes runtime variables (date, story_key, etc.)
       const validation = validateNoUnresolved(resolvedResult);
       expect(
         validation.valid,
-        `Unresolved build-time variables: ${validation.unresolvedVars.join(", ")}`,
+        `Unresolved build-time variables: ${validation.unresolvedVars.join(", ")}`
       ).toBe(true);
 
       // Key build-time fields should contain the actual project root path
@@ -269,10 +254,7 @@ describe("E2-S2: Build-Configs Regeneration Verification", () => {
     it("should detect stale resolved file when source has newer mtime", () => {
       // Use detectStaleness with a source that is guaranteed newer
       // The global.yaml is always a source — if it's newer than a resolved file, staleness is detected
-      const testResolvedPath = join(
-        GAIA_DIR,
-        "lifecycle/.resolved/dev-story.yaml",
-      );
+      const testResolvedPath = join(GAIA_DIR, "lifecycle/.resolved/dev-story.yaml");
 
       // This may or may not exist — the test validates the detection logic
       if (!existsSync(testResolvedPath)) {
@@ -298,9 +280,7 @@ describe("E2-S2: Build-Configs Regeneration Verification", () => {
     it("should include actionable remediation message when stale", () => {
       // Create a scenario: check a non-existent resolved path
       const fakePath = join(GAIA_DIR, "lifecycle/.resolved/nonexistent-workflow.yaml");
-      const result = detectStaleness(fakePath, [
-        join(GAIA_DIR, "_config", "global.yaml"),
-      ]);
+      const result = detectStaleness(fakePath, [join(GAIA_DIR, "_config", "global.yaml")]);
       expect(result.stale).toBe(true);
       expect(result.reason).toContain("does not exist");
     });

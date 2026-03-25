@@ -25,10 +25,9 @@ function readCached(filePath) {
  */
 function findCommandFiles() {
   const commandDir = join(PROJECT_ROOT, ".claude", "commands");
-  return execSync(
-    `find "${commandDir}" -name "gaia*.md" -not -path "*/node_modules/*"`,
-    { encoding: "utf8" },
-  )
+  return execSync(`find "${commandDir}" -name "gaia*.md" -not -path "*/node_modules/*"`, {
+    encoding: "utf8",
+  })
     .trim()
     .split("\n")
     .filter((f) => f.length > 0)
@@ -112,10 +111,9 @@ function parseCsv(filePath) {
  */
 function buildAgentCommandMap() {
   const commandDir = join(PROJECT_ROOT, ".claude", "commands");
-  const agentCommandFiles = execSync(
-    `find "${commandDir}" -name "gaia-agent-*.md"`,
-    { encoding: "utf8" },
-  )
+  const agentCommandFiles = execSync(`find "${commandDir}" -name "gaia-agent-*.md"`, {
+    encoding: "utf8",
+  })
     .trim()
     .split("\n")
     .filter((f) => f.length > 0);
@@ -123,9 +121,7 @@ function buildAgentCommandMap() {
   const map = {};
   for (const cmdFile of agentCommandFiles) {
     const content = readCached(cmdFile);
-    const match = content.match(
-      /LOAD[^\n]*\{project-root\}(\/_gaia\/[^\s]+\/agents\/[^\s]+\.md)/,
-    );
+    const match = content.match(/LOAD[^\n]*\{project-root\}(\/_gaia\/[^\s]+\/agents\/[^\s]+\.md)/);
     if (match) {
       map[match[1].replace(/^\//, "")] = cmdFile;
     }
@@ -150,10 +146,7 @@ describe("Slash Command Forward References (AC1, AC2)", () => {
   describe.each(commandFiles)("%s", (filePath) => {
     it("should have a parseable reference target", () => {
       const ref = extractReference(filePath);
-      expect(
-        ref,
-        `No workflow/agent/orchestrator reference found in ${filePath}`,
-      ).not.toBeNull();
+      expect(ref, `No workflow/agent/orchestrator reference found in ${filePath}`).not.toBeNull();
     });
 
     it("should reference an existing file or directory on disk", () => {
@@ -162,7 +155,7 @@ describe("Slash Command Forward References (AC1, AC2)", () => {
       const resolvedPath = join(PROJECT_ROOT, ref.path);
       expect(
         existsSync(resolvedPath),
-        `Orphaned command: ${filePath} references ${resolvedPath} which does not exist`,
+        `Orphaned command: ${filePath} references ${resolvedPath} which does not exist`
       ).toBe(true);
     });
   });
@@ -175,22 +168,20 @@ describe("Workflow Manifest → Command Coverage (AC3a)", () => {
     expect(existsSync(workflowManifestPath)).toBe(true);
   });
 
-  const workflowManifest = existsSync(workflowManifestPath)
-    ? parseCsv(workflowManifestPath)
-    : [];
+  const workflowManifest = existsSync(workflowManifestPath) ? parseCsv(workflowManifestPath) : [];
 
   it("should have workflow manifest entries", () => {
     expect(workflowManifest.length).toBeGreaterThan(0);
   });
 
   describe.each(
-    workflowManifest.filter((row) => row.command).map((row) => [row.command, row.name]),
+    workflowManifest.filter((row) => row.command).map((row) => [row.command, row.name])
   )("command '%s' (workflow: %s)", (commandName) => {
     it("should have a matching .md file in .claude/commands/", () => {
       const commandFilePath = join(PROJECT_ROOT, ".claude", "commands", `${commandName}.md`);
       expect(
         existsSync(commandFilePath),
-        `Manifest entry '${commandName}' has no command file at ${commandFilePath}`,
+        `Manifest entry '${commandName}' has no command file at ${commandFilePath}`
       ).toBe(true);
     });
   });
@@ -203,13 +194,11 @@ describe("Agent Manifest → Command Coverage (AC3b)", () => {
     expect(existsSync(agentManifestPath)).toBe(true);
   });
 
-  const agentManifest = existsSync(agentManifestPath)
-    ? parseCsv(agentManifestPath)
-    : [];
+  const agentManifest = existsSync(agentManifestPath) ? parseCsv(agentManifestPath) : [];
 
   // Exclusions: _base-dev (abstract base), orchestrator (uses gaia.md)
   const agentsWithCommands = agentManifest.filter(
-    (row) => row.name && row.name !== "_base-dev" && row.name !== "orchestrator",
+    (row) => row.name && row.name !== "_base-dev" && row.name !== "orchestrator"
   );
 
   it("should have agent manifest entries", () => {
@@ -225,10 +214,10 @@ describe("Agent Manifest → Command Coverage (AC3b)", () => {
         const commandFile = agentCommandMap[agentPath];
         expect(
           commandFile,
-          `Agent '${agentName}' (${agentPath}) has no command file referencing it`,
+          `Agent '${agentName}' (${agentPath}) has no command file referencing it`
         ).toBeTruthy();
       });
-    },
+    }
   );
 });
 
@@ -258,7 +247,7 @@ describe("Slash Command Frontmatter Validation (AC5)", () => {
       expect(fm?.model, `Missing 'model' in frontmatter of ${filePath}`).toBeTruthy();
       expect(
         validModels.includes(fm?.model),
-        `Invalid model '${fm?.model}' in ${filePath} — must be opus or sonnet`,
+        `Invalid model '${fm?.model}' in ${filePath} — must be opus or sonnet`
       ).toBe(true);
     });
   });

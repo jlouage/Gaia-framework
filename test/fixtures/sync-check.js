@@ -49,8 +49,8 @@ for (const rel of MOCK_REQUIRED_PATHS) {
   if (!existsSync(fullPath)) {
     console.error(
       `MISSING in mock-framework: ${rel} — ` +
-      `mock-framework must contain this path to be a valid test fixture. ` +
-      `Create the file at test/fixtures/mock-framework/${rel}`
+        `mock-framework must contain this path to be a valid test fixture. ` +
+        `Create the file at test/fixtures/mock-framework/${rel}`
     );
     exitCode = 1;
   }

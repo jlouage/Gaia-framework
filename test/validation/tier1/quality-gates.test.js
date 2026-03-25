@@ -49,11 +49,7 @@ const ABSOLUTE_PATH_PATTERNS = [
 ];
 
 // Critical-path workflows whose pre_start gates MUST use HALT: prefix
-const CRITICAL_PATH_WORKFLOWS = [
-  "dev-story",
-  "deployment-checklist",
-  "implementation-readiness",
-];
+const CRITICAL_PATH_WORKFLOWS = ["dev-story", "deployment-checklist", "implementation-readiness"];
 
 // Recognized on_fail severity prefixes
 const RECOGNIZED_PREFIXES = ["HALT:", "WARN:", "RECOMMEND:", "WARNING:"];
@@ -160,7 +156,6 @@ for (const wfPath of workflowFiles) {
 // ---------- Tests ----------
 
 describe("Quality Gate Validation (FR-41, US-13)", () => {
-
   // AC4: Dynamic enumeration
   it("should dynamically discover quality gates from the filesystem", () => {
     expect(gateRegistry.length).toBeGreaterThan(0);
@@ -168,15 +163,15 @@ describe("Quality Gate Validation (FR-41, US-13)", () => {
   });
 
   it("should exclude .resolved/ directories from gate discovery", () => {
-    const resolvedFiles = gateRegistry.filter((g) =>
-      g.workflowPath.includes(".resolved/") || g.workflowPath.includes(".resolved\\"),
+    const resolvedFiles = gateRegistry.filter(
+      (g) => g.workflowPath.includes(".resolved/") || g.workflowPath.includes(".resolved\\")
     );
     expect(resolvedFiles, ".resolved/ gates should be excluded").toHaveLength(0);
   });
 
   it("should exclude _backups/ directories from gate discovery", () => {
-    const backupFiles = gateRegistry.filter((g) =>
-      g.workflowPath.includes("_backups/") || g.workflowPath.includes("_backups\\"),
+    const backupFiles = gateRegistry.filter(
+      (g) => g.workflowPath.includes("_backups/") || g.workflowPath.includes("_backups\\")
     );
     expect(backupFiles, "_backups/ gates should be excluded").toHaveLength(0);
   });
@@ -192,116 +187,111 @@ describe("Quality Gate Validation (FR-41, US-13)", () => {
       expect(filePathGates.length).toBeGreaterThan(0);
     });
 
-    describe.each(
-      filePathGates.map((g) => [
-        `${g.workflowName} (${g.gateType}): ${g.check}`,
-        g,
-      ]),
-    )("%s", (_label, gate) => {
-      it("should use only defined framework variables", () => {
-        for (const v of extractVariables(gate.check)) {
-          expect(
-            FRAMEWORK_VARIABLES.has(v),
-            `Undefined variable '{${v}}' in gate check: "${gate.check}" (workflow: ${gate.workflowName})`,
-          ).toBe(true);
-        }
-      });
-    });
+    describe.each(filePathGates.map((g) => [`${g.workflowName} (${g.gateType}): ${g.check}`, g]))(
+      "%s",
+      (_label, gate) => {
+        it("should use only defined framework variables", () => {
+          for (const v of extractVariables(gate.check)) {
+            expect(
+              FRAMEWORK_VARIABLES.has(v),
+              `Undefined variable '{${v}}' in gate check: "${gate.check}" (workflow: ${gate.workflowName})`
+            ).toBe(true);
+          }
+        });
+      }
+    );
   });
 
   // AC1b: Classify all gate conditions
   describe("AC1b: Gate condition classification", () => {
-    describe.each(
-      gateRegistry.map((g) => [
-        `${g.workflowName} (${g.gateType}): ${g.check}`,
-        g,
-      ]),
-    )("%s", (_label, gate) => {
-      it("should be classifiable as file-path, state-enum, runtime-computed, or content-structure", () => {
-        const classification = classifyCheck(gate.check);
-        expect(
-          classification,
-          `Unclassified check: "${gate.check}" (workflow: ${gate.workflowName}). ` +
-            `Must match one of: file-path, state-enum, runtime-computed, content-structure`,
-        ).not.toBeNull();
-        expect(
-          ["file-path", "state-enum", "runtime-computed", "content-structure"],
-        ).toContain(classification.type);
-      });
-    });
+    describe.each(gateRegistry.map((g) => [`${g.workflowName} (${g.gateType}): ${g.check}`, g]))(
+      "%s",
+      (_label, gate) => {
+        it("should be classifiable as file-path, state-enum, runtime-computed, or content-structure", () => {
+          const classification = classifyCheck(gate.check);
+          expect(
+            classification,
+            `Unclassified check: "${gate.check}" (workflow: ${gate.workflowName}). ` +
+              `Must match one of: file-path, state-enum, runtime-computed, content-structure`
+          ).not.toBeNull();
+          expect(["file-path", "state-enum", "runtime-computed", "content-structure"]).toContain(
+            classification.type
+          );
+        });
+      }
+    );
   });
 
   // AC2a: on_fail message validation
   describe("AC2a: on_fail message presence, prefix, and actionability", () => {
-    describe.each(
-      gateRegistry.map((g) => [
-        `${g.workflowName} (${g.gateType}): ${g.check}`,
-        g,
-      ]),
-    )("%s", (_label, gate) => {
-      it("should have a non-empty on_fail message", () => {
-        expect(
-          gate.onFail,
-          `Missing on_fail for check: "${gate.check}" (workflow: ${gate.workflowName})`,
-        ).toBeTruthy();
-        expect(
-          typeof gate.onFail === "string" && gate.onFail.trim().length > 0,
-          `Empty on_fail for check: "${gate.check}" (workflow: ${gate.workflowName})`,
-        ).toBe(true);
-      });
+    describe.each(gateRegistry.map((g) => [`${g.workflowName} (${g.gateType}): ${g.check}`, g]))(
+      "%s",
+      (_label, gate) => {
+        it("should have a non-empty on_fail message", () => {
+          expect(
+            gate.onFail,
+            `Missing on_fail for check: "${gate.check}" (workflow: ${gate.workflowName})`
+          ).toBeTruthy();
+          expect(
+            typeof gate.onFail === "string" && gate.onFail.trim().length > 0,
+            `Empty on_fail for check: "${gate.check}" (workflow: ${gate.workflowName})`
+          ).toBe(true);
+        });
 
-      it("should begin with a recognized severity prefix", () => {
-        if (!gate.onFail) return;
-        const hasPrefix = RECOGNIZED_PREFIXES.some((prefix) =>
-          gate.onFail.trimStart().startsWith(prefix),
-        );
-        expect(
-          hasPrefix,
-          `on_fail message does not start with a recognized prefix (${RECOGNIZED_PREFIXES.join(", ")}): ` +
-            `"${gate.onFail}" (workflow: ${gate.workflowName})`,
-        ).toBe(true);
-      });
+        it("should begin with a recognized severity prefix", () => {
+          if (!gate.onFail) return;
+          const hasPrefix = RECOGNIZED_PREFIXES.some((prefix) =>
+            gate.onFail.trimStart().startsWith(prefix)
+          );
+          expect(
+            hasPrefix,
+            `on_fail message does not start with a recognized prefix (${RECOGNIZED_PREFIXES.join(", ")}): ` +
+              `"${gate.onFail}" (workflow: ${gate.workflowName})`
+          ).toBe(true);
+        });
 
-      it("should include actionable remediation (slash command or file path)", () => {
-        if (!gate.onFail) return;
-        const hasSlashCommand = /\/gaia-/.test(gate.onFail);
-        const hasFilePath = /\{[a-z_-]+\}\//.test(gate.onFail) || /\.\w{2,4}/.test(gate.onFail);
-        const hasActionableGuidance = hasSlashCommand || hasFilePath;
-        expect(
-          hasActionableGuidance,
-          `on_fail lacks actionable remediation (no /gaia- command or file reference): ` +
-            `"${gate.onFail}" (workflow: ${gate.workflowName})`,
-        ).toBe(true);
-      });
-    });
+        it("should include actionable remediation (slash command or file path)", () => {
+          if (!gate.onFail) return;
+          const hasSlashCommand = /\/gaia-/.test(gate.onFail);
+          const hasFilePath = /\{[a-z_-]+\}\//.test(gate.onFail) || /\.\w{2,4}/.test(gate.onFail);
+          const hasActionableGuidance = hasSlashCommand || hasFilePath;
+          expect(
+            hasActionableGuidance,
+            `on_fail lacks actionable remediation (no /gaia- command or file reference): ` +
+              `"${gate.onFail}" (workflow: ${gate.workflowName})`
+          ).toBe(true);
+        });
+      }
+    );
   });
 
   // AC2b: Critical-path pre_start gates use HALT: prefix
   describe("AC2b: Critical-path pre_start gates use HALT:", () => {
     for (const criticalWorkflow of CRITICAL_PATH_WORKFLOWS) {
       const criticalGates = gateRegistry.filter(
-        (g) => g.workflowName === criticalWorkflow && g.gateType === "pre_start",
+        (g) => g.workflowName === criticalWorkflow && g.gateType === "pre_start"
       );
 
       describe(`${criticalWorkflow}`, () => {
         it("should have pre_start gates defined", () => {
           expect(
             criticalGates.length,
-            `Critical workflow '${criticalWorkflow}' has no pre_start gates`,
+            `Critical workflow '${criticalWorkflow}' has no pre_start gates`
           ).toBeGreaterThan(0);
         });
 
         if (criticalGates.length > 0) {
-          describe.each(
-            criticalGates.map((g) => [`check: ${g.check}`, g]),
-          )("%s", (_label, gate) => {
-            it("should use HALT: prefix on on_fail", () => {
-              expect(
-                gate.onFail?.trimStart().startsWith("HALT:"),
-                `Critical-path pre_start gate uses non-HALT prefix: "${gate.onFail}" (workflow: ${gate.workflowName})`,
-              ).toBe(true);
-            });
-          });
+          describe.each(criticalGates.map((g) => [`check: ${g.check}`, g]))(
+            "%s",
+            (_label, gate) => {
+              it("should use HALT: prefix on on_fail", () => {
+                expect(
+                  gate.onFail?.trimStart().startsWith("HALT:"),
+                  `Critical-path pre_start gate uses non-HALT prefix: "${gate.onFail}" (workflow: ${gate.workflowName})`
+                ).toBe(true);
+              });
+            }
+          );
         }
       });
     }
@@ -309,9 +299,7 @@ describe("Quality Gate Validation (FR-41, US-13)", () => {
 
   // AC3a: No undefined variable references
   describe("AC3a: No undefined variable references in gate checks", () => {
-    const gatesWithVars = gateRegistry.filter((g) =>
-      /\{[a-z_-]+\}/.test(g.check),
-    );
+    const gatesWithVars = gateRegistry.filter((g) => /\{[a-z_-]+\}/.test(g.check));
 
     it("should find gates with variable references to validate", () => {
       // It's okay if there are none, but we expect some based on the codebase
@@ -319,41 +307,37 @@ describe("Quality Gate Validation (FR-41, US-13)", () => {
     });
 
     if (gatesWithVars.length > 0) {
-      describe.each(
-        gatesWithVars.map((g) => [
-          `${g.workflowName}: ${g.check}`,
-          g,
-        ]),
-      )("%s", (_label, gate) => {
-        it("should only reference defined variables", () => {
-          for (const v of extractVariables(gate.check)) {
-            expect(
-              FRAMEWORK_VARIABLES.has(v),
-              `Undefined variable '{${v}}' in check: "${gate.check}" (workflow: ${gate.workflowName})`,
-            ).toBe(true);
-          }
-        });
-      });
+      describe.each(gatesWithVars.map((g) => [`${g.workflowName}: ${g.check}`, g]))(
+        "%s",
+        (_label, gate) => {
+          it("should only reference defined variables", () => {
+            for (const v of extractVariables(gate.check)) {
+              expect(
+                FRAMEWORK_VARIABLES.has(v),
+                `Undefined variable '{${v}}' in check: "${gate.check}" (workflow: ${gate.workflowName})`
+              ).toBe(true);
+            }
+          });
+        }
+      );
     }
   });
 
   // AC3b: No hardcoded absolute paths
   describe("AC3b: No hardcoded absolute paths in gate checks", () => {
-    describe.each(
-      gateRegistry.map((g) => [
-        `${g.workflowName} (${g.gateType}): ${g.check}`,
-        g,
-      ]),
-    )("%s", (_label, gate) => {
-      it("should not contain hardcoded absolute paths", () => {
-        for (const pattern of ABSOLUTE_PATH_PATTERNS) {
-          expect(
-            pattern.test(gate.check),
-            `Hardcoded absolute path found in check: "${gate.check}" (pattern: ${pattern}) (workflow: ${gate.workflowName})`,
-          ).toBe(false);
-        }
-      });
-    });
+    describe.each(gateRegistry.map((g) => [`${g.workflowName} (${g.gateType}): ${g.check}`, g]))(
+      "%s",
+      (_label, gate) => {
+        it("should not contain hardcoded absolute paths", () => {
+          for (const pattern of ABSOLUTE_PATH_PATTERNS) {
+            expect(
+              pattern.test(gate.check),
+              `Hardcoded absolute path found in check: "${gate.check}" (pattern: ${pattern}) (workflow: ${gate.workflowName})`
+            ).toBe(false);
+          }
+        });
+      }
+    );
   });
 
   // Supplementary: Syntactic inconsistency detection (warnings, not failures)
@@ -391,7 +375,7 @@ describe("Quality Gate Validation (FR-41, US-13)", () => {
       if (inconsistencies.length > 0) {
         console.warn(
           "Syntactic inconsistencies detected in gate checks:",
-          JSON.stringify(inconsistencies, null, 2),
+          JSON.stringify(inconsistencies, null, 2)
         );
       }
       expect(true).toBe(true);

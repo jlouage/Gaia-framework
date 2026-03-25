@@ -32,7 +32,7 @@ function discoverAgentFiles() {
     const agentsDir = join(GAIA_DIR, mod, "agents");
     if (!existsSync(agentsDir)) continue;
     const files = readdirSync(agentsDir).filter(
-      (f) => f.endsWith(".md") && !f.includes("_backups"),
+      (f) => f.endsWith(".md") && !f.includes("_backups")
     );
     for (const f of files) {
       agents.push(join(agentsDir, f));
@@ -93,10 +93,13 @@ function extractSkillRegistryPaths(content) {
  */
 function extractStackConfigSkills(content) {
   const match = content.match(
-    /<stack-config>[\s\S]*?skills:\s*\[([^\]]+)\][\s\S]*?<\/stack-config>/,
+    /<stack-config>[\s\S]*?skills:\s*\[([^\]]+)\][\s\S]*?<\/stack-config>/
   );
   if (!match) return [];
-  return match[1].split(",").map((s) => s.trim()).filter(Boolean);
+  return match[1]
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
 }
 
 /**
@@ -135,7 +138,7 @@ describe("Agent Persona Validation (E1-S2, FR-31)", () => {
   it("should discover agent files via filesystem scan (auto-discovery)", () => {
     expect(
       agentFiles.length,
-      "No agent files discovered in any _gaia/*/agents/ directory",
+      "No agent files discovered in any _gaia/*/agents/ directory"
     ).toBeGreaterThan(0);
   });
 
@@ -147,7 +150,7 @@ describe("Agent Persona Validation (E1-S2, FR-31)", () => {
         const lineCount = content.split("\n").length;
         expect(
           lineCount,
-          `${basename(filePath)}${isAbstract(filePath) ? " (abstract)" : ""} is ${lineCount} lines — exceeds 400-line limit`,
+          `${basename(filePath)}${isAbstract(filePath) ? " (abstract)" : ""} is ${lineCount} lines — exceeds 400-line limit`
         ).toBeLessThanOrEqual(400);
       });
     });
@@ -174,7 +177,7 @@ describe("Agent Persona Validation (E1-S2, FR-31)", () => {
             const resolved = resolveSkillPath(skillPath);
             expect(
               resolved,
-              `${basename(filePath)}: skill-registry path "${skillPath}" does not resolve to a file in _gaia/dev/skills/ or _gaia/lifecycle/skills/`,
+              `${basename(filePath)}: skill-registry path "${skillPath}" does not resolve to a file in _gaia/dev/skills/ or _gaia/lifecycle/skills/`
             ).not.toBeNull();
           });
         });
@@ -186,7 +189,7 @@ describe("Agent Persona Validation (E1-S2, FR-31)", () => {
             const resolved = resolveSkillPath(skillName);
             expect(
               resolved,
-              `${basename(filePath)}: stack-config skill "${skillName}" does not resolve to ${skillName}.md in _gaia/dev/skills/ or _gaia/lifecycle/skills/`,
+              `${basename(filePath)}: stack-config skill "${skillName}" does not resolve to ${skillName}.md in _gaia/dev/skills/ or _gaia/lifecycle/skills/`
             ).not.toBeNull();
           });
         });
@@ -211,7 +214,7 @@ describe("Agent Persona Validation (E1-S2, FR-31)", () => {
         const fullPath = join(FRAMEWORK_ROOT, fragmentPath);
         expect(
           existsSync(fullPath),
-          `${basename(filePath)}: knowledge fragment "${fragmentPath}" not found at ${fullPath}`,
+          `${basename(filePath)}: knowledge fragment "${fragmentPath}" not found at ${fullPath}`
         ).toBe(true);
       });
     });
@@ -228,11 +231,11 @@ describe("Agent Persona Validation (E1-S2, FR-31)", () => {
         const expectedId = basename(filePath, ".md");
         expect(
           agentId,
-          `${basename(filePath)}: no agent id attribute found in <agent> tag`,
+          `${basename(filePath)}: no agent id attribute found in <agent> tag`
         ).not.toBeNull();
         expect(
           agentId,
-          `${basename(filePath)}: agent id="${agentId}" does not match filename stem "${expectedId}"`,
+          `${basename(filePath)}: agent id="${agentId}" does not match filename stem "${expectedId}"`
         ).toBe(expectedId);
       });
     });
@@ -252,14 +255,11 @@ describe("Agent Persona Validation (E1-S2, FR-31)", () => {
 
       it("should contain a non-empty <agent> XML block", () => {
         const xmlBlock = extractAgentXmlBlock(content);
-        expect(
-          xmlBlock,
-          `${basename(filePath)}: no <agent>...</agent> block found`,
-        ).not.toBeNull();
+        expect(xmlBlock, `${basename(filePath)}: no <agent>...</agent> block found`).not.toBeNull();
 
         expect(
           content,
-          `${basename(filePath)}: agent block appears to be self-closing (<agent ... />)`,
+          `${basename(filePath)}: agent block appears to be self-closing (<agent ... />)`
         ).not.toMatch(/<agent\s[^>]*\/>/);
       });
 
@@ -267,7 +267,7 @@ describe("Agent Persona Validation (E1-S2, FR-31)", () => {
         const agentId = extractAgentId(content);
         expect(
           agentId,
-          `${basename(filePath)}: <agent> tag is missing id attribute`,
+          `${basename(filePath)}: <agent> tag is missing id attribute`
         ).not.toBeNull();
       });
 
@@ -281,13 +281,12 @@ describe("Agent Persona Validation (E1-S2, FR-31)", () => {
           .trim();
         expect(
           innerContent.length,
-          `${basename(filePath)}: <agent> block has no child content`,
+          `${basename(filePath)}: <agent> block has no child content`
         ).toBeGreaterThan(0);
 
-        expect(
-          innerContent,
-          `${basename(filePath)}: <agent> block has no child elements`,
-        ).toMatch(/<\w+/);
+        expect(innerContent, `${basename(filePath)}: <agent> block has no child elements`).toMatch(
+          /<\w+/
+        );
       });
 
       it("should have a valid extends reference (if declared)", () => {
@@ -304,7 +303,7 @@ describe("Agent Persona Validation (E1-S2, FR-31)", () => {
         }
         expect(
           found,
-          `${basename(filePath)}: extends="${extendsRef}" but ${extendsRef}.md not found in any _gaia/*/agents/ directory`,
+          `${basename(filePath)}: extends="${extendsRef}" but ${extendsRef}.md not found in any _gaia/*/agents/ directory`
         ).toBe(true);
       });
     });
@@ -315,15 +314,11 @@ describe("Agent Persona Validation (E1-S2, FR-31)", () => {
     for (const mod of AGENT_MODULE_DIRS) {
       it(`should discover agents in _gaia/${mod}/agents/`, () => {
         const agentsDir = join(GAIA_DIR, mod, "agents");
-        expect(
-          existsSync(agentsDir),
-          `Agent directory _gaia/${mod}/agents/ does not exist`,
-        ).toBe(true);
+        expect(existsSync(agentsDir), `Agent directory _gaia/${mod}/agents/ does not exist`).toBe(
+          true
+        );
         const files = readdirSync(agentsDir).filter((f) => f.endsWith(".md"));
-        expect(
-          files.length,
-          `No agent .md files found in _gaia/${mod}/agents/`,
-        ).toBeGreaterThan(0);
+        expect(files.length, `No agent .md files found in _gaia/${mod}/agents/`).toBeGreaterThan(0);
       });
     }
   });
