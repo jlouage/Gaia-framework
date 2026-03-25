@@ -4,10 +4,7 @@ import { resolve, join } from "path";
 
 // Project root is where _gaia/ lives (3 levels up from test/validation/atdd/)
 const PROJECT_ROOT = resolve(import.meta.dirname, "../../..");
-const VALIDATOR_MD = join(
-  PROJECT_ROOT,
-  "_gaia/lifecycle/agents/validator.md"
-);
+const VALIDATOR_MD = join(PROJECT_ROOT, "_gaia/lifecycle/agents/validator.md");
 
 function loadValidator() {
   expect(existsSync(VALIDATOR_MD)).toBe(true);
@@ -25,9 +22,7 @@ describe("E9-S1: Tier 1 Memory — Val Load/Save Protocol", () => {
       expect(content).toContain("conversation-context.md");
       // The activation block must mention loading all 3, not just conversation-context
       // Look for the activation section and verify it references all 3 files in its load step
-      const activationMatch = content.match(
-        /<activation[\s\S]*?<\/activation>/
-      );
+      const activationMatch = content.match(/<activation[\s\S]*?<\/activation>/);
       expect(activationMatch).not.toBeNull();
       const activationBlock = activationMatch[0];
       expect(activationBlock).toContain("ground-truth.md");
@@ -113,9 +108,7 @@ describe("E9-S1: Tier 1 Memory — Val Load/Save Protocol", () => {
       expect(content).toMatch(/archive/i);
       expect(content).toMatch(/force.*save/i);
       // Ground-truth must never be archived
-      expect(content).toMatch(
-        /ground.truth.*never.*archiv|never.*archiv.*ground.truth/is
-      );
+      expect(content).toMatch(/ground.truth.*never.*archiv|never.*archiv.*ground.truth/is);
     });
 
     it("test_ac6_archive_directory — archives to archive/ subdirectory", () => {

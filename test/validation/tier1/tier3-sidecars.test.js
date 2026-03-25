@@ -1,23 +1,56 @@
 import { describe, it, expect } from "vitest";
-import { readFileSync, existsSync, readdirSync } from "fs";
+import { readFileSync, existsSync } from "fs";
 import { resolve, join } from "path";
 
 const PROJECT_ROOT = resolve(import.meta.dirname, "../../..");
 
 // Tier 3 agents per ADR-014
 const TIER_3_DEV_AGENTS = [
-  { id: "angular-dev", name: "Lena", title: "Angular Developer", sidecarDir: "angular-dev-sidecar" },
-  { id: "typescript-dev", name: "Cleo", title: "TypeScript Developer", sidecarDir: "typescript-dev-sidecar" },
-  { id: "flutter-dev", name: "Freya", title: "Flutter Developer", sidecarDir: "flutter-dev-sidecar" },
+  {
+    id: "angular-dev",
+    name: "Lena",
+    title: "Angular Developer",
+    sidecarDir: "angular-dev-sidecar",
+  },
+  {
+    id: "typescript-dev",
+    name: "Cleo",
+    title: "TypeScript Developer",
+    sidecarDir: "typescript-dev-sidecar",
+  },
+  {
+    id: "flutter-dev",
+    name: "Freya",
+    title: "Flutter Developer",
+    sidecarDir: "flutter-dev-sidecar",
+  },
   { id: "java-dev", name: "Hugo", title: "Java Developer", sidecarDir: "java-dev-sidecar" },
   { id: "python-dev", name: "Ravi", title: "Python Developer", sidecarDir: "python-dev-sidecar" },
   { id: "mobile-dev", name: "Talia", title: "Mobile Developer", sidecarDir: "mobile-dev-sidecar" },
 ];
 
 const TIER_3_SUPPORTING_AGENTS = [
-  { id: "tech-writer", name: "Iris", title: "Technical Writer", sidecarDir: "tech-writer-sidecar", personaPath: "_gaia/lifecycle/agents/tech-writer.md" },
-  { id: "storyteller", name: "Elara", title: "Master Storyteller", sidecarDir: "storyteller-sidecar", personaPath: "_gaia/creative/agents/storyteller.md" },
-  { id: "qa", name: "Vera", title: "QA Engineer", sidecarDir: "qa-sidecar", personaPath: "_gaia/lifecycle/agents/qa.md" },
+  {
+    id: "tech-writer",
+    name: "Iris",
+    title: "Technical Writer",
+    sidecarDir: "tech-writer-sidecar",
+    personaPath: "_gaia/lifecycle/agents/tech-writer.md",
+  },
+  {
+    id: "storyteller",
+    name: "Elara",
+    title: "Master Storyteller",
+    sidecarDir: "storyteller-sidecar",
+    personaPath: "_gaia/creative/agents/storyteller.md",
+  },
+  {
+    id: "qa",
+    name: "Vera",
+    title: "QA Engineer",
+    sidecarDir: "qa-sidecar",
+    personaPath: "_gaia/lifecycle/agents/qa.md",
+  },
 ];
 
 const ALL_TIER_3_AGENTS = [
@@ -27,9 +60,15 @@ const ALL_TIER_3_AGENTS = [
 
 // Untiered agents that should NOT be modified
 const UNTIERED_AGENTS = [
-  "analyst", "data-engineer", "performance", "ux-designer",
-  "brainstorming-coach", "design-thinking-coach", "innovation-strategist",
-  "presentation-designer", "problem-solver",
+  "analyst",
+  "data-engineer",
+  "performance",
+  "ux-designer",
+  "brainstorming-coach",
+  "design-thinking-coach",
+  "innovation-strategist",
+  "presentation-designer",
+  "problem-solver",
 ];
 
 const MEMORY_ROOT = resolve(PROJECT_ROOT, "../_memory");
@@ -47,14 +86,16 @@ describe("E9-S5: Tier 3 Dev Agent Sidecars", () => {
         const filePath = join(MEMORY_ROOT, agent.sidecarDir, "decision-log.md");
         const content = readFileSync(filePath, "utf8");
         expect(content).toContain(`# ${agent.name} — Decision Log`);
-        expect(content).toContain("Chronological record of decisions made during workflow sessions.");
+        expect(content).toContain(
+          "Chronological record of decisions made during workflow sessions."
+        );
         expect(content).toContain("---");
       });
     }
 
     it("should have all 6 dev agent decision-log.md files", () => {
       const found = TIER_3_DEV_AGENTS.filter((a) =>
-        existsSync(join(MEMORY_ROOT, a.sidecarDir, "decision-log.md")),
+        existsSync(join(MEMORY_ROOT, a.sidecarDir, "decision-log.md"))
       );
       expect(found.length).toBe(6);
     });
@@ -72,14 +113,16 @@ describe("E9-S5: Tier 3 Dev Agent Sidecars", () => {
         const filePath = join(MEMORY_ROOT, agent.sidecarDir, "decision-log.md");
         const content = readFileSync(filePath, "utf8");
         expect(content).toContain(`# ${agent.name} — Decision Log`);
-        expect(content).toContain("Chronological record of decisions made during workflow sessions.");
+        expect(content).toContain(
+          "Chronological record of decisions made during workflow sessions."
+        );
         expect(content).toContain("---");
       });
     }
 
     it("should have all 3 supporting agent decision-log.md files", () => {
       const found = TIER_3_SUPPORTING_AGENTS.filter((a) =>
-        existsSync(join(MEMORY_ROOT, a.sidecarDir, "decision-log.md")),
+        existsSync(join(MEMORY_ROOT, a.sidecarDir, "decision-log.md"))
       );
       expect(found.length).toBe(3);
     });
@@ -99,7 +142,10 @@ describe("E9-S5: Tier 3 Dev Agent Sidecars", () => {
         const filePath = join(PROJECT_ROOT, agent.personaPath);
         const content = readFileSync(filePath, "utf8");
         const matches = content.match(/<memory\s+sidecar="[^"]+"\s*\/>/g) || [];
-        expect(matches.length, `${agent.id}.md has ${matches.length} <memory> tags, expected 1`).toBe(1);
+        expect(
+          matches.length,
+          `${agent.id}.md has ${matches.length} <memory> tags, expected 1`
+        ).toBe(1);
       });
     }
   });
@@ -108,7 +154,7 @@ describe("E9-S5: Tier 3 Dev Agent Sidecars", () => {
   describe("AC4: Exactly 9 Tier 3 sidecar directories with decision-log.md", () => {
     it("should have exactly 9 directories containing decision-log.md among Tier 3 agents", () => {
       const count = ALL_TIER_3_AGENTS.filter((a) =>
-        existsSync(join(MEMORY_ROOT, a.sidecarDir, "decision-log.md")),
+        existsSync(join(MEMORY_ROOT, a.sidecarDir, "decision-log.md"))
       ).length;
       expect(count).toBe(9);
     });
@@ -121,7 +167,9 @@ describe("E9-S5: Tier 3 Dev Agent Sidecars", () => {
           violations.push(agent);
         }
       }
-      expect(violations, `Untiered agents with decision-log.md: ${violations.join(", ")}`).toEqual([]);
+      expect(violations, `Untiered agents with decision-log.md: ${violations.join(", ")}`).toEqual(
+        []
+      );
     });
   });
 
@@ -145,7 +193,7 @@ describe("E9-S5: Tier 3 Dev Agent Sidecars", () => {
         const pattern = new RegExp(`${agent.id}:\\s*\\n\\s+sidecar:\\s+${agent.sidecarDir}`);
         expect(
           pattern.test(configContent),
-          `Missing or incorrect agents entry for ${agent.id} with sidecar: ${agent.sidecarDir}`,
+          `Missing or incorrect agents entry for ${agent.id} with sidecar: ${agent.sidecarDir}`
         ).toBe(true);
       }
     });

@@ -6,9 +6,39 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 const { execSync, execFileSync } = require("child_process");
-const { mkdtempSync, rmSync, existsSync, readFileSync, realpathSync } = require("fs");
+const { mkdtempSync, rmSync, existsSync, readFileSync } = require("fs");
 const { join } = require("path");
 const { tmpdir } = require("os");
+
+// ─── Node.js Version Guard (E7-S2) ─────────────────────────────────────────
+
+const MIN_NODE_MAJOR = 20;
+
+function stripPrefix(version) {
+  return (version || "").replace(/^v/, "");
+}
+
+function checkNodeVersion(version) {
+  const major = parseInt(stripPrefix(version).split(".")[0], 10);
+  return major >= MIN_NODE_MAJOR;
+}
+
+function getNodeVersionWarning(version) {
+  const current = stripPrefix(version);
+  return (
+    `\x1b[31m✖\x1b[0m  Node.js ${current} is not supported.\n` +
+    `   GAIA Framework requires Node.js >= ${MIN_NODE_MAJOR}.\n` +
+    `   Download the latest version: https://nodejs.org/en/download\n` +
+    `   Current: ${current} | Required: >= ${MIN_NODE_MAJOR}`
+  );
+}
+
+if (require.main === module && !checkNodeVersion(process.version)) {
+  console.error(getNodeVersionWarning(process.version));
+  process.exit(1);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 const REPO_URL = "https://github.com/jlouage/Gaia-framework.git";
 const SCRIPT_NAME = "gaia-install.sh";
@@ -35,9 +65,9 @@ function findBash() {
 
   // 1. Try Git for Windows FIRST (preferred — simpler path mapping)
   const gitBashPaths = [
-    path.join(process.env.ProgramFiles || "C:\\Program Files", "Git", "bin", "bash.exe"),
-    path.join(process.env["ProgramFiles(x86)"] || "C:\\Program Files (x86)", "Git", "bin", "bash.exe"),
-    path.join(process.env.LOCALAPPDATA || "", "Programs", "Git", "bin", "bash.exe"),
+    join(process.env.ProgramFiles || "C:\\Program Files", "Git", "bin", "bash.exe"),
+    join(process.env["ProgramFiles(x86)"] || "C:\\Program Files (x86)", "Git", "bin", "bash.exe"),
+    join(process.env.LOCALAPPDATA || "", "Programs", "Git", "bin", "bash.exe"),
   ];
 
   for (const p of gitBashPaths) {
@@ -52,7 +82,10 @@ function findBash() {
     execSync("bash --version", { stdio: "ignore" });
     // Detect WSL vs Git Bash by checking uname
     try {
-      const uname = execSync('bash -c "uname -r"', { encoding: "utf8", stdio: ["pipe", "pipe", "ignore"] }).trim();
+      const uname = execSync('bash -c "uname -r"', {
+        encoding: "utf8",
+        stdio: ["pipe", "pipe", "ignore"],
+      }).trim();
       if (/microsoft|wsl/i.test(uname)) {
         bashType = "wsl";
       } else {
@@ -61,7 +94,10 @@ function findBash() {
     } catch {
       // Can't detect — try MSYSTEM env which Git Bash sets
       try {
-        const msys = execSync('bash -c "echo $MSYSTEM"', { encoding: "utf8", stdio: ["pipe", "pipe", "ignore"] }).trim();
+        const msys = execSync('bash -c "echo $MSYSTEM"', {
+          encoding: "utf8",
+          stdio: ["pipe", "pipe", "ignore"],
+        }).trim();
         bashType = msys ? "gitbash" : "wsl";
       } catch {
         bashType = "wsl"; // Assume WSL if detection fails — safer path mapping
@@ -96,10 +132,7 @@ function ensureGit() {
   try {
     execSync("git --version", { stdio: "ignore" });
   } catch {
-    fail(
-      "git is required but was not found.\n" +
-        "   Install git: https://git-scm.com/downloads"
-    );
+    fail("git is required but was not found.\n" + "   Install git: https://git-scm.com/downloads");
   }
 }
 
@@ -144,12 +177,9 @@ Examples:
 
 function main(deps) {
   // Dependency injection for testability — defaults to real modules
-  const _exec = deps && deps.execSync || execSync;
-  const _execFile = deps && deps.execFileSync || execFileSync;
-  const _mkdtemp = deps && deps.mkdtempSync || mkdtempSync;
-  const _exists = deps && deps.existsSync || existsSync;
-  const _join = deps && deps.join || join;
-  const _tmpdir = deps && deps.tmpdir || tmpdir;
+  const _exec = (deps && deps.execSync) || execSync;
+  const _exists = (deps && deps.existsSync) || existsSync;
+  const _join = (deps && deps.join) || join;
 
   const args = process.argv.slice(2);
 
@@ -191,8 +221,14 @@ function main(deps) {
 
   // Register cleanup for all exit scenarios
   process.on("exit", cleanup);
-  process.on("SIGINT", () => { cleanup(); process.exit(130); });
-  process.on("SIGTERM", () => { cleanup(); process.exit(143); });
+  process.on("SIGINT", () => {
+    cleanup();
+    process.exit(130);
+  });
+  process.on("SIGTERM", () => {
+    cleanup();
+    process.exit(143);
+  });
 
   info("Cloning GAIA framework from GitHub...");
 
@@ -233,7 +269,9 @@ function main(deps) {
 
   try {
     // Convert all passthrough args that look like paths (contain backslash or drive letter)
-    const posixArgs = passthrough.map(a => IS_WINDOWS && /[\\:]/.test(a) && !a.startsWith("--") ? toPosixPath(a) : a);
+    const posixArgs = passthrough.map((a) =>
+      IS_WINDOWS && /[\\:]/.test(a) && !a.startsWith("--") ? toPosixPath(a) : a
+    );
     const posixScript = toPosixPath(scriptPath);
 
     // Debug: on Windows, log the resolved paths if --verbose is passed
@@ -257,4 +295,4 @@ if (require.main === module) {
   main();
 }
 
-module.exports = { findBash, ensureGit, showUsage, fail, info, cleanup, readPackageVersion, main };
+module.exports = { checkNodeVersion, getNodeVersionWarning, findBash, ensureGit, showUsage, fail, info, cleanup, readPackageVersion, main };

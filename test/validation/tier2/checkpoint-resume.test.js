@@ -8,21 +8,12 @@
  * Covers test scenarios 1-10 from the E2-S4 story test matrix.
  */
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
-import {
-  readFileSync,
-  writeFileSync,
-  unlinkSync,
-  existsSync,
-  mkdirSync,
-  rmSync,
-} from "fs";
+import { writeFileSync, unlinkSync, mkdirSync, rmSync } from "fs";
 import { join, resolve } from "path";
 import { execSync } from "child_process";
-import yaml from "js-yaml";
 
 import {
   validateCheckpoint,
-  validateFilesTouched,
   compareChecksums,
   detectResumeMode,
   parseCheckpointFile,
@@ -69,9 +60,7 @@ describe("Tier 2 — E2-S4: Checkpoint/Resume Reliability", () => {
   // --- Scenario 2: Missing checkpoint ---
   describe("Scenario 2: Missing checkpoint file", () => {
     it("should return graceful error when no checkpoint file exists — AC1b", () => {
-      const result = parseCheckpointFile(
-        join(TMP_CHECKPOINT_DIR, "nonexistent-workflow.yaml"),
-      );
+      const result = parseCheckpointFile(join(TMP_CHECKPOINT_DIR, "nonexistent-workflow.yaml"));
       expect(result.success).toBe(false);
       expect(result.error).toMatch(/not found|does not exist/i);
     });
@@ -80,9 +69,7 @@ describe("Tier 2 — E2-S4: Checkpoint/Resume Reliability", () => {
   // --- Scenario 3: Corrupted YAML ---
   describe("Scenario 3: Corrupted YAML checkpoint", () => {
     it("should return graceful error identifying parse failure — AC1b", () => {
-      const result = parseCheckpointFile(
-        join(FIXTURES_DIR, "invalid-yaml-checkpoint.yaml"),
-      );
+      const result = parseCheckpointFile(join(FIXTURES_DIR, "invalid-yaml-checkpoint.yaml"));
       expect(result.success).toBe(false);
       expect(result.error).toBeDefined();
       expect(result.error.length).toBeGreaterThan(0);
@@ -92,9 +79,7 @@ describe("Tier 2 — E2-S4: Checkpoint/Resume Reliability", () => {
   // --- Scenario 4: Missing required fields ---
   describe("Scenario 4: Checkpoint missing required fields", () => {
     it("should report specific missing field: step — AC1b", () => {
-      const result = parseCheckpointFile(
-        join(FIXTURES_DIR, "missing-fields-checkpoint.yaml"),
-      );
+      const result = parseCheckpointFile(join(FIXTURES_DIR, "missing-fields-checkpoint.yaml"));
       expect(result.success).toBe(true);
       const validation = validateCheckpoint(result.data);
       expect(validation.valid).toBe(false);
@@ -102,9 +87,7 @@ describe("Tier 2 — E2-S4: Checkpoint/Resume Reliability", () => {
     });
 
     it("should report empty workflow string as invalid — AC1b", () => {
-      const result = parseCheckpointFile(
-        join(FIXTURES_DIR, "missing-fields-checkpoint.yaml"),
-      );
+      const result = parseCheckpointFile(join(FIXTURES_DIR, "missing-fields-checkpoint.yaml"));
       expect(result.success).toBe(true);
       const validation = validateCheckpoint(result.data);
       expect(validation.valid).toBe(false);
@@ -121,7 +104,11 @@ describe("Tier 2 — E2-S4: Checkpoint/Resume Reliability", () => {
     });
 
     afterAll(() => {
-      try { unlinkSync(tmpFile); } catch { /* noop */ }
+      try {
+        unlinkSync(tmpFile);
+      } catch {
+        /* noop */
+      }
     });
 
     it("should detect checksum mismatch when file was modified — AC2a", () => {
@@ -186,9 +173,7 @@ describe("Tier 2 — E2-S4: Checkpoint/Resume Reliability", () => {
   // --- Scenario 7: Legacy checkpoint (no files_touched) ---
   describe("Scenario 7: Legacy checkpoint without files_touched", () => {
     it("should resume via skip-validation path without error — AC5", () => {
-      const result = parseCheckpointFile(
-        join(FIXTURES_DIR, "legacy-checkpoint.yaml"),
-      );
+      const result = parseCheckpointFile(join(FIXTURES_DIR, "legacy-checkpoint.yaml"));
       expect(result.success).toBe(true);
 
       const checkpoint = result.data;
@@ -210,9 +195,7 @@ describe("Tier 2 — E2-S4: Checkpoint/Resume Reliability", () => {
       ];
 
       // The most recent checkpoint is the one with the highest step
-      const mostRecent = checkpoints.reduce((latest, cp) =>
-        cp.step > latest.step ? cp : latest,
-      );
+      const mostRecent = checkpoints.reduce((latest, cp) => (cp.step > latest.step ? cp : latest));
       expect(mostRecent.step).toBe(4);
     });
   });
@@ -233,10 +216,7 @@ describe("Tier 2 — E2-S4: Checkpoint/Resume Reliability", () => {
 
   // --- Scenario 10: Result file completeness ---
   describe("Scenario 10: Result file has all ADR-011 fields — AC4", () => {
-    const resultFilePath = join(
-      TIER2_RESULTS_DIR,
-      "checkpoint-resume-2026-03-24.yaml",
-    );
+    const _resultFilePath = join(TIER2_RESULTS_DIR, "checkpoint-resume-2026-03-24.yaml");
 
     it("should produce a result file with all 6 required fields", () => {
       // This test verifies the result file AFTER the Tier 2 run writes it

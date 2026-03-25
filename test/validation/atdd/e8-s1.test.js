@@ -19,9 +19,7 @@ describe("E8-S1: Memory Directory Migration", () => {
 
     it("checkpoints/ and checkpoints/completed/ exist", () => {
       expect(existsSync(join(NEW_MEMORY, "checkpoints"))).toBe(true);
-      expect(existsSync(join(NEW_MEMORY, "checkpoints", "completed"))).toBe(
-        true,
-      );
+      expect(existsSync(join(NEW_MEMORY, "checkpoints", "completed"))).toBe(true);
     });
 
     const expectedSidecars = [
@@ -38,10 +36,7 @@ describe("E8-S1: Memory Directory Migration", () => {
     ];
 
     it.each(expectedSidecars)("%s/ directory exists", (dir) => {
-      expect(
-        existsSync(join(NEW_MEMORY, dir)),
-        `Missing directory: _memory/${dir}`,
-      ).toBe(true);
+      expect(existsSync(join(NEW_MEMORY, dir)), `Missing directory: _memory/${dir}`).toBe(true);
     });
 
     it("config.yaml exists with token budgets and cross-reference matrix", () => {
@@ -81,9 +76,7 @@ describe("E8-S1: Memory Directory Migration", () => {
       const content = readFileSync(GLOBAL_YAML, "utf-8");
       const config = yaml.load(content);
 
-      expect(config.checkpoint_path).toMatch(
-        /\{project-root\}\/_memory\/checkpoints/,
-      );
+      expect(config.checkpoint_path).toMatch(/\{project-root\}\/_memory\/checkpoints/);
       expect(config.checkpoint_path).not.toContain("_gaia/_memory");
     });
   });
@@ -94,13 +87,9 @@ describe("E8-S1: Memory Directory Migration", () => {
       const content = readFileSync(GITIGNORE, "utf-8");
       const lines = content.split("\n");
       const hasNewPattern = lines.some(
-        (line) =>
-          line.includes("_memory/checkpoints/") &&
-          !line.includes("_gaia/_memory"),
+        (line) => line.includes("_memory/checkpoints/") && !line.includes("_gaia/_memory")
       );
-      expect(hasNewPattern, "Missing _memory/checkpoints/ gitignore line").toBe(
-        true,
-      );
+      expect(hasNewPattern, "Missing _memory/checkpoints/ gitignore line").toBe(true);
     });
 
     it("contains _memory/*-sidecar/archive/ exclusion", () => {
@@ -117,21 +106,17 @@ describe("E8-S1: Memory Directory Migration", () => {
   // AC4: Existing sidecar content preserved (only devops + security have content)
   describe("AC4: Sidecar content preserved", () => {
     function sha256(filePath) {
-      return execSync(`shasum -a 256 "${filePath}"`, { encoding: "utf-8" })
-        .split(" ")[0]
-        .trim();
+      return execSync(`shasum -a 256 "${filePath}"`, { encoding: "utf-8" }).split(" ")[0].trim();
     }
 
     function expectMigratedContent(sidecar, oldFilename) {
       const newPath = join(NEW_MEMORY, sidecar, "decision-log.md");
-      expect(existsSync(newPath), `${sidecar}/decision-log.md not found`).toBe(
-        true,
-      );
+      expect(existsSync(newPath), `${sidecar}/decision-log.md not found`).toBe(true);
 
       const oldPath = join(PROJECT_ROOT, "_gaia", "_memory", sidecar, oldFilename);
       if (existsSync(oldPath)) {
         expect(sha256(newPath), `Content mismatch: ${sidecar}/decision-log.md`).toBe(
-          sha256(oldPath),
+          sha256(oldPath)
         );
       }
     }

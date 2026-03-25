@@ -19,30 +19,22 @@ describe("E8-S10: Validation Patterns Skill", () => {
   // AC1: Skill file exists at correct path
   describe("AC1: Skill file structure", () => {
     it("should exist at _gaia/lifecycle/skills/validation-patterns.md", () => {
-      expect(
-        existsSync(SKILL_PATH),
-        `Skill file not found at ${SKILL_PATH}`,
-      ).toBe(true);
+      expect(existsSync(SKILL_PATH), `Skill file not found at ${SKILL_PATH}`).toBe(true);
     });
 
     it("should have all 5 section markers", () => {
       const content = readFileSync(SKILL_PATH, "utf8");
       for (const section of EXPECTED_SECTIONS) {
-        expect(
-          content,
-          `Missing section marker: <!-- SECTION: ${section} -->`,
-        ).toContain(`<!-- SECTION: ${section} -->`);
+        expect(content, `Missing section marker: <!-- SECTION: ${section} -->`).toContain(
+          `<!-- SECTION: ${section} -->`
+        );
       }
     });
 
     it("should have matching end markers for each section", () => {
       const content = readFileSync(SKILL_PATH, "utf8");
-      const sectionStarts = (
-        content.match(/<!-- SECTION: [\w-]+ -->/g) || []
-      ).length;
-      const sectionEnds = (
-        content.match(/<!-- END SECTION -->/g) || []
-      ).length;
+      const sectionStarts = (content.match(/<!-- SECTION: [\w-]+ -->/g) || []).length;
+      const sectionEnds = (content.match(/<!-- END SECTION -->/g) || []).length;
       expect(sectionStarts).toBe(5);
       expect(sectionEnds).toBe(5);
     });
@@ -53,10 +45,7 @@ describe("E8-S10: Validation Patterns Skill", () => {
       for (const section of EXPECTED_SECTIONS) {
         const idx = content.indexOf(`<!-- SECTION: ${section} -->`);
         expect(idx, `Section ${section} not found`).toBeGreaterThan(-1);
-        expect(
-          idx,
-          `Section ${section} is out of order`,
-        ).toBeGreaterThan(lastIndex);
+        expect(idx, `Section ${section} is out of order`).toBeGreaterThan(lastIndex);
         lastIndex = idx;
       }
     });
@@ -71,17 +60,14 @@ describe("E8-S10: Validation Patterns Skill", () => {
         const endMarker = `<!-- END SECTION -->`;
         const startIdx = content.indexOf(startMarker);
         const endIdx = content.indexOf(endMarker, startIdx + startMarker.length);
-        const sectionContent = content.slice(
-          startIdx + startMarker.length,
-          endIdx,
-        );
+        const sectionContent = content.slice(startIdx + startMarker.length, endIdx);
 
         // Check that this section doesn't reference other section markers
         const otherSections = EXPECTED_SECTIONS.filter((s) => s !== section);
         for (const other of otherSections) {
           expect(
             sectionContent,
-            `Section ${section} references section ${other} — sections must be self-contained`,
+            `Section ${section} references section ${other} — sections must be self-contained`
           ).not.toContain(`<!-- SECTION: ${other} -->`);
         }
       }
@@ -95,7 +81,7 @@ describe("E8-S10: Validation Patterns Skill", () => {
       const lineCount = content.split("\n").length;
       expect(
         lineCount,
-        `Skill file is ${lineCount} lines — exceeds 500-line limit`,
+        `Skill file is ${lineCount} lines — exceeds 500-line limit`
       ).toBeLessThanOrEqual(500);
     });
 
@@ -106,14 +92,11 @@ describe("E8-S10: Validation Patterns Skill", () => {
         const endMarker = `<!-- END SECTION -->`;
         const startIdx = content.indexOf(startMarker);
         const endIdx = content.indexOf(endMarker, startIdx + startMarker.length);
-        const sectionContent = content.slice(
-          startIdx + startMarker.length,
-          endIdx,
-        );
+        const sectionContent = content.slice(startIdx + startMarker.length, endIdx);
         const sectionLines = sectionContent.trim().split("\n").length;
         expect(
           sectionLines,
-          `Section ${section} is ${sectionLines} lines — exceeds 65-line max`,
+          `Section ${section} is ${sectionLines} lines — exceeds 65-line max`
         ).toBeLessThanOrEqual(65);
       }
     });
@@ -123,10 +106,9 @@ describe("E8-S10: Validation Patterns Skill", () => {
   describe("AC4: Skill manifest", () => {
     it("should have a validation-patterns entry in skill-manifest.csv", () => {
       const manifest = readFileSync(MANIFEST_PATH, "utf8");
-      expect(
-        manifest,
-        "skill-manifest.csv missing validation-patterns entry",
-      ).toContain("validation-patterns");
+      expect(manifest, "skill-manifest.csv missing validation-patterns entry").toContain(
+        "validation-patterns"
+      );
     });
 
     it("manifest entry should reference lifecycle module path", () => {
@@ -134,10 +116,9 @@ describe("E8-S10: Validation Patterns Skill", () => {
       const lines = manifest.split("\n");
       const entry = lines.find((l) => l.includes("validation-patterns"));
       expect(entry, "No manifest entry found").toBeTruthy();
-      expect(
-        entry,
-        "Manifest entry should reference lifecycle skills path",
-      ).toContain("_gaia/lifecycle/skills/validation-patterns.md");
+      expect(entry, "Manifest entry should reference lifecycle skills path").toContain(
+        "_gaia/lifecycle/skills/validation-patterns.md"
+      );
     });
 
     it("manifest entry should list validator as applicable agent", () => {
@@ -145,10 +126,7 @@ describe("E8-S10: Validation Patterns Skill", () => {
       const lines = manifest.split("\n");
       const entry = lines.find((l) => l.includes("validation-patterns"));
       expect(entry, "No manifest entry found").toBeTruthy();
-      expect(
-        entry,
-        "Manifest entry should include validator agent",
-      ).toContain("validator");
+      expect(entry, "Manifest entry should include validator agent").toContain("validator");
     });
   });
 
@@ -252,9 +230,7 @@ describe("E8-S10: Validation Patterns Skill", () => {
     it("should require consistency across validation workflows", () => {
       const content = readFileSync(SKILL_PATH, "utf8");
       const section = extractSection(content, "findings-formatting");
-      expect(section).toMatch(
-        /val.?validate.?artifact|val.?validate.?plan/i,
-      );
+      expect(section).toMatch(/val.?validate.?artifact|val.?validate.?plan/i);
     });
   });
 
@@ -277,10 +253,7 @@ describe("E8-S10: Validation Patterns Skill", () => {
       expect(frontmatterMatch, "No YAML frontmatter found").toBeTruthy();
       const frontmatter = frontmatterMatch[1];
       for (const section of EXPECTED_SECTIONS) {
-        expect(
-          frontmatter,
-          `Frontmatter missing section: ${section}`,
-        ).toContain(section);
+        expect(frontmatter, `Frontmatter missing section: ${section}`).toContain(section);
       }
     });
   });
@@ -309,10 +282,7 @@ describe("E8-S10: Validation Patterns Skill", () => {
         "dependency",
       ];
       for (const type of expectedTypes) {
-        expect(
-          section,
-          `Missing claim type: ${type}`,
-        ).toContain(type);
+        expect(section, `Missing claim type: ${type}`).toContain(type);
       }
     });
   });

@@ -10,7 +10,7 @@ const WORKFLOW_DIR = join(
   "lifecycle",
   "workflows",
   "4-implementation",
-  "val-validate-plan",
+  "val-validate-plan"
 );
 
 describe("E8-S7: val-validate-plan Workflow", () => {
@@ -19,10 +19,9 @@ describe("E8-S7: val-validate-plan Workflow", () => {
     const requiredFiles = ["workflow.yaml", "instructions.xml", "checklist.md"];
 
     it.each(requiredFiles)("val-validate-plan/%s exists", (file) => {
-      expect(
-        existsSync(join(WORKFLOW_DIR, file)),
-        `Missing file: val-validate-plan/${file}`,
-      ).toBe(true);
+      expect(existsSync(join(WORKFLOW_DIR, file)), `Missing file: val-validate-plan/${file}`).toBe(
+        true
+      );
     });
   });
 
@@ -78,15 +77,8 @@ describe("E8-S7: val-validate-plan Workflow", () => {
   // AC4: Manifest entry
   describe("AC4: workflow-manifest.csv contains val-validate-plan", () => {
     it("val-validate-plan is listed in workflow-manifest.csv", () => {
-      const manifestPath = join(
-        PROJECT_ROOT,
-        "_gaia",
-        "_config",
-        "workflow-manifest.csv",
-      );
-      expect(existsSync(manifestPath), "workflow-manifest.csv must exist").toBe(
-        true,
-      );
+      const manifestPath = join(PROJECT_ROOT, "_gaia", "_config", "workflow-manifest.csv");
+      expect(existsSync(manifestPath), "workflow-manifest.csv must exist").toBe(true);
 
       const content = readFileSync(manifestPath, "utf-8");
       expect(content).toContain("val-validate-plan");
@@ -117,15 +109,10 @@ describe("E8-S7: val-validate-plan Workflow", () => {
   // AC7: Slash command file exists
   describe("AC7: slash command file exists", () => {
     it(".claude/commands/gaia-val-validate-plan.md exists", () => {
-      const cmdPath = join(
-        PROJECT_ROOT,
-        ".claude",
-        "commands",
-        "gaia-val-validate-plan.md",
-      );
+      const cmdPath = join(PROJECT_ROOT, ".claude", "commands", "gaia-val-validate-plan.md");
       expect(
         existsSync(cmdPath),
-        "Slash command file must exist at .claude/commands/gaia-val-validate-plan.md",
+        "Slash command file must exist at .claude/commands/gaia-val-validate-plan.md"
       ).toBe(true);
     });
   });
@@ -147,13 +134,7 @@ describe("E8-S7: val-validate-plan Workflow", () => {
       const workflowPath = join(WORKFLOW_DIR, "workflow.yaml");
       const content = readFileSync(workflowPath, "utf-8");
 
-      const requiredFields = [
-        "name:",
-        "module:",
-        "agent:",
-        "instructions:",
-        "validation:",
-      ];
+      const requiredFields = ["name:", "module:", "agent:", "instructions:", "validation:"];
       for (const field of requiredFields) {
         expect(content, `Missing field: ${field}`).toContain(field);
       }
@@ -210,10 +191,7 @@ describe("E8-S7: val-validate-plan Workflow", () => {
         "findings-formatting",
       ];
       for (const section of requiredSections) {
-        expect(
-          content,
-          `Missing skill section reference: ${section}`,
-        ).toContain(section);
+        expect(content, `Missing skill section reference: ${section}`).toContain(section);
       }
     });
   });

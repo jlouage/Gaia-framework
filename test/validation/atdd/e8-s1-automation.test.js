@@ -44,7 +44,7 @@ describe("E8-S1: Test Automation — Extended Coverage", () => {
       config = yaml.load(readFileSync(configPath, "utf-8"));
 
       expect(config.tiers.tier_1.agents).toEqual(
-        expect.arrayContaining(["validator", "architect", "pm", "sm"]),
+        expect.arrayContaining(["validator", "architect", "pm", "sm"])
       );
     });
 
@@ -53,12 +53,7 @@ describe("E8-S1: Test Automation — Extended Coverage", () => {
       config = yaml.load(readFileSync(configPath, "utf-8"));
 
       expect(config.tiers.tier_2.agents).toEqual(
-        expect.arrayContaining([
-          "orchestrator",
-          "security",
-          "devops",
-          "test-architect",
-        ]),
+        expect.arrayContaining(["orchestrator", "security", "devops", "test-architect"])
       );
     });
 
@@ -70,12 +65,8 @@ describe("E8-S1: Test Automation — Extended Coverage", () => {
       expect(config.archival.budget_warn_at).toBe(0.8);
       expect(config.archival.budget_alert_at).toBe(0.9);
       expect(config.archival.budget_archive_at).toBe(1.0);
-      expect(config.archival.budget_warn_at).toBeLessThan(
-        config.archival.budget_alert_at,
-      );
-      expect(config.archival.budget_alert_at).toBeLessThan(
-        config.archival.budget_archive_at,
-      );
+      expect(config.archival.budget_warn_at).toBeLessThan(config.archival.budget_alert_at);
+      expect(config.archival.budget_alert_at).toBeLessThan(config.archival.budget_archive_at);
     });
 
     it("archival uses 'archive' subdirectory matching .gitignore pattern", () => {
@@ -127,7 +118,7 @@ describe("E8-S1: Test Automation — Extended Coverage", () => {
           const sidecarPath = join(NEW_MEMORY, agentConfig.sidecar);
           expect(
             existsSync(sidecarPath),
-            `Sidecar directory missing for ${agentName}: ${agentConfig.sidecar}`,
+            `Sidecar directory missing for ${agentName}: ${agentConfig.sidecar}`
           ).toBe(true);
         }
       }
@@ -151,15 +142,13 @@ describe("E8-S1: Test Automation — Extended Coverage", () => {
         const dirPath = join(NEW_MEMORY, dir);
         expect(existsSync(dirPath)).toBe(true);
 
-        const contents = readdirSync(dirPath).filter(
-          (f) => f !== ".gitkeep" && f !== ".DS_Store",
-        );
+        const contents = readdirSync(dirPath).filter((f) => f !== ".gitkeep" && f !== ".DS_Store");
         // These sidecars should have no content files — downstream stories create them
         expect(
           contents.length,
-          `${dir}/ should be empty or have only .gitkeep, found: ${contents.join(", ")}`,
+          `${dir}/ should be empty or have only .gitkeep, found: ${contents.join(", ")}`
         ).toBe(0);
-      },
+      }
     );
   });
 
@@ -171,10 +160,7 @@ describe("E8-S1: Test Automation — Extended Coverage", () => {
 
       // checkpoint_path should start with memory_path value
       const memoryBase = config.memory_path.replace("{project-root}/", "");
-      const checkpointBase = config.checkpoint_path.replace(
-        "{project-root}/",
-        "",
-      );
+      const checkpointBase = config.checkpoint_path.replace("{project-root}/", "");
       expect(checkpointBase.startsWith(memoryBase)).toBe(true);
     });
 

@@ -15,9 +15,7 @@ function readCached(filePath) {
 
 /** Run `find` under a directory with a name pattern, excluding node_modules. */
 function findFiles(dir, namePattern, extraExcludes = []) {
-  const excludes = ['*/node_modules/*', ...extraExcludes]
-    .map((e) => `-not -path "${e}"`)
-    .join(" ");
+  const excludes = ["*/node_modules/*", ...extraExcludes].map((e) => `-not -path "${e}"`).join(" ");
   return execSync(`find "${dir}" -name "${namePattern}" ${excludes}`, {
     encoding: "utf8",
   })
@@ -133,13 +131,7 @@ export function scanReferences(frameworkRoot) {
       while ((bareMatch = bareRefRegex.exec(actionText)) !== null) {
         const filename = bareMatch[1];
         // Resolve bare filename to lifecycle templates dir
-        const resolved = join(
-          frameworkRoot,
-          "_gaia",
-          "lifecycle",
-          "templates",
-          filename,
-        );
+        const resolved = join(frameworkRoot, "_gaia", "lifecycle", "templates", filename);
         if (existsSync(resolved)) {
           refs.push({
             normalizedPath: resolved,

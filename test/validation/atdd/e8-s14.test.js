@@ -4,19 +4,8 @@ import { join, resolve } from "path";
 
 // Project root is where _gaia/ lives (4 levels up: test/validation/atdd/ -> Gaia-framework/ -> GAIA-Framework/)
 const PROJECT_ROOT = resolve(import.meta.dirname, "../../../..");
-const ENGINE_PATH = join(
-  PROJECT_ROOT,
-  "_gaia",
-  "core",
-  "engine",
-  "workflow.xml",
-);
-const GLOBAL_YAML_PATH = join(
-  PROJECT_ROOT,
-  "_gaia",
-  "_config",
-  "global.yaml",
-);
+const ENGINE_PATH = join(PROJECT_ROOT, "_gaia", "core", "engine", "workflow.xml");
+const GLOBAL_YAML_PATH = join(PROJECT_ROOT, "_gaia", "_config", "global.yaml");
 
 describe("E8-S14: Workflow Engine [v] at Template-Output", () => {
   // AC1: Feature gate → prompt shows [c][y][e][v] when all conditions met
@@ -61,9 +50,7 @@ describe("E8-S14: Workflow Engine [v] at Template-Output", () => {
         content.includes("artifact_path") ||
         content.includes("artifact path") ||
         content.includes("file path");
-      expect(hasArtifactPath, "Must pass artifact path to Val subagent").toBe(
-        true,
-      );
+      expect(hasArtifactPath, "Must pass artifact path to Val subagent").toBe(true);
     });
 
     it("workflow.xml passes workflow name context to val-validate-artifact", () => {
@@ -72,10 +59,7 @@ describe("E8-S14: Workflow Engine [v] at Template-Output", () => {
         content.includes("source_workflow") ||
         content.includes("workflow name") ||
         content.includes("current workflow");
-      expect(
-        hasWorkflowName,
-        "Must pass workflow name to Val subagent",
-      ).toBe(true);
+      expect(hasWorkflowName, "Must pass workflow name to Val subagent").toBe(true);
     });
   });
 
@@ -83,12 +67,8 @@ describe("E8-S14: Workflow Engine [v] at Template-Output", () => {
   describe("AC3: findings approval and selective write-back", () => {
     it("workflow.xml contains user approval step for Val findings", () => {
       const content = readFileSync(ENGINE_PATH, "utf-8").toLowerCase();
-      const hasApproval =
-        content.includes("approve") && content.includes("findings");
-      expect(
-        hasApproval,
-        "Must allow user to approve findings before writing",
-      ).toBe(true);
+      const hasApproval = content.includes("approve") && content.includes("findings");
+      expect(hasApproval, "Must allow user to approve findings before writing").toBe(true);
     });
 
     it("workflow.xml returns to template-output prompt after findings are written", () => {
@@ -97,10 +77,9 @@ describe("E8-S14: Workflow Engine [v] at Template-Output", () => {
       const hasReturnToPrompt =
         content.includes("return to") &&
         (content.includes("template-output") || content.includes("prompt"));
-      expect(
-        hasReturnToPrompt,
-        "Must return to template-output prompt after Val completes",
-      ).toBe(true);
+      expect(hasReturnToPrompt, "Must return to template-output prompt after Val completes").toBe(
+        true
+      );
     });
   });
 
@@ -112,10 +91,7 @@ describe("E8-S14: Workflow Engine [v] at Template-Output", () => {
         content.includes("no issues found") ||
         content.includes("no issues") ||
         content.includes("zero issues");
-      expect(
-        hasZeroMsg,
-        "Must display 'no issues found' when Val returns clean",
-      ).toBe(true);
+      expect(hasZeroMsg, "Must display 'no issues found' when Val returns clean").toBe(true);
     });
   });
 
@@ -133,7 +109,7 @@ describe("E8-S14: Workflow Engine [v] at Template-Output", () => {
         content.includes("graceful");
       expect(
         hasFailureHandling && hasGraceful,
-        "Must handle Val failure gracefully and return to prompt",
+        "Must handle Val failure gracefully and return to prompt"
       ).toBe(true);
     });
   });
@@ -146,19 +122,14 @@ describe("E8-S14: Workflow Engine [v] at Template-Output", () => {
         content.includes("no artifact content") ||
         content.includes("empty") ||
         content.includes("not been written");
-      expect(
-        hasEmptyCheck,
-        "Must check for empty artifact and skip Val invocation",
-      ).toBe(true);
+      expect(hasEmptyCheck, "Must check for empty artifact and skip Val invocation").toBe(true);
     });
   });
 
   // AC7: Gate disabled → no [v] option, no error
   describe("AC7: feature gate disabled hides [v] silently", () => {
     it("global.yaml contains val_integration section", () => {
-      expect(existsSync(GLOBAL_YAML_PATH), "global.yaml must exist").toBe(
-        true,
-      );
+      expect(existsSync(GLOBAL_YAML_PATH), "global.yaml must exist").toBe(true);
 
       const content = readFileSync(GLOBAL_YAML_PATH, "utf-8");
       expect(content).toMatch(/val_integration/);
@@ -173,12 +144,10 @@ describe("E8-S14: Workflow Engine [v] at Template-Output", () => {
       const content = readFileSync(ENGINE_PATH, "utf-8").toLowerCase();
       // The [v] display must be inside a conditional block
       const hasConditional =
-        content.includes("if") &&
-        content.includes("val_integration") &&
-        content.includes("[v]");
+        content.includes("if") && content.includes("val_integration") && content.includes("[v]");
       expect(
         hasConditional,
-        "The [v] option must be conditionally displayed based on gate checks",
+        "The [v] option must be conditionally displayed based on gate checks"
       ).toBe(true);
     });
   });
@@ -210,10 +179,7 @@ describe("E8-S14: Workflow Engine [v] at Template-Output", () => {
         content.includes("[y]") &&
         content.includes("[e]") &&
         content.includes("[v]");
-      expect(
-        hasAllFour,
-        "Template-output prompt must contain [c], [y], [e], and [v]",
-      ).toBe(true);
+      expect(hasAllFour, "Template-output prompt must contain [c], [y], [e], and [v]").toBe(true);
     });
   });
 
@@ -233,21 +199,14 @@ describe("E8-S14: Workflow Engine [v] at Template-Output", () => {
       const content = readFileSync(ENGINE_PATH, "utf-8").toLowerCase();
       // The empty check must appear before the invocation — verify both exist
       // and the empty check references "not been written" or "empty" in the [v] handler
-      const vHandlerIdx = content.indexOf("[v] handler");
+      const _vHandlerIdx = content.indexOf("[v] handler");
       const emptyCheckIdx = content.indexOf("not been written yet or is empty");
-      const valInvokeIdx = content.indexOf(
-        "invoke val-validate-artifact as a subagent",
-      );
+      const valInvokeIdx = content.indexOf("invoke val-validate-artifact as a subagent");
       // Both must exist
-      expect(emptyCheckIdx, "Empty artifact check must exist").toBeGreaterThan(
-        -1,
-      );
+      expect(emptyCheckIdx, "Empty artifact check must exist").toBeGreaterThan(-1);
       expect(valInvokeIdx, "Val invocation must exist").toBeGreaterThan(-1);
       // Empty check must come before Val invocation in the [v] handler
-      expect(
-        emptyCheckIdx,
-        "Empty check must precede Val invocation",
-      ).toBeLessThan(valInvokeIdx);
+      expect(emptyCheckIdx, "Empty check must precede Val invocation").toBeLessThan(valInvokeIdx);
     });
   });
 
@@ -259,10 +218,7 @@ describe("E8-S14: Workflow Engine [v] at Template-Output", () => {
         content.includes("yolo") &&
         content.includes("[v]") &&
         content.includes("not auto-triggered");
-      expect(
-        hasYoloNoV,
-        "YOLO mode must explicitly state [v] is not auto-triggered",
-      ).toBe(true);
+      expect(hasYoloNoV, "YOLO mode must explicitly state [v] is not auto-triggered").toBe(true);
     });
   });
 
@@ -272,12 +228,8 @@ describe("E8-S14: Workflow Engine [v] at Template-Output", () => {
       const content = readFileSync(ENGINE_PATH, "utf-8");
       // Must have a prompt line that contains [c], [y], [e] but NOT [v]
       // The normal-mode fallback: "[c]ontinue [y]olo [e]dit"
-      const hasNonValPrompt =
-        content.includes("[c]ontinue") && content.includes("[e]dit");
-      expect(
-        hasNonValPrompt,
-        "Must have a fallback prompt with [c]/[y]/[e] only",
-      ).toBe(true);
+      const hasNonValPrompt = content.includes("[c]ontinue") && content.includes("[e]dit");
+      expect(hasNonValPrompt, "Must have a fallback prompt with [c]/[y]/[e] only").toBe(true);
     });
   });
 
@@ -287,24 +239,16 @@ describe("E8-S14: Workflow Engine [v] at Template-Output", () => {
       const content = readFileSync(ENGINE_PATH, "utf-8");
       // Step 5 planning gate should have val_review_available check and [v] option
       const hasStep5Val =
-        content.includes("val_review_available") &&
-        content.includes("[v] Review with Val");
-      expect(
-        hasStep5Val,
-        "Planning gate must have conditional [v] option",
-      ).toBe(true);
+        content.includes("val_review_available") && content.includes("[v] Review with Val");
+      expect(hasStep5Val, "Planning gate must have conditional [v] option").toBe(true);
     });
 
     it("workflow.xml Planning Gate checks val_integration feature gate", () => {
       const content = readFileSync(ENGINE_PATH, "utf-8").toLowerCase();
       // Must check the same feature gate as template-output
       const hasGateCheck =
-        content.includes("val_integration") &&
-        content.includes("val_review_available");
-      expect(
-        hasGateCheck,
-        "Planning gate must check val_integration feature gate",
-      ).toBe(true);
+        content.includes("val_integration") && content.includes("val_review_available");
+      expect(hasGateCheck, "Planning gate must check val_integration feature gate").toBe(true);
     });
 
     it("workflow.xml Planning Gate invokes val-validate-plan for [v]", () => {
@@ -316,12 +260,8 @@ describe("E8-S14: Workflow Engine [v] at Template-Output", () => {
       const content = readFileSync(ENGINE_PATH, "utf-8").toLowerCase();
       // Planning gate must have failure handling for Val
       const hasFailure =
-        content.includes("val validation could not complete") &&
-        content.includes("planning gate");
-      expect(
-        hasFailure,
-        "Planning gate must handle Val failure gracefully",
-      ).toBe(true);
+        content.includes("val validation could not complete") && content.includes("planning gate");
+      expect(hasFailure, "Planning gate must handle Val failure gracefully").toBe(true);
     });
 
     it("workflow.xml Planning Gate handles zero findings from Val", () => {
@@ -329,12 +269,8 @@ describe("E8-S14: Workflow Engine [v] at Template-Output", () => {
       // Must handle zero findings case in planning gate
       const hasZeroFindings =
         content.includes("[v] and val returns zero findings") ||
-        (content.includes("zero findings") &&
-          content.includes("no issues found"));
-      expect(
-        hasZeroFindings,
-        "Planning gate must handle zero findings from Val",
-      ).toBe(true);
+        (content.includes("zero findings") && content.includes("no issues found"));
+      expect(hasZeroFindings, "Planning gate must handle zero findings from Val").toBe(true);
     });
   });
 });

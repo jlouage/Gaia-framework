@@ -15,7 +15,11 @@
     "test:shell": "node -e \"if(process.platform==='win32'){console.log('BATS tests skipped on Windows');process.exit(0)}\" && bats test/shell/",
     "test:all": "vitest run && node -e \"if(process.platform==='win32'){console.log('BATS tests skipped on Windows');process.exit(0)}\" && bats test/shell/",
     "test:tier2": "vitest run --config vitest.config.tier2.js",
-    "fixtures:check": "node test/fixtures/sync-check.js"
+    "fixtures:check": "node test/fixtures/sync-check.js",
+    "lint": "eslint bin/**/*.js test/**/*.js",
+    "lint:fix": "eslint --fix bin/**/*.js test/**/*.js",
+    "format:check": "prettier --check \"bin/**/*.js\" \"test/**/*.js\"",
+    "format": "prettier --write \"bin/**/*.js\" \"test/**/*.js\""
   },
   "keywords": [
     "gaia",
@@ -32,17 +36,27 @@
   },
   "license": "AGPL-3.0",
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
   },
   "files": [
     "bin/",
-    "gaia-install.sh"
+    "gaia-install.sh",
+    "_gaia/",
+    ".claude/",
+    "CLAUDE.md",
+    "README.md",
+    "LICENSE"
   ],
   "devDependencies": {
-    "vitest": "^3.1.0",
+    "@eslint/js": "^9.39.4",
     "@vitest/coverage-v8": "^3.1.0",
-    "js-yaml": "^4.1.0",
+    "csv-parse": "^5.6.0",
+    "eslint": "^9.39.4",
+    "eslint-config-prettier": "^10.1.8",
     "fast-xml-parser": "^5.2.0",
-    "csv-parse": "^5.6.0"
+    "globals": "^17.4.0",
+    "js-yaml": "^4.1.0",
+    "prettier": "^3.8.1",
+    "vitest": "^3.1.0"
   }
 }

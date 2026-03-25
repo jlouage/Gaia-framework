@@ -1,13 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { readFileSync, existsSync } from "fs";
 import { join, resolve } from "path";
-import yaml from "js-yaml";
 import {
   loadYaml,
   resolveConfigChain,
   resolveVariables,
-  validateNoUnresolved,
-  FRAMEWORK_VARIABLES,
   PROJECT_ROOT,
 } from "../../validators/config-validator.js";
 
@@ -132,9 +128,7 @@ describe("E2-S1: Config Resolution Unit Tests", () => {
       const config = {
         path: "{undefined_setting}/output",
       };
-      expect(() => resolveVariables(config, PROJECT_ROOT)).toThrow(
-        /undefined_setting/,
-      );
+      expect(() => resolveVariables(config, PROJECT_ROOT)).toThrow(/undefined_setting/);
     });
   });
 

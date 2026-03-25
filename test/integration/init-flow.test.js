@@ -11,19 +11,12 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { existsSync, mkdirSync, readdirSync } from "fs";
 import { join } from "path";
-import {
-  MOCK_FRAMEWORK,
-  createTempDir,
-  cleanupTempDir,
-  runInstaller,
-} from "./helpers.js";
+import { MOCK_FRAMEWORK, createTempDir, cleanupTempDir, runInstaller } from "./helpers.js";
 
 // Derive expected command count from mock-framework source (no magic numbers)
 const MOCK_CMD_DIR = join(MOCK_FRAMEWORK, ".claude", "commands");
 const EXPECTED_CMD_COUNT = existsSync(MOCK_CMD_DIR)
-  ? readdirSync(MOCK_CMD_DIR).filter(
-      (f) => f.startsWith("gaia") && f.endsWith(".md")
-    ).length
+  ? readdirSync(MOCK_CMD_DIR).filter((f) => f.startsWith("gaia") && f.endsWith(".md")).length
   : 0;
 
 let tempDir;
@@ -39,22 +32,12 @@ describe("Init flow integration tests", () => {
 
   describe("AC1: Happy-path init", () => {
     it("should create complete framework structure after init", () => {
-      const result = runInstaller([
-        "init",
-        "--source",
-        MOCK_FRAMEWORK,
-        "--yes",
-        tempDir,
-      ]);
+      const result = runInstaller(["init", "--source", MOCK_FRAMEWORK, "--yes", tempDir]);
 
       expect(result.status).toBe(0);
       expect(existsSync(join(tempDir, "_gaia"))).toBe(true);
-      expect(
-        existsSync(join(tempDir, "_gaia", "_config", "manifest.yaml"))
-      ).toBe(true);
-      expect(
-        existsSync(join(tempDir, "_gaia", "_config", "global.yaml"))
-      ).toBe(true);
+      expect(existsSync(join(tempDir, "_gaia", "_config", "manifest.yaml"))).toBe(true);
+      expect(existsSync(join(tempDir, "_gaia", "_config", "global.yaml"))).toBe(true);
     });
 
     it("should create .claude/commands/ with all gaia*.md files matching source count", () => {
@@ -80,19 +63,11 @@ describe("Init flow integration tests", () => {
       const memoryDir = join(tempDir, "_memory");
       expect(existsSync(memoryDir)).toBe(true);
       expect(existsSync(join(memoryDir, "checkpoints"))).toBe(true);
-      expect(existsSync(join(memoryDir, "checkpoints", ".gitkeep"))).toBe(
-        true
-      );
+      expect(existsSync(join(memoryDir, "checkpoints", ".gitkeep"))).toBe(true);
     });
 
     it("should report success in output", () => {
-      const result = runInstaller([
-        "init",
-        "--source",
-        MOCK_FRAMEWORK,
-        "--yes",
-        tempDir,
-      ]);
+      const result = runInstaller(["init", "--source", MOCK_FRAMEWORK, "--yes", tempDir]);
       expect(result.stdout).toContain("installed successfully");
     });
   });
@@ -103,12 +78,7 @@ describe("Init flow integration tests", () => {
       mkdirSync(join(tempDir, "_gaia"), { recursive: true });
 
       // Run WITHOUT --yes: piped stdin gives empty input, prompt defaults to N, script aborts
-      const result = runInstaller([
-        "init",
-        "--source",
-        MOCK_FRAMEWORK,
-        tempDir,
-      ]);
+      const result = runInstaller(["init", "--source", MOCK_FRAMEWORK, tempDir]);
 
       expect(result.stdout).toContain("already contains _gaia/");
     });
@@ -159,10 +129,9 @@ describe("Init flow integration tests", () => {
         })
         .join(":");
 
-      const result = runInstaller(
-        ["init", "--source", MOCK_FRAMEWORK, "--yes", tempDir],
-        { env: { PATH: pathWithoutRsync } }
-      );
+      const result = runInstaller(["init", "--source", MOCK_FRAMEWORK, "--yes", tempDir], {
+        env: { PATH: pathWithoutRsync },
+      });
 
       // Current behavior: script fails without rsync (no cp -r fallback).
       // When a fallback is added, update this test to verify cp -r produces

@@ -74,14 +74,14 @@ describe("E1-S8: Validation Coverage Gaps", () => {
     it("should discover lifecycle skill files", () => {
       expect(
         lifecycleSkillFiles.length,
-        "No lifecycle skill files found in _gaia/lifecycle/skills/",
+        "No lifecycle skill files found in _gaia/lifecycle/skills/"
       ).toBeGreaterThan(0);
     });
 
     it("should find at least 3 lifecycle skill files", () => {
       expect(
         lifecycleSkillFiles.length,
-        `Expected at least 3 lifecycle skills, found ${lifecycleSkillFiles.length}`,
+        `Expected at least 3 lifecycle skills, found ${lifecycleSkillFiles.length}`
       ).toBeGreaterThanOrEqual(3);
     });
 
@@ -91,7 +91,7 @@ describe("E1-S8: Validation Coverage Gaps", () => {
         const lineCount = content.split("\n").length;
         expect(
           lineCount,
-          `${basename(filePath)} is ${lineCount} lines — exceeds 500-line limit`,
+          `${basename(filePath)} is ${lineCount} lines — exceeds 500-line limit`
         ).toBeLessThanOrEqual(500);
       }
     });
@@ -102,7 +102,7 @@ describe("E1-S8: Validation Coverage Gaps", () => {
         const markers = content.match(/<!--\s*SECTION:\s*[\w-]+\s*-->/g) || [];
         expect(
           markers.length,
-          `${basename(filePath)} has no <!-- SECTION: xxx --> markers`,
+          `${basename(filePath)} has no <!-- SECTION: xxx --> markers`
         ).toBeGreaterThan(0);
       }
     });
@@ -114,10 +114,7 @@ describe("E1-S8: Validation Coverage Gaps", () => {
     for (const [name, dir] of Object.entries(CORE_DIRS)) {
       it(`should discover XML files in _gaia/core/${name}/`, () => {
         const files = discoverXmlFilesIn(dir);
-        expect(
-          files.length,
-          `No XML files found in _gaia/core/${name}/`,
-        ).toBeGreaterThan(0);
+        expect(files.length, `No XML files found in _gaia/core/${name}/`).toBeGreaterThan(0);
       });
     }
 
@@ -127,7 +124,7 @@ describe("E1-S8: Validation Coverage Gaps", () => {
         "Gaia-framework",
         "test",
         "validators",
-        "instruction-validator.js",
+        "instruction-validator.js"
       );
       const { validateWellFormedness } = await import(validatorPath);
 
@@ -157,19 +154,13 @@ describe("E1-S8: Validation Coverage Gaps", () => {
     for (const { csv, baseDir, label } of knowledgeIndexes) {
       describe(`${label}/_index.csv`, () => {
         it("CSV file should exist", () => {
-          expect(
-            existsSync(csv),
-            `Knowledge index CSV not found: ${csv}`,
-          ).toBe(true);
+          expect(existsSync(csv), `Knowledge index CSV not found: ${csv}`).toBe(true);
         });
 
         it("all file path references should resolve to existing files", () => {
           if (!existsSync(csv)) return;
           const rows = parseCsv(csv);
-          expect(
-            rows.length,
-            `${label}/_index.csv has no data rows`,
-          ).toBeGreaterThan(0);
+          expect(rows.length, `${label}/_index.csv has no data rows`).toBeGreaterThan(0);
 
           const missing = [];
           for (const row of rows) {
@@ -182,7 +173,7 @@ describe("E1-S8: Validation Coverage Gaps", () => {
           }
           expect(
             missing,
-            `${label}/_index.csv has ${missing.length} broken reference(s):\n${missing.map((m) => `  - ${m.reference} (expected: ${m.expected})`).join("\n")}`,
+            `${label}/_index.csv has ${missing.length} broken reference(s):\n${missing.map((m) => `  - ${m.reference} (expected: ${m.expected})`).join("\n")}`
           ).toHaveLength(0);
         });
       });

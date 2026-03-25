@@ -25,18 +25,14 @@ describe("E8-S13: Test Automation — Extended Coverage", () => {
   // ─── AC5: Dependency guard prerequisite ───
   describe("AC5: Dependency guard — _memory/ must exist", () => {
     it("_memory/ directory exists at project root (prerequisite from E8-S1)", () => {
-      expect(
-        existsSync(MEMORY_DIR),
-        "_memory/ directory must exist — E8-S1 dependency",
-      ).toBe(true);
+      expect(existsSync(MEMORY_DIR), "_memory/ directory must exist — E8-S1 dependency").toBe(true);
     });
 
     it("_memory/config.yaml exists (prerequisite from E8-S1)", () => {
       const configPath = join(MEMORY_DIR, "config.yaml");
-      expect(
-        existsSync(configPath),
-        "_memory/config.yaml must exist — E8-S1 dependency",
-      ).toBe(true);
+      expect(existsSync(configPath), "_memory/config.yaml must exist — E8-S1 dependency").toBe(
+        true
+      );
     });
   });
 
@@ -86,10 +82,9 @@ describe("E8-S13: Test Automation — Extended Coverage", () => {
 
       for (const relativePath of samples) {
         const fullPath = join(PROJECT_ROOT, relativePath);
-        expect(
-          existsSync(fullPath),
-          `Ground truth path does not exist: ${relativePath}`,
-        ).toBe(true);
+        expect(existsSync(fullPath), `Ground truth path does not exist: ${relativePath}`).toBe(
+          true
+        );
       }
     });
 
@@ -114,10 +109,9 @@ describe("E8-S13: Test Automation — Extended Coverage", () => {
 
       for (const relativePath of samples) {
         const fullPath = join(PROJECT_ROOT, relativePath);
-        expect(
-          existsSync(fullPath),
-          `Ground truth path does not exist: ${relativePath}`,
-        ).toBe(true);
+        expect(existsSync(fullPath), `Ground truth path does not exist: ${relativePath}`).toBe(
+          true
+        );
       }
     });
 
@@ -135,7 +129,7 @@ describe("E8-S13: Test Automation — Extended Coverage", () => {
         const fullPath = join(PROJECT_ROOT, relativePath);
         expect(
           existsSync(fullPath),
-          `Ground truth manifest path does not exist: ${relativePath}`,
+          `Ground truth manifest path does not exist: ${relativePath}`
         ).toBe(true);
       }
     });
@@ -155,10 +149,7 @@ describe("E8-S13: Test Automation — Extended Coverage", () => {
       ];
 
       for (const field of requiredFields) {
-        expect(
-          content,
-          `Missing frontmatter field: ${field}`,
-        ).toMatch(new RegExp(`${field}:`));
+        expect(content, `Missing frontmatter field: ${field}`).toMatch(new RegExp(`${field}:`));
       }
     });
 
@@ -263,7 +254,7 @@ describe("E8-S13: Test Automation — Extended Coverage", () => {
       // Allow a small delta (max 3) for workflows added after seed
       expect(
         Math.abs(claimedCount - actualCount),
-        `Ground truth claims ${claimedCount} workflows but found ${actualCount}`,
+        `Ground truth claims ${claimedCount} workflows but found ${actualCount}`
       ).toBeLessThanOrEqual(3);
     });
 
@@ -271,10 +262,7 @@ describe("E8-S13: Test Automation — Extended Coverage", () => {
       const files = [GROUND_TRUTH, DECISION_LOG, CONVERSATION_CONTEXT];
       for (const file of files) {
         const content = readFileSync(file, "utf-8");
-        expect(
-          content,
-          `${file} must reference agent: validator`,
-        ).toMatch(/agent:\s*validator/);
+        expect(content, `${file} must reference agent: validator`).toMatch(/agent:\s*validator/);
       }
     });
   });

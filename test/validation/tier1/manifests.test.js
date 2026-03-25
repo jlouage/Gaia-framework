@@ -58,7 +58,7 @@ function parseCSVLine(line) {
 function findOnDisk(findArgs, mapFn) {
   const result = execSync(
     `find -L "${PROJECT_ROOT}/_gaia" ${findArgs} -not -path "*/node_modules/*" -not -path "*/_backups/*"`,
-    { encoding: "utf8" },
+    { encoding: "utf8" }
   );
   const mapper = mapFn || ((f) => relative(PROJECT_ROOT, f));
   return result
@@ -69,9 +69,8 @@ function findOnDisk(findArgs, mapFn) {
 }
 
 function findWorkflowDirsOnDisk() {
-  return findOnDisk(
-    '-name "workflow.yaml" -not -path "*/.resolved/*"',
-    (f) => relative(PROJECT_ROOT, dirname(f)),
+  return findOnDisk('-name "workflow.yaml" -not -path "*/.resolved/*"', (f) =>
+    relative(PROJECT_ROOT, dirname(f))
   );
 }
 
@@ -109,9 +108,9 @@ describe("Manifest-Filesystem Sync Validation (E1-S5)", () => {
         const fullPath = join(PROJECT_ROOT, path);
         expect(
           existsSync(fullPath),
-          `Workflow '${name}' references ${path} but file does not exist`,
+          `Workflow '${name}' references ${path} but file does not exist`
         ).toBe(true);
-      },
+      }
     );
   });
 
@@ -128,9 +127,9 @@ describe("Manifest-Filesystem Sync Validation (E1-S5)", () => {
         const fullPath = join(PROJECT_ROOT, path);
         expect(
           existsSync(fullPath),
-          `Agent '${name}' references ${path} but file does not exist`,
+          `Agent '${name}' references ${path} but file does not exist`
         ).toBe(true);
-      },
+      }
     );
   });
 
@@ -147,9 +146,9 @@ describe("Manifest-Filesystem Sync Validation (E1-S5)", () => {
         const fullPath = join(PROJECT_ROOT, path);
         expect(
           existsSync(fullPath),
-          `Skill '${name}' references ${path} but file does not exist`,
+          `Skill '${name}' references ${path} but file does not exist`
         ).toBe(true);
-      },
+      }
     );
   });
 
@@ -166,9 +165,9 @@ describe("Manifest-Filesystem Sync Validation (E1-S5)", () => {
         const fullPath = join(PROJECT_ROOT, path);
         expect(
           existsSync(fullPath),
-          `Task '${name}' references ${path} but file does not exist`,
+          `Task '${name}' references ${path} but file does not exist`
         ).toBe(true);
-      },
+      }
     );
   });
 
@@ -185,18 +184,16 @@ describe("Manifest-Filesystem Sync Validation (E1-S5)", () => {
         const fullPath = join(PROJECT_ROOT, path);
         expect(
           existsSync(fullPath),
-          `files-manifest entry '${path}' (type: ${type}) does not exist on disk`,
+          `files-manifest entry '${path}' (type: ${type}) does not exist on disk`
         ).toBe(true);
-      },
+      }
     );
   });
 
   // ─── AC6: Reverse check — every file on disk has a manifest entry ─────
 
   describe("AC6: filesystem → manifest (reverse check)", () => {
-    const workflowPaths = new Set(
-      workflowManifest.map((w) => w.path),
-    );
+    const workflowPaths = new Set(workflowManifest.map((w) => w.path));
     const agentPaths = new Set(agentManifest.map((a) => a.path));
     const skillPaths = new Set(skillManifest.map((s) => s.path));
     const taskPaths = new Set(taskManifest.map((t) => t.path));
@@ -214,9 +211,9 @@ describe("Manifest-Filesystem Sync Validation (E1-S5)", () => {
           const yamlPath = join(dirPath, "workflow.yaml");
           expect(
             workflowPaths.has(yamlPath),
-            `Workflow directory '${dirPath}' exists on disk but has no entry in workflow-manifest.csv (expected path: ${yamlPath})`,
+            `Workflow directory '${dirPath}' exists on disk but has no entry in workflow-manifest.csv (expected path: ${yamlPath})`
           ).toBe(true);
-        },
+        }
       );
     });
 
@@ -232,9 +229,9 @@ describe("Manifest-Filesystem Sync Validation (E1-S5)", () => {
         (filePath) => {
           expect(
             agentPaths.has(filePath),
-            `Agent file '${filePath}' exists on disk but has no entry in agent-manifest.csv`,
+            `Agent file '${filePath}' exists on disk but has no entry in agent-manifest.csv`
           ).toBe(true);
-        },
+        }
       );
     });
 
@@ -250,9 +247,9 @@ describe("Manifest-Filesystem Sync Validation (E1-S5)", () => {
         (filePath) => {
           expect(
             skillPaths.has(filePath),
-            `Skill file '${filePath}' exists on disk but has no entry in skill-manifest.csv`,
+            `Skill file '${filePath}' exists on disk but has no entry in skill-manifest.csv`
           ).toBe(true);
-        },
+        }
       );
     });
 
@@ -263,15 +260,12 @@ describe("Manifest-Filesystem Sync Validation (E1-S5)", () => {
         expect(diskTasks.length).toBeGreaterThan(0);
       });
 
-      it.each(diskTasks.map((t) => [t]))(
-        "task at %s should have a manifest entry",
-        (filePath) => {
-          expect(
-            taskPaths.has(filePath),
-            `Task file '${filePath}' exists on disk but has no entry in task-manifest.csv`,
-          ).toBe(true);
-        },
-      );
+      it.each(diskTasks.map((t) => [t]))("task at %s should have a manifest entry", (filePath) => {
+        expect(
+          taskPaths.has(filePath),
+          `Task file '${filePath}' exists on disk but has no entry in task-manifest.csv`
+        ).toBe(true);
+      });
     });
   });
 
@@ -279,97 +273,71 @@ describe("Manifest-Filesystem Sync Validation (E1-S5)", () => {
 
   describe("AC6: no orphaned or missing entries", () => {
     it("should have zero orphaned workflow-manifest entries (manifest → disk)", () => {
-      const orphaned = workflowManifest.filter(
-        (w) => !existsSync(join(PROJECT_ROOT, w.path)),
-      );
+      const orphaned = workflowManifest.filter((w) => !existsSync(join(PROJECT_ROOT, w.path)));
       expect(
         orphaned,
-        `Orphaned workflow entries: ${orphaned.map((w) => w.name).join(", ")}`,
+        `Orphaned workflow entries: ${orphaned.map((w) => w.name).join(", ")}`
       ).toHaveLength(0);
     });
 
     it("should have zero orphaned agent-manifest entries (manifest → disk)", () => {
-      const orphaned = agentManifest.filter(
-        (a) => !existsSync(join(PROJECT_ROOT, a.path)),
-      );
+      const orphaned = agentManifest.filter((a) => !existsSync(join(PROJECT_ROOT, a.path)));
       expect(
         orphaned,
-        `Orphaned agent entries: ${orphaned.map((a) => a.name).join(", ")}`,
+        `Orphaned agent entries: ${orphaned.map((a) => a.name).join(", ")}`
       ).toHaveLength(0);
     });
 
     it("should have zero orphaned skill-manifest entries (manifest → disk)", () => {
-      const orphaned = skillManifest.filter(
-        (s) => !existsSync(join(PROJECT_ROOT, s.path)),
-      );
+      const orphaned = skillManifest.filter((s) => !existsSync(join(PROJECT_ROOT, s.path)));
       expect(
         orphaned,
-        `Orphaned skill entries: ${orphaned.map((s) => s.name).join(", ")}`,
+        `Orphaned skill entries: ${orphaned.map((s) => s.name).join(", ")}`
       ).toHaveLength(0);
     });
 
     it("should have zero orphaned task-manifest entries (manifest → disk)", () => {
-      const orphaned = taskManifest.filter(
-        (t) => !existsSync(join(PROJECT_ROOT, t.path)),
-      );
+      const orphaned = taskManifest.filter((t) => !existsSync(join(PROJECT_ROOT, t.path)));
       expect(
         orphaned,
-        `Orphaned task entries: ${orphaned.map((t) => t.name).join(", ")}`,
+        `Orphaned task entries: ${orphaned.map((t) => t.name).join(", ")}`
       ).toHaveLength(0);
     });
 
     it("should have zero orphaned files-manifest entries (manifest → disk)", () => {
-      const orphaned = filesManifest.filter(
-        (f) => !existsSync(join(PROJECT_ROOT, f.path)),
-      );
+      const orphaned = filesManifest.filter((f) => !existsSync(join(PROJECT_ROOT, f.path)));
       expect(
         orphaned,
-        `Orphaned files-manifest entries: ${orphaned.map((f) => f.path).join(", ")}`,
+        `Orphaned files-manifest entries: ${orphaned.map((f) => f.path).join(", ")}`
       ).toHaveLength(0);
     });
 
     it("should have zero missing workflow entries (disk → manifest)", () => {
       const workflowPaths = new Set(workflowManifest.map((w) => w.path));
       const missing = findWorkflowDirsOnDisk().filter(
-        (d) => !workflowPaths.has(join(d, "workflow.yaml")),
+        (d) => !workflowPaths.has(join(d, "workflow.yaml"))
       );
-      expect(
-        missing,
-        `Missing workflow manifest entries for: ${missing.join(", ")}`,
-      ).toHaveLength(0);
+      expect(missing, `Missing workflow manifest entries for: ${missing.join(", ")}`).toHaveLength(
+        0
+      );
     });
 
     it("should have zero missing agent entries (disk → manifest)", () => {
       const agentPaths = new Set(agentManifest.map((a) => a.path));
-      const missing = findAgentFilesOnDisk().filter(
-        (f) => !agentPaths.has(f),
-      );
-      expect(
-        missing,
-        `Missing agent manifest entries for: ${missing.join(", ")}`,
-      ).toHaveLength(0);
+      const missing = findAgentFilesOnDisk().filter((f) => !agentPaths.has(f));
+      expect(missing, `Missing agent manifest entries for: ${missing.join(", ")}`).toHaveLength(0);
     });
 
     it("should have zero missing skill entries (disk → manifest)", () => {
       const skillPaths = new Set(skillManifest.map((s) => s.path));
-      const missing = findSkillFilesOnDisk().filter(
-        (f) => !skillPaths.has(f),
-      );
-      expect(
-        missing,
-        `Missing skill manifest entries for: ${missing.join(", ")}`,
-      ).toHaveLength(0);
+      const missing = findSkillFilesOnDisk().filter((f) => !skillPaths.has(f));
+      expect(missing, `Missing skill manifest entries for: ${missing.join(", ")}`).toHaveLength(0);
     });
 
     it("should have zero missing task entries (disk → manifest)", () => {
       const taskPaths = new Set(taskManifest.map((t) => t.path));
-      const missing = findTaskFilesOnDisk().filter(
-        (f) => !taskPaths.has(f),
-      );
-      expect(
-        missing,
-        `Missing task manifest entries for: ${missing.join(", ")}`,
-      ).toHaveLength(0);
+      const missing = findTaskFilesOnDisk().filter((f) => !taskPaths.has(f));
+      expect(missing, `Missing task manifest entries for: ${missing.join(", ")}`).toHaveLength(0);
     });
   });
 });

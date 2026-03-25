@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { readFileSync, existsSync } from "fs";
+import { existsSync } from "fs";
 import { join, resolve } from "path";
 import { execSync } from "child_process";
 
@@ -12,7 +12,7 @@ const VALIDATOR_PATH = join(
   "Gaia-framework",
   "test",
   "validators",
-  "instruction-validator.js",
+  "instruction-validator.js"
 );
 const IMPL_TEST_PATH = join(
   PROJECT_ROOT,
@@ -20,7 +20,7 @@ const IMPL_TEST_PATH = join(
   "test",
   "validation",
   "tier1",
-  "instructions.test.js",
+  "instructions.test.js"
 );
 
 // Canonical variable set per AC3 — maintained as constant
@@ -48,7 +48,7 @@ const VALID_VARIABLES = new Set([
 function findInstructionFiles() {
   const result = execSync(
     `find -L "${GAIA_DIR}" -name "instructions.xml" -not -path "*/node_modules/*" -not -path "*/_backups/*"`,
-    { encoding: "utf8" },
+    { encoding: "utf8" }
   );
   return result
     .trim()
@@ -69,9 +69,7 @@ describe("ATDD E1-S4: Instruction XML Validation", () => {
   // ---------------------------------------------------------------------------
   describe("AC1: Well-formed XML (fast-xml-parser)", () => {
     it("instruction-validator.js exports a wellFormedness check", async () => {
-      expect(existsSync(VALIDATOR_PATH), "Validator module must exist").toBe(
-        true,
-      );
+      expect(existsSync(VALIDATOR_PATH), "Validator module must exist").toBe(true);
       const validator = await import(VALIDATOR_PATH);
       expect(typeof validator.validateWellFormedness).toBe("function");
     });
@@ -99,10 +97,7 @@ describe("ATDD E1-S4: Instruction XML Validation", () => {
       const validator = await import(VALIDATOR_PATH);
       for (const file of instructionFiles) {
         const result = validator.validateStepNumbering(file);
-        expect(
-          result.errors,
-          `Step numbering errors in ${file}`,
-        ).toHaveLength(0);
+        expect(result.errors, `Step numbering errors in ${file}`).toHaveLength(0);
       }
     });
   });
@@ -121,10 +116,7 @@ describe("ATDD E1-S4: Instruction XML Validation", () => {
       const validator = await import(VALIDATOR_PATH);
       for (const file of instructionFiles) {
         const result = validator.validateTemplateOutputVariables(file);
-        expect(
-          result.errors,
-          `Invalid variable references in ${file}`,
-        ).toHaveLength(0);
+        expect(result.errors, `Invalid variable references in ${file}`).toHaveLength(0);
       }
     });
 
@@ -133,10 +125,7 @@ describe("ATDD E1-S4: Instruction XML Validation", () => {
       expect(validator.VALID_VARIABLES).toBeDefined();
       // Must contain all canonical variables
       for (const v of VALID_VARIABLES) {
-        expect(
-          validator.VALID_VARIABLES.has(v),
-          `Missing canonical variable: ${v}`,
-        ).toBe(true);
+        expect(validator.VALID_VARIABLES.has(v), `Missing canonical variable: ${v}`).toBe(true);
       }
     });
   });
@@ -149,19 +138,14 @@ describe("ATDD E1-S4: Instruction XML Validation", () => {
     it("instruction-validator.js exports a skillKnowledgeReferences check", async () => {
       expect(existsSync(VALIDATOR_PATH)).toBe(true);
       const validator = await import(VALIDATOR_PATH);
-      expect(typeof validator.validateSkillKnowledgeReferences).toBe(
-        "function",
-      );
+      expect(typeof validator.validateSkillKnowledgeReferences).toBe("function");
     });
 
     it("all skill/knowledge references resolve to existing files", async () => {
       const validator = await import(VALIDATOR_PATH);
       for (const file of instructionFiles) {
         const result = validator.validateSkillKnowledgeReferences(file);
-        expect(
-          result.errors,
-          `Broken skill/knowledge refs in ${file}`,
-        ).toHaveLength(0);
+        expect(result.errors, `Broken skill/knowledge refs in ${file}`).toHaveLength(0);
       }
     });
   });
@@ -181,10 +165,7 @@ describe("ATDD E1-S4: Instruction XML Validation", () => {
       const validator = await import(VALIDATOR_PATH);
       for (const file of instructionFiles) {
         const result = validator.validateInvokeTaskReferences(file);
-        expect(
-          result.errors,
-          `Broken invoke-task refs in ${file}`,
-        ).toHaveLength(0);
+        expect(result.errors, `Broken invoke-task refs in ${file}`).toHaveLength(0);
       }
     });
   });
@@ -196,19 +177,14 @@ describe("ATDD E1-S4: Instruction XML Validation", () => {
     it("instruction-validator.js exports an invokeWorkflowReferences check", async () => {
       expect(existsSync(VALIDATOR_PATH)).toBe(true);
       const validator = await import(VALIDATOR_PATH);
-      expect(typeof validator.validateInvokeWorkflowReferences).toBe(
-        "function",
-      );
+      expect(typeof validator.validateInvokeWorkflowReferences).toBe("function");
     });
 
     it("all invoke-workflow references resolve to existing files", async () => {
       const validator = await import(VALIDATOR_PATH);
       for (const file of instructionFiles) {
         const result = validator.validateInvokeWorkflowReferences(file);
-        expect(
-          result.errors,
-          `Broken invoke-workflow refs in ${file}`,
-        ).toHaveLength(0);
+        expect(result.errors, `Broken invoke-workflow refs in ${file}`).toHaveLength(0);
       }
     });
   });
@@ -220,7 +196,7 @@ describe("ATDD E1-S4: Instruction XML Validation", () => {
     it("test/validation/tier1/instructions.test.js exists", () => {
       expect(
         existsSync(IMPL_TEST_PATH),
-        "Implementation test file must exist at test/validation/tier1/instructions.test.js",
+        "Implementation test file must exist at test/validation/tier1/instructions.test.js"
       ).toBe(true);
     });
   });
@@ -232,19 +208,14 @@ describe("ATDD E1-S4: Instruction XML Validation", () => {
     it("instruction-validator.js exports an invokeProtocolReferences check", async () => {
       expect(existsSync(VALIDATOR_PATH)).toBe(true);
       const validator = await import(VALIDATOR_PATH);
-      expect(typeof validator.validateInvokeProtocolReferences).toBe(
-        "function",
-      );
+      expect(typeof validator.validateInvokeProtocolReferences).toBe("function");
     });
 
     it("all invoke-protocol references resolve to existing files", async () => {
       const validator = await import(VALIDATOR_PATH);
       for (const file of instructionFiles) {
         const result = validator.validateInvokeProtocolReferences(file);
-        expect(
-          result.errors,
-          `Broken invoke-protocol refs in ${file}`,
-        ).toHaveLength(0);
+        expect(result.errors, `Broken invoke-protocol refs in ${file}`).toHaveLength(0);
       }
     });
   });
@@ -263,10 +234,7 @@ describe("ATDD E1-S4: Instruction XML Validation", () => {
       const validator = await import(VALIDATOR_PATH);
       for (const file of instructionFiles) {
         const result = validator.validateCheckElements(file);
-        expect(
-          result.errors,
-          `Invalid check elements in ${file}`,
-        ).toHaveLength(0);
+        expect(result.errors, `Invalid check elements in ${file}`).toHaveLength(0);
       }
     });
   });

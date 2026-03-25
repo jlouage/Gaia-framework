@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { readFileSync, writeFileSync, unlinkSync, mkdirSync, existsSync } from "fs";
+import { writeFileSync, unlinkSync, mkdirSync, existsSync } from "fs";
 import { join, resolve } from "path";
 import { execSync } from "child_process";
 
@@ -40,9 +40,7 @@ describe("Checkpoint Validator", () => {
       const checkpoint = { step: 3, files_touched: [], variables: {} };
       const result = validateCheckpoint(checkpoint);
       expect(result.valid).toBe(false);
-      expect(result.errors).toContainEqual(
-        expect.objectContaining({ field: "workflow" }),
-      );
+      expect(result.errors).toContainEqual(expect.objectContaining({ field: "workflow" }));
     });
 
     it("should reject checkpoint missing 'step' field", () => {
@@ -53,9 +51,7 @@ describe("Checkpoint Validator", () => {
       };
       const result = validateCheckpoint(checkpoint);
       expect(result.valid).toBe(false);
-      expect(result.errors).toContainEqual(
-        expect.objectContaining({ field: "step" }),
-      );
+      expect(result.errors).toContainEqual(expect.objectContaining({ field: "step" }));
     });
 
     it("should reject checkpoint with step = 0", () => {
@@ -68,7 +64,7 @@ describe("Checkpoint Validator", () => {
       const result = validateCheckpoint(checkpoint);
       expect(result.valid).toBe(false);
       expect(result.errors).toContainEqual(
-        expect.objectContaining({ field: "step", reason: expect.stringContaining("non-zero") }),
+        expect.objectContaining({ field: "step", reason: expect.stringContaining("non-zero") })
       );
     });
 
@@ -81,9 +77,7 @@ describe("Checkpoint Validator", () => {
       };
       const result = validateCheckpoint(checkpoint);
       expect(result.valid).toBe(false);
-      expect(result.errors).toContainEqual(
-        expect.objectContaining({ field: "step" }),
-      );
+      expect(result.errors).toContainEqual(expect.objectContaining({ field: "step" }));
     });
 
     it("should reject checkpoint with empty workflow string", () => {
@@ -95,9 +89,7 @@ describe("Checkpoint Validator", () => {
       };
       const result = validateCheckpoint(checkpoint);
       expect(result.valid).toBe(false);
-      expect(result.errors).toContainEqual(
-        expect.objectContaining({ field: "workflow" }),
-      );
+      expect(result.errors).toContainEqual(expect.objectContaining({ field: "workflow" }));
     });
 
     it("should reject checkpoint with null workflow", () => {
@@ -115,9 +107,7 @@ describe("Checkpoint Validator", () => {
       const checkpoint = { workflow: "dev-story", step: 3, files_touched: [] };
       const result = validateCheckpoint(checkpoint);
       expect(result.valid).toBe(false);
-      expect(result.errors).toContainEqual(
-        expect.objectContaining({ field: "variables" }),
-      );
+      expect(result.errors).toContainEqual(expect.objectContaining({ field: "variables" }));
     });
 
     it("should reject checkpoint with non-object variables", () => {
@@ -262,8 +252,7 @@ describe("Checkpoint Validator", () => {
     it("should report matched when file checksum matches", () => {
       const checksum = execSync(`shasum -a 256 "${tmpFile}"`, {
         encoding: "utf8",
-      })
-        .split(" ")[0];
+      }).split(" ")[0];
       const filesTouched = [
         {
           path: tmpFile,
@@ -307,8 +296,7 @@ describe("Checkpoint Validator", () => {
     it("should handle mixed matched, modified, and deleted files", () => {
       const checksum = execSync(`shasum -a 256 "${tmpFile}"`, {
         encoding: "utf8",
-      })
-        .split(" ")[0];
+      }).split(" ")[0];
       const filesTouched = [
         {
           path: tmpFile,
@@ -333,7 +321,11 @@ describe("Checkpoint Validator", () => {
       expect(result.modified).toHaveLength(1);
       expect(result.deleted).toHaveLength(1);
       // cleanup
-      try { unlinkSync(tmpFile + ".modified"); } catch { /* noop */ }
+      try {
+        unlinkSync(tmpFile + ".modified");
+      } catch {
+        /* noop */
+      }
     });
   });
 

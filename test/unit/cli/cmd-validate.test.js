@@ -43,7 +43,7 @@ describe("cmd_validate — AC6: happy path", () => {
   it("should NOT use eval in the source under test", () => {
     const cliSource = readFileSync(
       join(import.meta.dirname, "../../../bin/gaia-framework.js"),
-      "utf8",
+      "utf8"
     );
     const evalCalls = cliSource.match(/\beval\s*\(/g);
     expect(evalCalls).toBeNull();

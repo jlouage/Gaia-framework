@@ -15,7 +15,7 @@ describe("cmd_update — AC5: happy path", () => {
     main();
 
     expect(mocks.execFileSync).toHaveBeenCalledOnce();
-    const [bashPath, args, opts] = mocks.execFileSync.mock.calls[0];
+    const [bashPath, args] = mocks.execFileSync.mock.calls[0];
     expect(bashPath).toBe("bash");
     expect(args[0]).toContain("gaia-install.sh");
     expect(args[1]).toBe("update");

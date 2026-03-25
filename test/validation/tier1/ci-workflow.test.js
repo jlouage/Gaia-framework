@@ -4,15 +4,9 @@ import { resolve } from "path";
 import yaml from "js-yaml";
 
 const PROJECT_ROOT = resolve(import.meta.dirname, "../../..");
-const CI_WORKFLOW_PATH = resolve(
-  PROJECT_ROOT,
-  ".github/workflows/ci.yml",
-);
+const CI_WORKFLOW_PATH = resolve(PROJECT_ROOT, ".github/workflows/ci.yml");
 const AUDIT_ALLOWLIST_PATH = resolve(PROJECT_ROOT, "audit-allowlist.json");
-const WINDOWS_VALIDATE_PATH = resolve(
-  PROJECT_ROOT,
-  "test/shell/windows-validate.sh",
-);
+const WINDOWS_VALIDATE_PATH = resolve(PROJECT_ROOT, "test/shell/windows-validate.sh");
 
 describe("CI Workflow Validation (E4-S1)", () => {
   let ciConfig;
@@ -32,12 +26,7 @@ describe("CI Workflow Validation (E4-S1)", () => {
       const pr = ciConfig.on.pull_request;
       expect(pr).toBeDefined();
       expect(pr.types).toEqual(
-        expect.arrayContaining([
-          "opened",
-          "synchronize",
-          "reopened",
-          "ready_for_review",
-        ]),
+        expect.arrayContaining(["opened", "synchronize", "reopened", "ready_for_review"])
       );
     });
 
@@ -67,9 +56,7 @@ describe("CI Workflow Validation (E4-S1)", () => {
 
     it("lint job should use setup-node@v4 with node 20 and npm cache", () => {
       const steps = ciConfig.jobs.lint.steps;
-      const setupNode = steps.find(
-        (s) => s.uses && s.uses.startsWith("actions/setup-node@v4"),
-      );
+      const setupNode = steps.find((s) => s.uses && s.uses.startsWith("actions/setup-node@v4"));
       expect(setupNode).toBeDefined();
       expect(setupNode.with["node-version"]).toBe(20);
       expect(setupNode.with.cache).toBe("npm");
@@ -83,25 +70,21 @@ describe("CI Workflow Validation (E4-S1)", () => {
 
     it("lint job should include ESLint step", () => {
       const steps = ciConfig.jobs.lint.steps;
-      const eslint = steps.find(
-        (s) => s.name && s.name.toLowerCase().includes("eslint"),
-      );
+      const eslint = steps.find((s) => s.name && s.name.toLowerCase().includes("eslint"));
       expect(eslint).toBeDefined();
     });
 
     it("lint job should include Prettier --check step", () => {
       const steps = ciConfig.jobs.lint.steps;
       const prettier = steps.find(
-        (s) => s.run && s.run.includes("prettier") && s.run.includes("--check"),
+        (s) => s.run && s.run.includes("prettier") && s.run.includes("--check")
       );
       expect(prettier).toBeDefined();
     });
 
     it("lint job should include ShellCheck step with Windows skip", () => {
       const steps = ciConfig.jobs.lint.steps;
-      const shellcheck = steps.find(
-        (s) => s.name && s.name.toLowerCase().includes("shellcheck"),
-      );
+      const shellcheck = steps.find((s) => s.name && s.name.toLowerCase().includes("shellcheck"));
       expect(shellcheck).toBeDefined();
       expect(shellcheck.if).toContain("runner.os != 'Windows'");
     });
@@ -116,11 +99,7 @@ describe("CI Workflow Validation (E4-S1)", () => {
     it("test job should use OS matrix with 3 platforms", () => {
       const matrix = ciConfig.jobs.test.strategy.matrix;
       expect(matrix.os).toEqual(
-        expect.arrayContaining([
-          "ubuntu-latest",
-          "macos-latest",
-          "windows-latest",
-        ]),
+        expect.arrayContaining(["ubuntu-latest", "macos-latest", "windows-latest"])
       );
     });
 
@@ -137,16 +116,15 @@ describe("CI Workflow Validation (E4-S1)", () => {
 
     it("test job should include Vitest step", () => {
       const steps = ciConfig.jobs.test.steps;
-      const vitest = steps.find(
-        (s) => s.run && s.run.includes("npm test"),
-      );
+      const vitest = steps.find((s) => s.run && s.run.includes("npm test"));
       expect(vitest).toBeDefined();
     });
 
     it("test job should include BATS setup with Windows skip", () => {
       const steps = ciConfig.jobs.test.steps;
       const batsSetup = steps.find(
-        (s) => s.name && s.name.toLowerCase().includes("bats") && s.name.toLowerCase().includes("setup"),
+        (s) =>
+          s.name && s.name.toLowerCase().includes("bats") && s.name.toLowerCase().includes("setup")
       );
       expect(batsSetup).toBeDefined();
       expect(batsSetup.if).toContain("runner.os != 'Windows'");
@@ -156,10 +134,7 @@ describe("CI Workflow Validation (E4-S1)", () => {
       const steps = ciConfig.jobs.test.steps;
       const batsRun = steps.find(
         (s) =>
-          s.run &&
-          s.run.includes("test:shell") &&
-          s.if &&
-          s.if.includes("runner.os != 'Windows'"),
+          s.run && s.run.includes("test:shell") && s.if && s.if.includes("runner.os != 'Windows'")
       );
       expect(batsRun).toBeDefined();
     });
@@ -171,7 +146,7 @@ describe("CI Workflow Validation (E4-S1)", () => {
           s.name &&
           s.name.toLowerCase().includes("windows") &&
           s.if &&
-          s.if.includes("runner.os == 'Windows'"),
+          s.if.includes("runner.os == 'Windows'")
       );
       expect(winValidate).toBeDefined();
     });
@@ -195,21 +170,21 @@ describe("CI Workflow Validation (E4-S1)", () => {
           s.run &&
           s.run.includes("npm audit") &&
           s.run.includes("--omit=dev") &&
-          s.run.includes("--audit-level=moderate"),
+          s.run.includes("--audit-level=moderate")
       );
       expect(hardAudit).toBeDefined();
     });
 
-    it("security job should include informational dev audit step", () => {
+    it("security job should include dev audit step", () => {
       const steps = ciConfig.jobs.security.steps;
-      const softAudit = steps.find(
+      const devAudit = steps.find(
         (s) =>
           s.run &&
           s.run.includes("npm audit") &&
           s.run.includes("--audit-level=high") &&
-          s.run.includes("|| true"),
+          s.run.includes("|| true")
       );
-      expect(softAudit).toBeDefined();
+      expect(devAudit).toBeDefined();
     });
   });
 
@@ -225,9 +200,7 @@ describe("CI Workflow Validation (E4-S1)", () => {
 
     it("package job should include npm pack --dry-run step", () => {
       const steps = ciConfig.jobs.package.steps;
-      const packStep = steps.find(
-        (s) => s.run && s.run.includes("npm pack --dry-run"),
-      );
+      const packStep = steps.find((s) => s.run && s.run.includes("npm pack --dry-run"));
       expect(packStep).toBeDefined();
     });
 
@@ -240,9 +213,7 @@ describe("CI Workflow Validation (E4-S1)", () => {
 
     it("package job should include dep count check with warning annotation", () => {
       const steps = ciConfig.jobs.package.steps;
-      const depCheck = steps.find(
-        (s) => s.run && s.run.includes("::warning::"),
-      );
+      const depCheck = steps.find((s) => s.run && s.run.includes("::warning::"));
       expect(depCheck).toBeDefined();
     });
   });
@@ -252,9 +223,7 @@ describe("CI Workflow Validation (E4-S1)", () => {
     it("test job should upload coverage artifact only on ubuntu", () => {
       const steps = ciConfig.jobs.test.steps;
       const coverageUpload = steps.find(
-        (s) =>
-          s.uses &&
-          s.uses.startsWith("actions/upload-artifact@v4"),
+        (s) => s.uses && s.uses.startsWith("actions/upload-artifact@v4")
       );
       expect(coverageUpload).toBeDefined();
       expect(coverageUpload.if).toContain("ubuntu-latest");
@@ -263,9 +232,7 @@ describe("CI Workflow Validation (E4-S1)", () => {
     it("coverage artifact should be named coverage-report", () => {
       const steps = ciConfig.jobs.test.steps;
       const coverageUpload = steps.find(
-        (s) =>
-          s.uses &&
-          s.uses.startsWith("actions/upload-artifact@v4"),
+        (s) => s.uses && s.uses.startsWith("actions/upload-artifact@v4")
       );
       expect(coverageUpload.with.name).toBe("coverage-report");
     });
@@ -295,9 +262,7 @@ describe("Audit Allowlist Validation (E4-S1)", () => {
   });
 
   it("audit-allowlist.json should have allowlist array", () => {
-    const content = JSON.parse(
-      readFileSync(AUDIT_ALLOWLIST_PATH, "utf8"),
-    );
+    const content = JSON.parse(readFileSync(AUDIT_ALLOWLIST_PATH, "utf8"));
     expect(Array.isArray(content.allowlist)).toBe(true);
   });
 });

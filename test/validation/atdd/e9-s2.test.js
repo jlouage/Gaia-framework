@@ -9,18 +9,9 @@ const MEMORY_DIR = join(PROJECT_ROOT, "_memory");
 const GAIA_DIR = join(PROJECT_ROOT, "_gaia");
 const CONFIG_YAML = join(MEMORY_DIR, "config.yaml");
 
-const REQUIRED_FILES = [
-  "ground-truth.md",
-  "decision-log.md",
-  "conversation-context.md",
-];
+const REQUIRED_FILES = ["ground-truth.md", "decision-log.md", "conversation-context.md"];
 
-const TIER_1_SIDECARS = [
-  "validator-sidecar",
-  "architect-sidecar",
-  "pm-sidecar",
-  "sm-sidecar",
-];
+const TIER_1_SIDECARS = ["validator-sidecar", "architect-sidecar", "pm-sidecar", "sm-sidecar"];
 
 function readFile(filePath) {
   return readFileSync(filePath, "utf-8");
@@ -32,20 +23,13 @@ function sidecarPath(sidecar, file) {
 
 function validateSidecarStructure(sidecarName) {
   const sidecarDir = join(MEMORY_DIR, sidecarName);
-  expect(existsSync(sidecarDir), `Directory missing: ${sidecarName}`).toBe(
-    true,
-  );
+  expect(existsSync(sidecarDir), `Directory missing: ${sidecarName}`).toBe(true);
 
   for (const file of REQUIRED_FILES) {
     const filePath = join(sidecarDir, file);
-    expect(existsSync(filePath), `Missing file: ${sidecarName}/${file}`).toBe(
-      true,
-    );
+    expect(existsSync(filePath), `Missing file: ${sidecarName}/${file}`).toBe(true);
     const content = readFile(filePath);
-    expect(
-      content.length,
-      `Empty file: ${sidecarName}/${file}`,
-    ).toBeGreaterThan(0);
+    expect(content.length, `Empty file: ${sidecarName}/${file}`).toBeGreaterThan(0);
   }
 }
 
@@ -61,10 +45,9 @@ describe("E9-S2: Tier 1 Memory — Theo, Derek, Nate", () => {
       // Accept either YAML frontmatter last_refresh or HTML comment <!-- last-refresh -->
       const hasYamlMeta = /last_refresh:/.test(content);
       const hasHtmlMeta = /<!-- last-refresh/.test(content);
-      expect(
-        hasYamlMeta || hasHtmlMeta,
-        "ground-truth.md missing last-refresh metadata",
-      ).toBe(true);
+      expect(hasYamlMeta || hasHtmlMeta, "ground-truth.md missing last-refresh metadata").toBe(
+        true
+      );
     });
 
     it("architect ground-truth budget is 150K in config.yaml", () => {
@@ -83,10 +66,9 @@ describe("E9-S2: Tier 1 Memory — Theo, Derek, Nate", () => {
       const content = readFile(sidecarPath("pm-sidecar", "ground-truth.md"));
       const hasYamlMeta = /last_refresh:/.test(content);
       const hasHtmlMeta = /<!-- last-refresh/.test(content);
-      expect(
-        hasYamlMeta || hasHtmlMeta,
-        "ground-truth.md missing last-refresh metadata",
-      ).toBe(true);
+      expect(hasYamlMeta || hasHtmlMeta, "ground-truth.md missing last-refresh metadata").toBe(
+        true
+      );
     });
 
     it("pm ground-truth budget is 100K in config.yaml", () => {
@@ -105,10 +87,9 @@ describe("E9-S2: Tier 1 Memory — Theo, Derek, Nate", () => {
       const content = readFile(sidecarPath("sm-sidecar", "ground-truth.md"));
       const hasYamlMeta = /last_refresh:/.test(content);
       const hasHtmlMeta = /<!-- last-refresh/.test(content);
-      expect(
-        hasYamlMeta || hasHtmlMeta,
-        "ground-truth.md missing last-refresh metadata",
-      ).toBe(true);
+      expect(hasYamlMeta || hasHtmlMeta, "ground-truth.md missing last-refresh metadata").toBe(
+        true
+      );
     });
 
     it("sm ground-truth budget is 100K in config.yaml", () => {
@@ -120,9 +101,7 @@ describe("E9-S2: Tier 1 Memory — Theo, Derek, Nate", () => {
   // AC4: Architect decision-log migration — architecture-decisions.md consolidated
   describe("AC4: Architect decision-log migration", () => {
     it("architect decision-log contains migrated ADR entries from architecture-decisions.md", () => {
-      const content = readFile(
-        sidecarPath("architect-sidecar", "decision-log.md"),
-      );
+      const content = readFile(sidecarPath("architect-sidecar", "decision-log.md"));
       // architecture-decisions.md had ADR-012 through ADR-016 entries
       expect(content).toMatch(/ADR-012/);
       expect(content).toMatch(/ADR-013/);
@@ -130,32 +109,24 @@ describe("E9-S2: Tier 1 Memory — Theo, Derek, Nate", () => {
     });
 
     it("architect decision-log contains original decision-log entries", () => {
-      const content = readFile(
-        sidecarPath("architect-sidecar", "decision-log.md"),
-      );
+      const content = readFile(sidecarPath("architect-sidecar", "decision-log.md"));
       // Original decision-log had architecture v1.2.1 update and dual directory entries
       expect(content).toMatch(/v1\.2\.1/);
       expect(content).toMatch(/Dual.*Directory|Dual.*_gaia/i);
     });
 
     it("architect decision-log preserves retro entries", () => {
-      const content = readFile(
-        sidecarPath("architect-sidecar", "decision-log.md"),
-      );
+      const content = readFile(sidecarPath("architect-sidecar", "decision-log.md"));
       // Retro entries from 2026-03-19 (skill budget) and 2026-03-20 (dual-directory friction)
       expect(content).toMatch(/300-Line Skill Budget|skill budget/i);
       expect(content).toMatch(/Version.*Drift|Version String Duplication/i);
     });
 
     it("architect decision-log entries use E9-S3 standardized format", () => {
-      const content = readFile(
-        sidecarPath("architect-sidecar", "decision-log.md"),
-      );
+      const content = readFile(sidecarPath("architect-sidecar", "decision-log.md"));
       // E9-S3 format: ### [YYYY-MM-DD] {Title} with Agent/Status fields
       const entries = content.match(/### \[\d{4}-\d{2}-\d{2}\]/g) || [];
-      expect(entries.length, "No E9-S3 formatted entries found").toBeGreaterThan(
-        0,
-      );
+      expect(entries.length, "No E9-S3 formatted entries found").toBeGreaterThan(0);
       // Each entry should have Agent and Status fields
       expect(content).toMatch(/\*\*Agent:\*\*/);
       expect(content).toMatch(/\*\*Status:\*\*/);
@@ -164,7 +135,7 @@ describe("E9-S2: Tier 1 Memory — Theo, Derek, Nate", () => {
     it("legacy architecture-decisions.md is removed", () => {
       expect(
         existsSync(sidecarPath("architect-sidecar", "architecture-decisions.md")),
-        "architecture-decisions.md should be removed after migration",
+        "architecture-decisions.md should be removed after migration"
       ).toBe(false);
     });
   });
@@ -188,7 +159,7 @@ describe("E9-S2: Tier 1 Memory — Theo, Derek, Nate", () => {
     it("legacy velocity-data.md is removed", () => {
       expect(
         existsSync(sidecarPath("sm-sidecar", "velocity-data.md")),
-        "velocity-data.md should be removed after migration",
+        "velocity-data.md should be removed after migration"
       ).toBe(false);
     });
   });
@@ -209,9 +180,7 @@ describe("E9-S2: Tier 1 Memory — Theo, Derek, Nate", () => {
     });
 
     it("pm conversation-context.md has stub headers", () => {
-      const content = readFile(
-        sidecarPath("pm-sidecar", "conversation-context.md"),
-      );
+      const content = readFile(sidecarPath("pm-sidecar", "conversation-context.md"));
       expect(content).toMatch(/Conversation Context|conversation.context/i);
     });
   });
@@ -224,10 +193,7 @@ describe("E9-S2: Tier 1 Memory — Theo, Derek, Nate", () => {
         expect(existsSync(sidecarDir), `Missing: ${sidecar}`).toBe(true);
 
         for (const file of REQUIRED_FILES) {
-          expect(
-            existsSync(join(sidecarDir, file)),
-            `Missing: ${sidecar}/${file}`,
-          ).toBe(true);
+          expect(existsSync(join(sidecarDir, file)), `Missing: ${sidecar}/${file}`).toBe(true);
         }
       }
     });
@@ -239,7 +205,7 @@ describe("E9-S2: Tier 1 Memory — Theo, Derek, Nate", () => {
         const hasHtmlMeta = /<!-- last-refresh/.test(content);
         expect(
           hasYamlMeta || hasHtmlMeta,
-          `${sidecar}/ground-truth.md missing last-refresh metadata`,
+          `${sidecar}/ground-truth.md missing last-refresh metadata`
         ).toBe(true);
       }
     });
@@ -249,10 +215,9 @@ describe("E9-S2: Tier 1 Memory — Theo, Derek, Nate", () => {
         const content = readFile(sidecarPath(sidecar, "decision-log.md"));
         // Must have at least one E9-S3 formatted entry
         const entries = content.match(/### \[\d{4}-\d{2}-\d{2}\]/g) || [];
-        expect(
-          entries.length,
-          `${sidecar}/decision-log.md has no E9-S3 entries`,
-        ).toBeGreaterThan(0);
+        expect(entries.length, `${sidecar}/decision-log.md has no E9-S3 entries`).toBeGreaterThan(
+          0
+        );
       }
     });
 
@@ -279,12 +244,8 @@ describe("E9-S2: Tier 1 Memory — Theo, Derek, Nate", () => {
 
         const content = readFile(filePath);
         const sidecarMatches =
-          content.match(new RegExp(`<memory sidecar=.*${agent.sidecar}`, "g")) ||
-          [];
-        expect(
-          sidecarMatches.length,
-          `${agent.file} should have 3 sidecar declarations`,
-        ).toBe(3);
+          content.match(new RegExp(`<memory sidecar=.*${agent.sidecar}`, "g")) || [];
+        expect(sidecarMatches.length, `${agent.file} should have 3 sidecar declarations`).toBe(3);
       });
     }
   });
@@ -295,7 +256,7 @@ describe("E9-S2: Tier 1 Memory — Theo, Derek, Nate", () => {
       for (const sidecar of ["architect-sidecar", "pm-sidecar", "sm-sidecar"]) {
         expect(
           existsSync(join(MEMORY_DIR, sidecar, ".gitkeep")),
-          `${sidecar}/.gitkeep should be removed`,
+          `${sidecar}/.gitkeep should be removed`
         ).toBe(false);
       }
     });
@@ -306,7 +267,10 @@ describe("E9-S2: Tier 1 Memory — Theo, Derek, Nate", () => {
     it("all Tier 1 conversation-context.md files have YAML frontmatter", () => {
       for (const sidecar of ["architect-sidecar", "pm-sidecar", "sm-sidecar"]) {
         const content = readFile(sidecarPath(sidecar, "conversation-context.md"));
-        expect(content, `${sidecar}/conversation-context.md should start with YAML frontmatter`).toMatch(/^---\n/);
+        expect(
+          content,
+          `${sidecar}/conversation-context.md should start with YAML frontmatter`
+        ).toMatch(/^---\n/);
         expect(content).toMatch(/agent:/);
         expect(content).toMatch(/tier: 1/);
       }
@@ -320,7 +284,10 @@ describe("E9-S2: Tier 1 Memory — Theo, Derek, Nate", () => {
       };
       for (const [sidecar, pattern] of Object.entries(expectedHeaders)) {
         const content = readFile(sidecarPath(sidecar, "conversation-context.md"));
-        expect(content, `${sidecar}/conversation-context.md should have agent-specific header`).toMatch(pattern);
+        expect(
+          content,
+          `${sidecar}/conversation-context.md should have agent-specific header`
+        ).toMatch(pattern);
       }
     });
   });
@@ -338,7 +305,7 @@ describe("E9-S2: Tier 1 Memory — Theo, Derek, Nate", () => {
         expect(content, `${sidecar}/ground-truth.md should have agent field`).toMatch(/agent:/);
         expect(content, `${sidecar}/ground-truth.md should have tier field`).toMatch(/tier: 1/);
         expect(content, `${sidecar}/ground-truth.md should have token_budget field`).toMatch(
-          new RegExp(`token_budget: ${budget}`),
+          new RegExp(`token_budget: ${budget}`)
         );
       }
     });
@@ -358,13 +325,10 @@ describe("E9-S2: Tier 1 Memory — Theo, Derek, Nate", () => {
     it("each Tier 1 sidecar has exactly 3 files (no extra files)", () => {
       for (const sidecar of ["architect-sidecar", "pm-sidecar", "sm-sidecar"]) {
         const sidecarDir = join(MEMORY_DIR, sidecar);
-        const files = readdirSync(sidecarDir).filter(
-          (f) => !f.startsWith(".") && f !== "archive",
+        const files = readdirSync(sidecarDir).filter((f) => !f.startsWith(".") && f !== "archive");
+        expect(files.sort(), `${sidecar} should have exactly 3 files`).toEqual(
+          REQUIRED_FILES.sort()
         );
-        expect(
-          files.sort(),
-          `${sidecar} should have exactly 3 files`,
-        ).toEqual(REQUIRED_FILES.sort());
       }
     });
   });

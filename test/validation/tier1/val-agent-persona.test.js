@@ -1,7 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync, existsSync } from "fs";
 import { resolve } from "path";
-import { execSync } from "child_process";
 
 const PROJECT_ROOT = resolve(import.meta.dirname, "../../..");
 const VALIDATOR_PATH = `${PROJECT_ROOT}/_gaia/lifecycle/agents/validator.md`;

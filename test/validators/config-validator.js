@@ -88,9 +88,7 @@ export function resolveConfigChain(globalConfig, moduleConfig, workflowConfig) {
 export function resolveVariables(config, projectRoot, options = {}) {
   const projectPath = options.project_path;
   const resolvedProjectPath =
-    !projectPath || projectPath === "."
-      ? projectRoot
-      : join(projectRoot, projectPath);
+    !projectPath || projectPath === "." ? projectRoot : join(projectRoot, projectPath);
 
   const varMap = {
     "project-root": projectRoot,
@@ -110,7 +108,7 @@ export function resolveVariables(config, projectRoot, options = {}) {
         return match; // Known but no value — leave as-is for runtime resolution
       }
       throw new Error(
-        `Undefined variable: {${varName}} — not defined at any level of the config inheritance chain`,
+        `Undefined variable: {${varName}} — not defined at any level of the config inheritance chain`
       );
     });
   }
@@ -197,9 +195,12 @@ export function validateNoUnresolved(config) {
  * Used by resolveWorkflowConfig to pre-resolve artifact variables.
  */
 const ARTIFACT_PATH_KEYS = [
-  "planning_artifacts", "implementation_artifacts",
-  "test_artifacts", "creative_artifacts",
-  "memory_path", "checkpoint_path",
+  "planning_artifacts",
+  "implementation_artifacts",
+  "test_artifacts",
+  "creative_artifacts",
+  "memory_path",
+  "checkpoint_path",
 ];
 
 /**
@@ -228,7 +229,7 @@ function findModuleFiles(modDir, pattern, usePath = false) {
   const flag = usePath ? "-path" : "-name";
   const result = execSync(
     `find -L "${modDir}" ${flag} "${pattern}" -not -path "*/_backups/*" -not -path "*/node_modules/*" 2>/dev/null || true`,
-    { encoding: "utf8" },
+    { encoding: "utf8" }
   ).trim();
   return result ? result.split("\n").filter(Boolean) : [];
 }
@@ -283,7 +284,7 @@ export function countResolvedByModule(modules) {
 
     const resolvedCount = findModuleFiles(modDir, "*/.resolved/*.yaml", true).length;
     const workflowFiles = findModuleFiles(modDir, "workflow.yaml").filter(
-      (f) => !f.includes("/.resolved/"),
+      (f) => !f.includes("/.resolved/")
     );
 
     const gap = workflowFiles.length - resolvedCount;
@@ -309,10 +310,10 @@ export function detectCountDrift(modules) {
     }
 
     const workflowPaths = findModuleFiles(modDir, "workflow.yaml").filter(
-      (f) => !f.includes("/.resolved/"),
+      (f) => !f.includes("/.resolved/")
     );
     const resolvedNames = new Set(
-      findModuleFiles(modDir, "*/.resolved/*.yaml", true).map((f) => basename(f, ".yaml")),
+      findModuleFiles(modDir, "*/.resolved/*.yaml", true).map((f) => basename(f, ".yaml"))
     );
 
     const missingFiles = [];

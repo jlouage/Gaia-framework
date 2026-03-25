@@ -5,13 +5,7 @@ import { execSync } from "child_process";
 
 const PROJECT_ROOT = resolve(import.meta.dirname, "../../../..");
 const GAIA_DIR = join(PROJECT_ROOT, "_gaia");
-const FIXTURES_DIR = join(
-  PROJECT_ROOT,
-  "Gaia-framework",
-  "test",
-  "fixtures",
-  "instructions",
-);
+const FIXTURES_DIR = join(PROJECT_ROOT, "Gaia-framework", "test", "fixtures", "instructions");
 
 // Dynamic import of the validator module
 const validatorPath = join(
@@ -19,13 +13,13 @@ const validatorPath = join(
   "Gaia-framework",
   "test",
   "validators",
-  "instruction-validator.js",
+  "instruction-validator.js"
 );
 
 function findInstructionFiles() {
   const result = execSync(
     `find -L "${GAIA_DIR}" -name "instructions.xml" -not -path "*/node_modules/*" -not -path "*/_backups/*"`,
-    { encoding: "utf8" },
+    { encoding: "utf8" }
   );
   return result
     .trim()
@@ -48,7 +42,7 @@ function findCoreXmlFiles() {
     if (!existsSync(dir)) continue;
     const result = execSync(
       `find -L "${dir}" -maxdepth 1 -name "*.xml" -not -path "*/node_modules/*"`,
-      { encoding: "utf8" },
+      { encoding: "utf8" }
     );
     const found = result
       .trim()
@@ -67,9 +61,7 @@ describe("Tier 1: Instruction XML Validation", () => {
   describe("Fixtures: Well-formedness (AC1)", () => {
     it("valid instruction XML passes", async () => {
       const { validateWellFormedness } = await import(validatorPath);
-      const result = validateWellFormedness(
-        join(FIXTURES_DIR, "valid-instruction.xml"),
-      );
+      const result = validateWellFormedness(join(FIXTURES_DIR, "valid-instruction.xml"));
       expect(result.errors).toHaveLength(0);
     });
 
@@ -84,26 +76,20 @@ describe("Tier 1: Instruction XML Validation", () => {
   describe("Fixtures: Step numbering (AC2)", () => {
     it("valid sequential steps pass", async () => {
       const { validateStepNumbering } = await import(validatorPath);
-      const result = validateStepNumbering(
-        join(FIXTURES_DIR, "valid-instruction.xml"),
-      );
+      const result = validateStepNumbering(join(FIXTURES_DIR, "valid-instruction.xml"));
       expect(result.errors).toHaveLength(0);
     });
 
     it("step gap detected", async () => {
       const { validateStepNumbering } = await import(validatorPath);
-      const result = validateStepNumbering(
-        join(FIXTURES_DIR, "step-gap.xml"),
-      );
+      const result = validateStepNumbering(join(FIXTURES_DIR, "step-gap.xml"));
       expect(result.errors.length).toBeGreaterThan(0);
       expect(result.errors[0]).toContain("step 3 missing");
     });
 
     it("duplicate step detected", async () => {
       const { validateStepNumbering } = await import(validatorPath);
-      const result = validateStepNumbering(
-        join(FIXTURES_DIR, "step-duplicate.xml"),
-      );
+      const result = validateStepNumbering(join(FIXTURES_DIR, "step-duplicate.xml"));
       expect(result.errors.length).toBeGreaterThan(0);
       expect(result.errors[0]).toContain("Duplicate step number: 2");
     });
@@ -112,17 +98,13 @@ describe("Tier 1: Instruction XML Validation", () => {
   describe("Fixtures: Template-output variables (AC3)", () => {
     it("valid variables pass", async () => {
       const { validateTemplateOutputVariables } = await import(validatorPath);
-      const result = validateTemplateOutputVariables(
-        join(FIXTURES_DIR, "valid-instruction.xml"),
-      );
+      const result = validateTemplateOutputVariables(join(FIXTURES_DIR, "valid-instruction.xml"));
       expect(result.errors).toHaveLength(0);
     });
 
     it("invalid variable detected", async () => {
       const { validateTemplateOutputVariables } = await import(validatorPath);
-      const result = validateTemplateOutputVariables(
-        join(FIXTURES_DIR, "invalid-variable.xml"),
-      );
+      const result = validateTemplateOutputVariables(join(FIXTURES_DIR, "invalid-variable.xml"));
       expect(result.errors.length).toBeGreaterThan(0);
       expect(result.errors[0]).toContain("Unrecognized variable: {invalid_var}");
     });
@@ -131,18 +113,14 @@ describe("Tier 1: Instruction XML Validation", () => {
   describe("Fixtures: Skill/knowledge references (AC4)", () => {
     it("broken skill ref detected", async () => {
       const { validateSkillKnowledgeReferences } = await import(validatorPath);
-      const result = validateSkillKnowledgeReferences(
-        join(FIXTURES_DIR, "broken-skill-ref.xml"),
-      );
+      const result = validateSkillKnowledgeReferences(join(FIXTURES_DIR, "broken-skill-ref.xml"));
       expect(result.errors.length).toBeGreaterThan(0);
       expect(result.errors[0]).toContain("file not found");
     });
 
     it("valid text-embedded skill ref passes", async () => {
       const { validateSkillKnowledgeReferences } = await import(validatorPath);
-      const result = validateSkillKnowledgeReferences(
-        join(FIXTURES_DIR, "text-embedded-refs.xml"),
-      );
+      const result = validateSkillKnowledgeReferences(join(FIXTURES_DIR, "text-embedded-refs.xml"));
       expect(result.errors).toHaveLength(0);
     });
   });
@@ -150,9 +128,7 @@ describe("Tier 1: Instruction XML Validation", () => {
   describe("Fixtures: invoke-task references (AC5)", () => {
     it("broken task ref detected", async () => {
       const { validateInvokeTaskReferences } = await import(validatorPath);
-      const result = validateInvokeTaskReferences(
-        join(FIXTURES_DIR, "broken-task-ref.xml"),
-      );
+      const result = validateInvokeTaskReferences(join(FIXTURES_DIR, "broken-task-ref.xml"));
       expect(result.errors.length).toBeGreaterThan(0);
       expect(result.errors[0]).toContain("Task file not found");
     });
@@ -162,7 +138,7 @@ describe("Tier 1: Instruction XML Validation", () => {
     it("broken workflow ref detected", async () => {
       const { validateInvokeWorkflowReferences } = await import(validatorPath);
       const result = validateInvokeWorkflowReferences(
-        join(FIXTURES_DIR, "broken-workflow-ref.xml"),
+        join(FIXTURES_DIR, "broken-workflow-ref.xml")
       );
       expect(result.errors.length).toBeGreaterThan(0);
       expect(result.errors[0]).toContain("Workflow file not found");
@@ -173,7 +149,7 @@ describe("Tier 1: Instruction XML Validation", () => {
     it("broken protocol ref detected", async () => {
       const { validateInvokeProtocolReferences } = await import(validatorPath);
       const result = validateInvokeProtocolReferences(
-        join(FIXTURES_DIR, "broken-protocol-ref.xml"),
+        join(FIXTURES_DIR, "broken-protocol-ref.xml")
       );
       expect(result.errors.length).toBeGreaterThan(0);
       expect(result.errors[0]).toContain("Protocol file not found");
@@ -183,26 +159,20 @@ describe("Tier 1: Instruction XML Validation", () => {
   describe("Fixtures: Check elements (AC9)", () => {
     it("valid check elements pass", async () => {
       const { validateCheckElements } = await import(validatorPath);
-      const result = validateCheckElements(
-        join(FIXTURES_DIR, "valid-instruction.xml"),
-      );
+      const result = validateCheckElements(join(FIXTURES_DIR, "valid-instruction.xml"));
       expect(result.errors).toHaveLength(0);
     });
 
     it("empty check condition detected", async () => {
       const { validateCheckElements } = await import(validatorPath);
-      const result = validateCheckElements(
-        join(FIXTURES_DIR, "empty-check-condition.xml"),
-      );
+      const result = validateCheckElements(join(FIXTURES_DIR, "empty-check-condition.xml"));
       expect(result.errors.length).toBeGreaterThan(0);
       expect(result.errors[0]).toContain("Empty condition");
     });
 
     it("empty check body detected", async () => {
       const { validateCheckElements } = await import(validatorPath);
-      const result = validateCheckElements(
-        join(FIXTURES_DIR, "empty-check-body.xml"),
-      );
+      const result = validateCheckElements(join(FIXTURES_DIR, "empty-check-body.xml"));
       expect(result.errors.length).toBeGreaterThan(0);
       expect(result.errors[0]).toContain("Empty body");
     });
