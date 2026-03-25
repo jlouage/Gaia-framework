@@ -251,6 +251,29 @@ sequence:
       on_failures: /gaia-dev-story
       on_pending: /gaia-run-all-reviews
 
+  val-validate-artifact:
+    phase: 4-implementation
+    command: /gaia-val-validate
+    next:
+      standalone: true
+      note: "Invoked inline by workflow engine at template-output checkpoints"
+
+  val-validate-plan:
+    phase: 4-implementation
+    command: /gaia-val-validate-plan
+    next:
+      standalone: true
+      note: "Invoked inline by workflow engine at planning gate"
+
+  val-refresh-ground-truth:
+    phase: 4-implementation
+    command: /gaia-refresh-ground-truth
+    next:
+      standalone: true
+      suggestions:
+        - command: /gaia-val-validate
+          context: "To validate an artifact using refreshed ground truth"
+
   change-request:
     phase: 4-implementation
     command: /gaia-change-request
@@ -413,6 +436,13 @@ sequence:
     command: /gaia-project-context
     next:
       standalone: true
+
+  memory-hygiene:
+    module: lifecycle
+    command: /gaia-memory-hygiene
+    next:
+      standalone: true
+      note: "Run periodically to detect stale or contradicted decisions in agent memory sidecars"
 
   performance-review:
     module: lifecycle
