@@ -1,0 +1,10 @@
+node_modules/
+coverage/
+_memory/
+_gaia/
+docs/
+*.md
+*.yaml
+*.yml
+*.xml
+*.sh

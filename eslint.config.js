@@ -1,5 +1,6 @@
 const js = require("@eslint/js");
 const globals = require("globals");
+const eslintConfigPrettier = require("eslint-config-prettier");
 
 // Shared rules for both CJS (bin/) and ESM (test/) scopes
 const sharedRules = {
@@ -51,4 +52,7 @@ module.exports = [
     },
     rules: sharedRules,
   },
+
+  // Disable ESLint rules that conflict with Prettier (eslint-config-prettier)
+  eslintConfigPrettier,
 ];

@@ -35,7 +35,7 @@ jobs:
         run: npm run lint
 
       - name: Prettier check
-        run: npx prettier --check .
+        run: npm run format:check
 
       - name: ShellCheck
         if: runner.os != 'Windows'
