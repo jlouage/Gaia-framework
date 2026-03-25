@@ -4,101 +4,199 @@
   <mandate>Never modify a sidecar file without explicit user confirmation for each entry</mandate>
   <mandate>Preserve the sidecar file header and marker comment in all modifications</mandate>
   <mandate>Process sidecars one at a time — release previous sidecar content before loading next (JIT)</mandate>
+  <mandate>Archival is recommendation-only — never auto-execute without user confirmation</mandate>
+  <mandate>Cross-reference validation scope is limited to the declared matrix in _memory/config.yaml</mandate>
+  <mandate>Token approximation: 4 chars per token (file size in bytes / 4)</mandate>
 </critical>
 
-<step n="1" title="Scan Sidecars">
-  <action>Read {memory_path}/config.yaml to get sidecar_root path</action>
-  <action>Enumerate all 9 *-sidecar/ directories under {memory_path}/</action>
-  <action>For each directory, read the .md file(s) inside</action>
-  <action>Determine if content exists beyond the template header — look for text after the
-    &lt;!-- Decisions will be appended below this line --&gt; marker or similar comment markers</action>
-  <action>Build two lists:
-    - Sidecars with content (candidates for hygiene review)
-    - Sidecars without content (empty — will be skipped)</action>
+<step n="1" title="Dynamic Sidecar Discovery">
+  <action>Read {memory_path}/config.yaml to get tier assignments, token budgets, and cross-reference matrix</action>
+  <action>Extract tier_1, tier_2, tier_3 agent lists from config. For each agent, resolve sidecar directory name from the agents.{agent-id}.sidecar field</action>
+  <action>Enumerate all on-disk {memory_path}/*-sidecar/ directories</action>
+  <action>Union config-declared sidecars and on-disk sidecars into a master list. For each sidecar, classify by tier:
+    - If agent is in tiers.tier_1.agents → Tier 1 (3 files: ground-truth.md, decision-log.md, conversation-context.md)
+    - If agent is in tiers.tier_2.agents → Tier 2 (2 files: decision-log.md, conversation-context.md)
+    - If agent is in tiers.tier_3.agents → Tier 3 (1 file: decision-log.md)
+    - If agent has on-disk sidecar but no tier in config → classify as Untiered (scan decision-log.md only, no budget enforced)</action>
+  <action>Exclude archive/ subdirectories from active scanning — these contain archived entries and are gitignored</action>
+  <action>Build categorized sidecar lists:
+    - Tier 1 sidecars with expected files
+    - Tier 2 sidecars with expected files
+    - Tier 3 sidecars with expected files
+    - Untiered sidecars (decision-log.md only)
+    - Empty sidecars (no content files found)
+    - Sidecars with legacy filenames (architecture-decisions.md, infrastructure-decisions.md, threat-model-decisions.md, velocity-data.md) — flag for migration to standard names</action>
   <check if="zero sidecars have content">Report "All sidecars are empty — nothing to review" and complete the workflow</check>
-  <action>Report to user: "{N} sidecars with content found, {M} empty. Proceeding with review."</action>
+  <action>Report to user: "{N} sidecars discovered ({T1} Tier 1, {T2} Tier 2, {T3} Tier 3, {U} untiered), {E} empty. {L} legacy filenames detected. Proceeding with review."</action>
 </step>
 
-<step n="2" title="Load Reference Artifacts">
+<step n="2" title="Tier-Aware Multi-File Scanning">
+  <action>For each sidecar (JIT — release previous sidecar content before loading next):
+    - Determine expected files based on tier classification from Step 1
+    - Tier 1: read ground-truth.md, decision-log.md, conversation-context.md
+    - Tier 2: read decision-log.md, conversation-context.md
+    - Tier 3: read decision-log.md
+    - Untiered: read decision-log.md</action>
+  <action>For each expected file:
+    - Check if file exists
+    - If missing: log warning "Expected {filename} for {tier} agent {agent} — file not found"
+    - If exists: check for content beyond template header (text after marker comment)
+    - Record file size in bytes for token budget calculation</action>
+  <action>Detect legacy filenames in each sidecar:
+    - architecture-decisions.md → should be decision-log.md (architect-sidecar)
+    - infrastructure-decisions.md → should be decision-log.md (devops-sidecar)
+    - threat-model-decisions.md → should be decision-log.md (security-sidecar)
+    - velocity-data.md → should be decision-log.md (sm-sidecar)
+    If legacy file found: scan it as decision-log content but flag for migration</action>
+  <action>Build content inventory: list of all files scanned with size, tier, and content status (has-content / empty / missing / legacy-name)</action>
+</step>
+
+<step n="3" title="Load Reference Artifacts">
   <action>Attempt to read each reference artifact (record which exist and which are missing):
-    - {planning_artifacts}/architecture.md — for architect, devops, security sidecar validation
-    - {planning_artifacts}/prd.md — for pm sidecar validation
-    - {planning_artifacts}/infrastructure-design.md — for devops sidecar validation
-    - {test_artifacts}/test-plan.md — for test-architect sidecar validation
-    - {implementation_artifacts}/sprint-status.yaml — for sm sidecar validation</action>
+    - {planning_artifacts}/architecture.md — for architectural decision validation
+    - {planning_artifacts}/prd.md — for product decision validation
+    - {planning_artifacts}/infrastructure-design.md — for infrastructure validation
+    - {test_artifacts}/test-plan.md — for test strategy validation
+    - {implementation_artifacts}/sprint-status.yaml — for sprint references and current sprint ID
+    - {planning_artifacts}/epics-and-stories.md — for story/epic key validation</action>
   <action>For each artifact that exists: retain its key sections and structure for comparison</action>
-  <check if="no reference artifacts exist">Warn user: "No reference artifacts found. Hygiene will be limited to structural checks (orphaned references to nonexistent components). Create architecture.md or prd.md for full cross-referencing."</check>
+  <action>Extract current sprint ID from sprint-status.yaml if it exists. If not found, note "sprint data unavailable — will use 42-day calendar fallback for age calculations"</action>
+  <check if="no reference artifacts exist">Warn user: "No reference artifacts found. Hygiene will be limited to structural checks and budget reporting."</check>
 </step>
 
-<step n="3" title="Cross-Reference Entries">
-  <action>Process each sidecar with content one at a time (JIT — release previous before loading next)</action>
-  <action>Identify individual entries within the sidecar by:
-    - ### headings (ADR-style entries)
-    - Date-prefixed list items (e.g., "- 2026-03-01: Decided to...")
-    - If format is unstructured: treat entire post-header content as a single entry</action>
-  <action>For each sidecar, apply its specific validation rules:
-    - architect-sidecar: Compare each entry against architecture.md ADR section. Check if the
-      technology, component, or pattern referenced still exists in current architecture.
-    - devops-sidecar: Compare against architecture.md deployment section and infrastructure-design.md.
-      Check for changed hosting, container, or IaC choices.
-    - security-sidecar: Compare against architecture.md security section. Check if referenced
-      components still exist and threat mitigations match current security posture.
-    - pm-sidecar: Compare against prd.md requirements and scope. Check if deprioritized or
-      descoped features still have active product decisions.
-    - sm-sidecar: Compare sprint references against sprint-status.yaml. Check for velocity data
-      referencing completed or nonexistent sprints.
-    - test-architect-sidecar: Compare against test-plan.md strategy and framework choices.
-    - tech-writer-sidecar: Validate referenced conventions against project file patterns.
-    - orchestrator-sidecar: SKIP — session log only, no decisions to validate.
-    - storyteller-sidecar: SKIP — creative log, no decisions to validate.</action>
-  <action>If a sidecar's reference artifact is missing: flag all its entries as "UNVERIFIABLE —
-    reference artifact not found" and note which artifact would be needed</action>
-  <action>For all sidecars: scan each entry for references to specific component names, service names, or artifact filenames. Cross-reference against current artifact content. If a referenced name does not appear in any current artifact, flag as potential ORPHANED or RENAMED. For RENAMED candidates: search for semantically similar names in current artifacts and suggest the likely rename (e.g., "auth-service → identity-service?").</action>
+<step n="4" title="Cross-Reference Validation">
+  <action>For each sidecar with content (JIT — release previous before loading next):
+    Parse decision-log entries using the standardized format (E9-S3):
+    - Header: ### [YYYY-MM-DD] Decision Title
+    - Fields: Agent, Sprint, Status: active | superseded | archived, Related: {paths, keys}
+    - If entry does not follow standardized format (no Status field, no ### header): flag as UNVERIFIABLE-FORMAT</action>
+  <action>For entries with Status field:
+    - If Status: superseded or Status: archived → flag entry itself as already-archived (candidate for archive/ move)
+    - If Status: active → validate Related field references</action>
+  <action>For entries with Related field pointing to other agents' decisions:
+    - Use the cross-reference matrix from {memory_path}/config.yaml to determine valid cross-agent reads
+    - For each cross-agent reference: look up the referenced entry's Status in the source agent's decision-log
+    - If referenced entry has Status: superseded or archived → flag as STALE with evidence
+    - If referenced entry not found → flag as ORPHANED
+    - If source agent's file not parseable → flag reference as UNVERIFIABLE-FORMAT</action>
+  <action>For all entries: scan Related field for artifact paths and story/epic keys
+    - Cross-reference paths against filesystem — if not found, flag as potential STALE or ORPHANED
+    - Cross-reference story/epic keys against epics-and-stories.md — if not found, flag as ORPHANED
+    - For ORPHANED candidates: search for semantically similar names and suggest likely renames</action>
 </step>
 
-<step n="4" title="Classify Entries">
-  <action>Assign each sidecar entry one of four statuses:
+<step n="5" title="Stale Detection via Skill">
+  <action>JIT-load the stale-detection section from {project-root}/_gaia/lifecycle/skills/memory-management.md
+    Load only the content between &lt;!-- SECTION: stale-detection --&gt; and &lt;!-- END SECTION --&gt; markers</action>
+  <action>Apply the canonical stale detection logic from the memory-management skill:
+    1. Stale entries — decision references an artifact path that no longer exists on the filesystem
+    2. Contradicted entries — two active decisions in the same sidecar that conflict
+    3. Orphaned entries — decision references a story or epic removed from epics-and-stories.md</action>
+  <action>Merge stale detection results with cross-reference validation results from Step 4 — deduplicate entries flagged by both checks</action>
+</step>
+
+<step n="6" title="Classify Entries">
+  <action>Assign each sidecar entry one of five statuses:
     - ACTIVE: Entry is consistent with current reference artifacts — no action needed
-    - STALE: The referenced artifact has changed since this entry was recorded (e.g.,
-      architecture.md has a newer ADR on the same topic with a different decision)
+    - STALE: The referenced artifact has changed or the cross-referenced decision is superseded/archived
     - CONTRADICTED: Current artifact explicitly states the opposite of what this entry records
-      (e.g., sidecar says "Use PostgreSQL", architecture.md says "Use MongoDB" for the same component)
-    - ORPHANED: The component, service, or feature referenced in this entry no longer exists
-      in any current artifact</action>
-  <action>Record evidence for each classification: which artifact section confirms or contradicts,
-    what changed, or what is missing</action>
+    - ORPHANED: The component, service, story, or epic referenced no longer exists in any current artifact
+    - UNVERIFIABLE-FORMAT: Entry does not follow standardized format (no Status field) — cannot validate programmatically</action>
+  <action>Record evidence for each classification: which artifact section confirms or contradicts, what changed, or what is missing</action>
 </step>
 
-<step n="5" title="Present Findings">
-  <action>Generate a findings report with:
-    - Summary: total entries scanned, counts by status (ACTIVE, STALE, CONTRADICTED, ORPHANED)
-    - Detailed table grouped by sidecar, sorted by severity (CONTRADICTED first, then STALE,
-      then ORPHANED, then ACTIVE):
+<step n="7" title="Token Budget Reporting">
+  <action>For each agent sidecar, calculate token usage:
+    - Sum file sizes in bytes across all sidecar files (from Step 2 inventory)
+    - Convert to approximate token count: file size in bytes / 4 (chars-per-token approximation from config archival.token_approximation)
+    - For Tier 1 agents: also calculate ground-truth.md token usage separately</action>
+  <action>Compare against budgets from {memory_path}/config.yaml:
+    - Tier 1 session budget: tiers.tier_1.session_budget (300K tokens)
+    - Tier 1 ground truth budget: agents.{agent}.ground_truth_budget (per-agent: Val 200K, Theo 150K, Derek 100K, Nate 100K)
+    - Tier 2 session budget: tiers.tier_2.session_budget (100K tokens)
+    - Tier 3: no budget enforced
+    - Untiered: no budget enforced</action>
+  <action>Apply threshold status indicators per archival config:
+    - OK: below 80% of budget
+    - warning: at or above 80% but below 90%
+    - critical: at or above 90% but below 100%
+    - over-budget: at or above 100%</action>
+  <action>Build Token Budget Table with columns:
+    | Agent | Tier | Files Scanned | Token Usage | Session Budget | GT Budget | % Used | Status |
+    For Tier 3 and untiered agents: budget column shows "no budget enforced" with actual token count reported</action>
+</step>
 
+<step n="8" title="Archival Recommendations">
+  <action>Generate archival recommendations based on three criteria:
+    (a) Budget pressure — for agents at or above 90% of budget: identify oldest entries as archival candidates (oldest first). Mark as "actionable — budget pressure"
+    (b) Staleness — entries with Status: superseded or Status: archived that have not been moved to the archive/ subdirectory. Mark as "actionable — stale status"
+    (c) Age — entries older than 3 sprints (determined from current sprint ID minus 3; fallback to 42 calendar days if no sprint data). Only flag if the entry has no Related field pointing to an active story. Mark as "advisory — age"</action>
+  <action>Classify each recommendation:
+    - Actionable: budget pressure and staleness recommendations — should be acted on
+    - Advisory: age-based recommendations — informational, user decides</action>
+  <action>Archival is never auto-executed — all recommendations require user confirmation per entry before any file changes are made</action>
+</step>
+
+<step n="9" title="Ground Truth Refresh Trigger">
+  <action>For each Tier 1 agent (Val, Theo, Derek, Nate) that has a ground-truth.md file:
+    - Read the most recent entry's Sprint field from ground-truth.md
+    - Compare against current sprint ID from sprint-status.yaml
+    - If the gap is more than 1 sprint behind: recommend /gaia-refresh-ground-truth for that agent</action>
+  <action>If sprint-status.yaml does not exist or has no sprint ID: skip ground truth refresh check (cannot determine staleness without sprint data)</action>
+  <action>If E9-S11 (--agent parameter) is not yet implemented: recommend base command /gaia-refresh-ground-truth without --agent flag. Once E9-S11 ships, recommend /gaia-refresh-ground-truth --agent {agent-id}</action>
+  <action>Tier 2 and Tier 3 agents have no ground-truth.md — exclude from this check entirely</action>
+</step>
+
+<step n="10" title="Present Enhanced Report">
+  <action>Generate the enhanced findings report with these 7 sections:
+
+    **1. Summary**
+    - Total sidecars scanned (by tier: Tier 1, Tier 2, Tier 3, untiered)
+    - Total entries scanned
+    - Counts by status: ACTIVE, STALE, CONTRADICTED, ORPHANED, UNVERIFIABLE-FORMAT
+    - Budget usage summary: agents OK, warning, critical, over-budget
+
+    **2. Token Budget Table**
+    | Agent | Tier | Files Scanned | Token Usage | Session Budget | GT Budget | % Used | Status |
+    (One row per agent, sorted by tier then agent name)
+
+    **3. Detailed Findings**
     | Sidecar | Entry | Status | Evidence | Reference Artifact |
-    |---------|-------|--------|----------|--------------------|
+    (Grouped by sidecar, sorted by severity: CONTRADICTED, STALE, ORPHANED, UNVERIFIABLE-FORMAT, ACTIVE)
 
-    - Skipped sidecars listed separately (empty or session/creative logs)</action>
+    **4. Archival Recommendations**
+    | # | Agent | Entry | Reason | Type | Action |
+    (Budget pressure first, then staleness, then age)
+
+    **5. Ground Truth Refresh Recommendations**
+    | Agent | Last Sprint | Current Sprint | Gap | Recommendation |
+    (Tier 1 agents only)
+
+    **6. Untiered Agent Report**
+    | Agent | Sidecar Dir | Files Found | Recommendation |
+    For each untiered agent: recommend adding to _memory/config.yaml as Tier 3
+
+    **7. Skipped Sidecars**
+    List of sidecars with no content or explicitly skipped</action>
   <template-output file="{implementation_artifacts}/memory-hygiene-report-{date}.md">
-    Memory hygiene report with summary counts, detailed findings table, and skipped sidecars list.
+    Enhanced memory hygiene report with all 7 sections: Summary, Token Budget Table, Detailed Findings, Archival Recommendations, Ground Truth Refresh Recommendations, Untiered Agent Report, Skipped Sidecars.
   </template-output>
 </step>
 
-<step n="6" title="User Action on Flagged Items">
+<step n="11" title="User Action on Flagged Items">
   <action>For each entry with status other than ACTIVE, ask the user to choose one action:
     - Keep: Add a [Reviewed: {date}] annotation to the entry — confirms user saw and accepted it
-    - Archive: Move the entry to a ## Archived Decisions section at the bottom of the sidecar file,
-      prefixed with [Archived: {date} — Reason: {status}]. Create the section if it does not exist.
+    - Archive: Move the entry to the archive/ subdirectory of the sidecar (if directory exists; create if not). Prefix with [Archived: {date} — Reason: {status}]
     - Delete: Remove the entry from the sidecar file entirely</action>
   <action>When modifying sidecar files:
     - ALWAYS preserve the file header (title, description, marker comment)
     - ALWAYS keep the &lt;!-- Decisions will be appended below this line --&gt; marker intact
-    - Place the ## Archived Decisions section after all active entries but before end of file
-    - Active entries remain between the marker comment and the ## Archived Decisions section</action>
+    - Active entries remain between the marker comment and end of file
+    - Archived entries go to archive/ subdirectory, not inline section</action>
   <action>After all user actions are processed: report summary of changes made to each sidecar file</action>
 </step>
 
-<step n="7" title="Optional: Prune Completed Checkpoints" optional="true">
+<step n="12" title="Optional: Prune Completed Checkpoints" optional="true">
   <ask>Would you like to prune old completed checkpoints? (yes / skip)</ask>
   <action if="yes">Read {checkpoint_path}/completed/ and list all .yaml files with dates</action>
   <ask if="yes">How many sprints of checkpoints to retain? (default: 2)</ask>

@@ -1,6 +1,6 @@
 # GAIA — Generative Agile Intelligence Architecture
 
-[![Framework](https://img.shields.io/badge/framework-v1.54.0-blue)]()
+[![Framework](https://img.shields.io/badge/framework-v1.56.0-blue)]()
 [![License](https://img.shields.io/badge/license-AGPL--3.0-green)]()
 [![Agents](https://img.shields.io/badge/agents-26-purple)]()
 [![Workflows](https://img.shields.io/badge/workflows-73-orange)]()
@@ -43,7 +43,7 @@ GAIA is built on a few core beliefs about how AI-assisted development should wor
 ## Prerequisites
 
 - [Claude Code](https://docs.anthropic.com/en/docs/claude-code) (requires Anthropic account)
-- Node.js 18+
+- Node.js 20+
 - Git
 
 ---
@@ -460,7 +460,7 @@ The single source of truth is `_gaia/_config/global.yaml`:
 
 ```yaml
 framework_name: "GAIA"
-framework_version: "1.56.0"
+framework_version: "1.56.1"
 user_name: "your-name"
 project_name: "your-project"
 ```
