@@ -106,24 +106,14 @@
 </step>
 
 <step n="7" title="Token Budget Reporting">
-  <action>For each agent sidecar, calculate token usage:
-    - Sum file sizes in bytes across all sidecar files (from Step 2 inventory)
-    - Convert to approximate token count: file size in bytes / 4 (chars-per-token approximation from config archival.token_approximation)
-    - For Tier 1 agents: also calculate ground-truth.md token usage separately</action>
-  <action>Compare against budgets from {memory_path}/config.yaml:
-    - Tier 1 session budget: tiers.tier_1.session_budget (300K tokens)
-    - Tier 1 ground truth budget: agents.{agent}.ground_truth_budget (per-agent: Val 200K, Theo 150K, Derek 100K, Nate 100K)
-    - Tier 2 session budget: tiers.tier_2.session_budget (100K tokens)
-    - Tier 3: no budget enforced
-    - Untiered: no budget enforced</action>
-  <action>Apply threshold status indicators per archival config:
-    - OK: below 80% of budget
-    - warning: at or above 80% but below 90%
-    - critical: at or above 90% but below 100%
-    - over-budget: at or above 100%</action>
-  <action>Build Token Budget Table with columns:
-    | Agent | Tier | Files Scanned | Token Usage | Session Budget | GT Budget | % Used | Status |
-    For Tier 3 and untiered agents: budget column shows "no budget enforced" with actual token count reported</action>
+  <action>JIT-load the budget-monitoring section from {project-root}/_gaia/lifecycle/skills/memory-management.md
+    Load only the content between &lt;!-- SECTION: budget-monitoring --&gt; and &lt;!-- END SECTION --&gt; markers</action>
+  <action>Apply the budget-monitoring skill procedure using file sizes from Step 2 inventory and tier budgets from {memory_path}/config.yaml:
+    - Calculate token usage per agent (sum sidecar file sizes, convert via skill formula)
+    - Classify each agent by threshold status (OK / warning / critical / over-budget)
+    - For Tier 1 agents: also report ground truth budget usage separately
+    - For Tier 3 / untiered: report actual tokens with "no budget enforced"</action>
+  <action>Build Token Budget Table per the skill's output format</action>
 </step>
 
 <step n="8" title="Archival Recommendations">

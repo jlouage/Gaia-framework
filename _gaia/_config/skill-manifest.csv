@@ -9,4 +9,4 @@ name,displayName,description,path,applicable_agents
 "security-basics","Security Basics","OWASP Top 10, input validation, secrets, CORS/CSRF","_gaia/dev/skills/security-basics.md","all-dev,architect,security,devops"
 "validation-patterns","Validation Patterns","Claim extraction, filesystem verification, cross-reference, severity classification, findings formatting","_gaia/lifecycle/skills/validation-patterns.md","validator"
 "ground-truth-management","Ground Truth Management","Entry structure, incremental/full refresh, conflict resolution, archival, token budget, brownfield extraction","_gaia/lifecycle/skills/ground-truth-management.md","validator"
-"memory-management","Memory Management","Session load/save, decision formatting, stale detection, deduplication, context summarization","_gaia/lifecycle/skills/memory-management.md","all"
+"memory-management","Memory Management","Session load/save, decision formatting, stale detection, deduplication, context summarization, cross-ref loading, budget-monitoring","_gaia/lifecycle/skills/memory-management.md","all"

@@ -2,7 +2,7 @@
 name: memory-management
 version: '1.1'
 applicable_agents: [all]
-description: 'Core memory operations: session load/save, decision formatting, stale detection, deduplication, context summarization. Cross-agent sections in memory-management-cross-agent.md.'
+description: 'Core memory operations: session load/save, decision formatting, stale detection, deduplication, context summarization, budget monitoring. Cross-agent sections in memory-management-cross-agent.md.'
 ---
 
 <!-- SECTION: decision-formatting -->
@@ -195,4 +195,37 @@ Detect and merge duplicate decision entries within a decision log.
 **Output:** List of duplicate pairs with recommended action (auto-archive or review).
 <!-- END SECTION -->
 
-<!-- Cross-agent extensions (cross-reference-loading, budget-monitoring) are in memory-management-cross-agent.md -->
+<!-- Cross-agent extensions (cross-reference-loading) are in memory-management-cross-agent.md -->
+
+<!-- SECTION: budget-monitoring -->
+## Budget Monitoring
+
+Calculate and report token budget usage per agent sidecar. Reusable by any workflow that needs budget status.
+
+**Input:**
+- Agent sidecar file sizes (bytes) from filesystem scan
+- Tier budgets from `_memory/config.yaml`: `tiers.tier_1.session_budget` (300K), `tiers.tier_2.session_budget` (100K)
+- Per-agent ground truth budgets: `agents.{agent-id}.ground_truth_budget` (Tier 1 only)
+
+**Token calculation:**
+- Approximate tokens = file size in bytes / 4 (chars-per-token convention)
+- Sum across all sidecar files per agent (decision-log.md + conversation-context.md + ground-truth.md)
+
+**Threshold classification:**
+- **OK:** below 80% of budget
+- **warning:** at or above 80%, below 90%
+- **critical:** at or above 90%, below 100%
+- **over-budget:** at or above 100% — triggers archival recommendation
+
+**Tier handling:**
+- Tier 1: report session budget usage and ground truth budget usage separately
+- Tier 2: report session budget usage only (no ground truth file)
+- Tier 3 / untiered: report actual token count with "no budget enforced"
+
+**Output format (Token Budget Table):**
+
+| Agent | Tier | Files Scanned | Token Usage | Session Budget | GT Budget | % Used | Status |
+|-------|------|---------------|-------------|----------------|-----------|--------|--------|
+
+For Tier 3 and untiered agents, budget columns show "no budget enforced" with actual token count.
+<!-- END SECTION -->
