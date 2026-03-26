@@ -2,7 +2,7 @@
 name: memory-management
 version: '1.0'
 applicable_agents: [all]
-description: 'Session load/save, decision formatting, stale detection, deduplication, context summarization'
+description: 'Session load/save, decision formatting, stale detection, deduplication, context summarization, cross-ref loading, budget monitoring'
 ---
 
 <!-- SECTION: decision-formatting -->
@@ -319,4 +319,37 @@ After loading cross-references, record in the session checkpoint:
 - Total tokens consumed by cross-references
 
 This enables `/gaia-resume` to detect stale cross-references when resuming a session.
+<!-- END SECTION -->
+
+<!-- SECTION: budget-monitoring -->
+## Budget Monitoring
+
+Calculate and report token budget usage per agent sidecar. Reusable by any workflow that needs budget status.
+
+**Input:**
+- Agent sidecar file sizes (bytes) from filesystem scan
+- Tier budgets from `_memory/config.yaml`: `tiers.tier_1.session_budget` (300K), `tiers.tier_2.session_budget` (100K)
+- Per-agent ground truth budgets: `agents.{agent-id}.ground_truth_budget` (Tier 1 only)
+
+**Token calculation:**
+- Approximate tokens = file size in bytes / 4 (chars-per-token convention)
+- Sum across all sidecar files per agent (decision-log.md + conversation-context.md + ground-truth.md)
+
+**Threshold classification:**
+- **OK:** below 80% of budget
+- **warning:** at or above 80%, below 90%
+- **critical:** at or above 90%, below 100%
+- **over-budget:** at or above 100% — triggers archival recommendation
+
+**Tier handling:**
+- Tier 1: report session budget usage and ground truth budget usage separately
+- Tier 2: report session budget usage only (no ground truth file)
+- Tier 3 / untiered: report actual token count with "no budget enforced"
+
+**Output format (Token Budget Table):**
+
+| Agent | Tier | Files Scanned | Token Usage | Session Budget | GT Budget | % Used | Status |
+|-------|------|---------------|-------------|----------------|-----------|--------|--------|
+
+For Tier 3 and untiered agents, budget columns show "no budget enforced" with actual token count.
 <!-- END SECTION -->
