@@ -18,7 +18,17 @@
   <action>Present the section map to confirm scope: "{N} sections identified, {M} chunks for validation"</action>
 </step>
 
-<step n="2" title="Extract Claims">
+<step n="2" title="Detect Artifact Type and Run Document-Specific Rules">
+  <!-- SKILL-REF: document-rulesets.md SECTION: type-detection -->
+  <!-- Two-pass validation: document-specific structural rules first (Pass 1), then factual claim verification (Pass 2) -->
+  <action>Load the "type-detection" section from the document-rulesets skill (JIT)</action>
+  <action>Extract the basename from {artifact_path} and match against the type-detection mapping table to determine the artifact type and corresponding ruleset ID (prd-rules, arch-rules, ux-rules, test-plan-rules, epics-rules, or unknown)</action>
+  <action>If artifact type is unknown (no ruleset matches): skip structural rules entirely — no document-specific rules to apply. Log: "No document-specific ruleset for this artifact type — factual verification only." Release the type-detection section and proceed directly to Step 3 (Pass 2 — factual claims only).</action>
+  <action>If artifact type is recognized: load the matching ruleset section from document-rulesets skill (JIT). Execute Pass 1 — structural rules first: run all checks defined in the ruleset against the artifact content. Record structural findings with source tag [STRUCTURAL]. Release the ruleset section from context.</action>
+  <action>Release the "type-detection" section from context</action>
+</step>
+
+<step n="3" title="Extract Claims (Pass 2 — Factual Verification)">
   <!-- SKILL-REF: validation-patterns.md SECTION: claim-extraction -->
   <action>Load the "claim-extraction" section from the validation-patterns skill (JIT)</action>
   <action>For each chunk from Step 1, extract all verifiable factual claims:
@@ -33,7 +43,7 @@
   <action>Release the "claim-extraction" skill section from context</action>
 </step>
 
-<step n="3" title="Filesystem Verify">
+<step n="4" title="Filesystem Verify">
   <!-- SKILL-REF: validation-patterns.md SECTION: filesystem-verification -->
   <action>Load the "filesystem-verification" section from the validation-patterns skill (JIT)</action>
   <action>For each extracted claim, verify against the actual filesystem:
@@ -45,32 +55,33 @@
   <action>Release the "filesystem-verification" skill section from context</action>
 </step>
 
-<step n="4" title="Cross-Reference Ground Truth">
+<step n="5" title="Cross-Reference Ground Truth">
   <!-- SKILL-REF: validation-patterns.md SECTION: cross-reference -->
   <action>Check if {memory_path}/validator-sidecar/ground-truth.md exists and is non-empty</action>
-  <action>If ground-truth.md is missing or empty: skip cross-reference checks. Record a note: "Ground truth not available — cross-reference checks skipped." Proceed to Step 5. Filesystem verification results from Step 3 are still valid.</action>
+  <action>If ground-truth.md is missing or empty: skip cross-reference checks. Record a note: "Ground truth not available — cross-reference checks skipped." Proceed to Step 6. Filesystem verification results from Step 4 are still valid.</action>
   <action>If ground-truth.md exists and is non-empty:
     — Load the "cross-reference" section from the validation-patterns skill (JIT)
-    — For each claim that was VERIFIED in Step 3, cross-reference against ground truth:
+    — For each claim that was VERIFIED in Step 4, cross-reference against ground truth:
       — Check if ground truth contains a contradicting fact
       — Check if ground truth has a more recent or more precise version of the same fact
       — Flag any discrepancies between the artifact claim and ground truth
     — Release the "cross-reference" skill section from context</action>
 </step>
 
-<step n="5" title="Classify Findings">
+<step n="6" title="Classify Findings">
   <!-- SKILL-REF: validation-patterns.md SECTION: severity-classification -->
+  <!-- SKILL-REF: document-rulesets.md SECTION: two-pass-logic -->
   <action>Load the "severity-classification" section from the validation-patterns skill (JIT)</action>
-  <action>Compile all findings from Steps 3 and 4 — only FAILED verifications and ground-truth discrepancies</action>
+  <action>Compile and merge findings from both passes — structural findings from Step 2 (Pass 1, tagged [STRUCTURAL]) and factual findings from Steps 3-5 (Pass 2, tagged [FACTUAL]). Include only FAILED verifications, ground-truth discrepancies, and structural quality issues.</action>
   <action>Classify each finding into exactly one severity level:
     — **CRITICAL**: Wrong file path (file does not exist), incorrect count (stated N but actual is M), broken reference (FR/ADR/component does not exist), contradicts ground truth on a verified fact
     — **WARNING**: Outdated reference (file exists but content has changed), stale data (version number is behind), ground truth has newer information
     — **INFO**: Style suggestion (naming inconsistency), minor inconsistency (non-breaking), cosmetic discrepancy</action>
-  <action>If no findings were produced (all claims verified, no discrepancies): report "All {N} claims verified — no findings." Skip Steps 6 and 7 — proceed to workflow completion.</action>
+  <action>If no findings were produced (all claims verified, no discrepancies): report "All {N} claims verified — no findings." Skip Steps 7 and 8 — proceed to workflow completion.</action>
   <action>Release the "severity-classification" skill section from context</action>
 </step>
 
-<step n="6" title="Discussion Loop">
+<step n="7" title="Discussion Loop">
   <action>Present all classified findings to the user in a structured table:
 
   | # | Severity | Section | Claim | Finding | Evidence |
@@ -88,11 +99,11 @@
     — APPROVE: finding is correct, include in written output
     — DISPUTE: finding is incorrect or not applicable, exclude from written output
     — EDIT: modify the finding description before approving</action>
-  <action>Only findings explicitly approved by the user proceed to Step 7</action>
+  <action>Only findings explicitly approved by the user proceed to Step 8</action>
   <action>If the user disputes ALL findings: report "All findings disputed — no changes written to artifact." Complete the workflow gracefully.</action>
 </step>
 
-<step n="7" title="Write Approved Findings">
+<step n="8" title="Write Approved Findings">
   <!-- SKILL-REF: validation-patterns.md SECTION: findings-formatting -->
   <action>Load the "findings-formatting" section from the validation-patterns skill (JIT)</action>
   <action>Check if the target artifact already contains a "## Validation Findings" section</action>
@@ -112,7 +123,7 @@
   <action>Release the "findings-formatting" skill section from context</action>
 </step>
 
-<step n="8" title="Save to Val Memory">
+<step n="9" title="Save to Val Memory">
   <action>Auto-save all validation results to Val's memory sidecar (no user prompt required):
 
   1. Append to {memory_path}/validator-sidecar/decision-log.md using standardized format:
