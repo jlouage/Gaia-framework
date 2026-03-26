@@ -23,6 +23,7 @@ project_path: "Gaia-framework"
 # Val integration — feature gates for inline validation
 val_integration:
   template_output_review: true   # Show [v] Review with Val at template-output prompts
+  val_validate_output: true      # Enable automatic Val validation when workflow declares val_validate_output: true
 
 # Output paths
 output_folder: "{project-root}/docs"
