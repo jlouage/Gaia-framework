@@ -55,8 +55,23 @@ function loadCrossRefMatrix() {
   return config.cross_references || {};
 }
 
-// Memory-management skill path
+// Memory-management skill paths (core + cross-agent companion file)
 const MEMORY_SKILL_PATH = join(GAIA_DIR, "lifecycle", "skills", "memory-management.md");
+const CROSS_AGENT_SKILL_PATH = join(
+  GAIA_DIR,
+  "lifecycle",
+  "skills",
+  "memory-management-cross-agent.md"
+);
+
+// Helper: read combined content from both skill files (core + cross-agent)
+function readMemorySkillContent() {
+  let content = readFileSync(MEMORY_SKILL_PATH, "utf-8");
+  if (existsSync(CROSS_AGENT_SKILL_PATH)) {
+    content += "\n" + readFileSync(CROSS_AGENT_SKILL_PATH, "utf-8");
+  }
+  return content;
+}
 
 // All tiered agents per config.yaml
 const TIER_1_AGENTS = ["validator", "architect", "pm", "sm"];
@@ -75,13 +90,13 @@ describe("E9-S6: Cross-Agent Read-Only Memory Access", () => {
   // AC1: Read-only cross-references — no write to foreign sidecars
   describe("AC1: Read-only cross-references", () => {
     it("memory-management skill has cross-ref-loading section with load_cross_ref", () => {
-      const content = readFileSync(MEMORY_SKILL_PATH, "utf-8");
-      expect(content).toMatch(/<!-- SECTION: cross-ref-loading -->/);
+      const content = readMemorySkillContent();
+      expect(content).toMatch(/<!-- SECTION: cross-ref(?:erence)?-loading -->/);
       expect(content).toMatch(/load_cross_ref/i);
     });
 
     it("memory-management skill has write-guard for foreign sidecars", () => {
-      const content = readFileSync(MEMORY_SKILL_PATH, "utf-8");
+      const content = readMemorySkillContent();
       expect(content).toMatch(/write.guard|hard.error|write.*block/i);
     });
 
@@ -326,7 +341,7 @@ describe("E9-S6: Cross-Agent Read-Only Memory Access", () => {
   // AC4: JIT loading — not at session start
   describe("AC4: JIT cross-reference loading", () => {
     it("memory-management skill documents JIT loading for cross-refs", () => {
-      const content = readFileSync(MEMORY_SKILL_PATH, "utf-8");
+      const content = readMemorySkillContent();
       expect(content).toMatch(/jit|just.in.time/i);
       expect(content).not.toMatch(/preload.*cross.ref|eager.*cross.ref/i);
     });
@@ -335,13 +350,13 @@ describe("E9-S6: Cross-Agent Read-Only Memory Access", () => {
   // AC5: Budget enforcement — Tier 1: 300K, Tier 2: 100K, Val 50% cap
   describe("AC5: Budget enforcement", () => {
     it("memory-management skill documents progressive downgrade chain", () => {
-      const content = readFileSync(MEMORY_SKILL_PATH, "utf-8");
+      const content = readMemorySkillContent();
       // Must document the downgrade chain: full -> recent -> summary -> skip
       expect(content).toMatch(/full.*recent.*summary.*skip|progressive.*downgrade/i);
     });
 
     it("memory-management skill documents Val 50% cross-ref budget cap", () => {
-      const content = readFileSync(MEMORY_SKILL_PATH, "utf-8");
+      const content = readMemorySkillContent();
       expect(content).toMatch(/50%|cross_ref_budget_cap|150K|150,?000/i);
     });
 
@@ -357,7 +372,7 @@ describe("E9-S6: Cross-Agent Read-Only Memory Access", () => {
   // AC6: Graceful handling of missing/corrupt sidecars
   describe("AC6: Graceful error handling", () => {
     it("memory-management skill documents graceful handling of missing sidecars", () => {
-      const content = readFileSync(MEMORY_SKILL_PATH, "utf-8");
+      const content = readMemorySkillContent();
       // Must document: log warning, skip, continue
       expect(content).toMatch(/missing.*sidecar|absent.*sidecar/i);
       expect(content).toMatch(/warn|warning/i);
@@ -365,7 +380,7 @@ describe("E9-S6: Cross-Agent Read-Only Memory Access", () => {
     });
 
     it("memory-management skill documents handling of malformed sidecars", () => {
-      const content = readFileSync(MEMORY_SKILL_PATH, "utf-8");
+      const content = readMemorySkillContent();
       expect(content).toMatch(/malformed|corrupt|unparseable/i);
     });
   });
@@ -373,12 +388,12 @@ describe("E9-S6: Cross-Agent Read-Only Memory Access", () => {
   // AC7: Consistency validation — persona vs config.yaml
   describe("AC7: Consistency validation", () => {
     it("memory-management skill documents consistency validation procedure", () => {
-      const content = readFileSync(MEMORY_SKILL_PATH, "utf-8");
+      const content = readMemorySkillContent();
       expect(content).toMatch(/consistency.*valid|config\.yaml.*authoritative/i);
     });
 
     it("memory-management skill documents self-reference guard", () => {
-      const content = readFileSync(MEMORY_SKILL_PATH, "utf-8");
+      const content = readMemorySkillContent();
       expect(content).toMatch(/self.reference|own.*sidecar/i);
     });
 
