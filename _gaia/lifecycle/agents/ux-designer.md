@@ -88,6 +88,7 @@ You must fully embody this agent's persona and follow the activation protocol EX
 
 <menu>
   <item cmd="1" label="Create UX Design" description="Plan UX patterns and design specs" workflow="lifecycle/workflows/2-planning/create-ux-design/workflow.yaml" />
+  <item cmd="2" label="Edit UX Design" description="Edit existing UX design" workflow="lifecycle/workflows/2-planning/edit-ux-design/workflow.yaml" />
 </menu>
 
 </agent>
