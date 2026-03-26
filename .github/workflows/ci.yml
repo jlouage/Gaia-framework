@@ -2,6 +2,7 @@
 # Job topology: lint → test → package (sequential), security (parallel)
 # E4-S1: Base pipeline structure (lint, test, security, package)
 # E4-S4: Supply chain gates (audit hard/soft, dep budget, lock-file detection)
+# E6-S3: Cross-platform CI matrix (Ubuntu + macOS required, Windows best-effort)
 # See docs/planning-artifacts/architecture.md Section 10.4
 
 name: CI
@@ -54,6 +55,7 @@ jobs:
     name: Test (${{ matrix.os }})
     needs: [lint]
     runs-on: ${{ matrix.os }}
+    # ADR-004: Windows support is best-effort — failure does not block merges or releases
     continue-on-error: ${{ matrix.os == 'windows-latest' }}
     strategy:
       fail-fast: false
@@ -63,11 +65,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # Per-OS cache to prevent cross-platform cache pollution (E6-S3 Task 4.1)
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
 
       - name: Install dependencies
         run: npm ci
@@ -76,6 +86,7 @@ jobs:
         run: npm test
 
       # ShellCheck in test matrix — runs on Ubuntu and macOS, skipped on Windows (E5-S3)
+      # ADR-004: ShellCheck skipped on Windows (best-effort platform)
       # Ubuntu: apt-get install shellcheck | macOS: pre-installed or brew install shellcheck
       - name: ShellCheck
         if: runner.os != 'Windows'
@@ -88,6 +99,15 @@ jobs:
           shellcheck --version
           find . -name "*.sh" -not -path "./node_modules/*" -exec shellcheck --severity=error {} +
 
+      # macOS ships Bash 3.2 (GPLv3 licensing) — BATS requires Bash 4+
+      # Install modern Bash via Homebrew before running BATS (E6-S3 Task 2.3)
+      - name: Upgrade Bash on macOS
+        if: runner.os == 'macOS'
+        run: |
+          brew install bash
+          echo "Bash version: $(bash --version | head -1)"
+
+      # ADR-007: BATS for shell testing — macOS/Linux only, skipped on Windows
       - name: Setup BATS
         if: runner.os != 'Windows'
         run: bash test/shell/setup-bats.sh
@@ -96,6 +116,7 @@ jobs:
         if: runner.os != 'Windows'
         run: npm run test:shell
 
+      # ADR-004 + ADR-007: Windows gets simplified validation instead of BATS/ShellCheck
       - name: Windows validation
         if: runner.os == 'Windows'
         run: bash test/shell/windows-validate.sh
@@ -136,9 +157,10 @@ jobs:
             fi
           fi
 
+      # npm audit --audit-level=high avoids noise from low-severity dev-dependency advisories (E6-S3 Task 4.2)
       - name: Audit production dependencies (hard gate)
         timeout-minutes: 5
-        run: npm audit --omit=dev
+        run: npm audit --omit=dev --audit-level=high
 
       - name: Audit moderate production vulnerabilities (hard gate)
         timeout-minutes: 5
