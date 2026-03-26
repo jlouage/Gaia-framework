@@ -1,6 +1,6 @@
 {
   "name": "gaia-framework",
-  "version": "1.58.0",
+  "version": "1.59.0",
   "description": "GAIA — Generative Agile Intelligence Architecture installer",
   "bin": {
     "gaia-framework": "./bin/gaia-framework.js"
@@ -19,7 +19,8 @@
     "lint": "eslint bin/**/*.js test/**/*.js",
     "lint:fix": "eslint --fix bin/**/*.js test/**/*.js",
     "format:check": "prettier --check \"bin/**/*.js\" \"test/**/*.js\"",
-    "format": "prettier --write \"bin/**/*.js\" \"test/**/*.js\""
+    "format": "prettier --write \"bin/**/*.js\" \"test/**/*.js\"",
+    "version:bump": "node scripts/version-bump.js"
   },
   "keywords": [
     "gaia",

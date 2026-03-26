@@ -1,5 +1,5 @@
 
-# GAIA Framework v1.58.0
+# GAIA Framework v1.59.0
 
 This project uses the **GAIA** (Generative Agile Intelligence Architecture) framework — an AI agent framework for Claude Code that orchestrates software product development through 26 specialized agents, 65 workflows, and 8 shared skills.
 
@@ -152,6 +152,19 @@ If any review fails, the story returns to `in-progress`. The Review Gate table i
 ## Memory Hygiene
 
 Agent memory sidecars accumulate decisions across sessions. Run `/gaia-memory-hygiene` periodically (recommended before each sprint) to detect stale, contradicted, or orphaned entries by cross-referencing sidecar decisions against current planning and architecture artifacts.
+
+## Version Bumping
+
+Use `/gaia-version-bump` (or `npm run version:bump`) to bump the framework version across all managed files:
+
+```
+node scripts/version-bump.js <patch|minor|major> [--modules mod1,mod2] [--dry-run]
+```
+
+- Bumps all 6 global version files atomically (package.json, gaia-install.sh, global.yaml, manifest.yaml, CLAUDE.md, README.md)
+- `--modules core,dev,...` also updates module config.yaml and manifest.yaml entries
+- `--dry-run` previews changes without writing
+- Always run `/gaia-build-configs` after bumping (the script reminds you)
 
 ## Do Not
 
