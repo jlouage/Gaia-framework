@@ -295,4 +295,15 @@ if (require.main === module) {
   main();
 }
 
-module.exports = { checkNodeVersion, getNodeVersionWarning, findBash, ensureGit, showUsage, fail, info, cleanup, readPackageVersion, main };
+module.exports = {
+  checkNodeVersion,
+  getNodeVersionWarning,
+  findBash,
+  ensureGit,
+  showUsage,
+  fail,
+  info,
+  cleanup,
+  readPackageVersion,
+  main,
+};

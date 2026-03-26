@@ -85,24 +85,20 @@ describe("E4-S3: Package Content Verification", () => {
           line.includes("/") &&
           !line.startsWith("npm") &&
           !line.startsWith("=") &&
-          !line.includes("Tarball"),
+          !line.includes("Tarball")
       );
       const allowedPrefixes = [...TARGET_WHITELIST, "package.json"];
       for (const fileLine of fileLines) {
         const trimmed = fileLine.trim();
         if (!trimmed) continue;
-        const matchesWhitelist = allowedPrefixes.some((prefix) =>
-          trimmed.includes(prefix),
-        );
+        const matchesWhitelist = allowedPrefixes.some((prefix) => trimmed.includes(prefix));
         expect(matchesWhitelist).toBe(true);
       }
     });
 
     for (const { pattern, description } of EXCLUDED_PATTERNS) {
       it(`AC3: should NOT contain ${description} (${pattern})`, () => {
-        const violations = packOutput
-          .split("\n")
-          .filter((line) => line.trim().includes(pattern));
+        const violations = packOutput.split("\n").filter((line) => line.trim().includes(pattern));
         expect(violations).toEqual([]);
       });
     }
@@ -130,9 +126,7 @@ describe("E4-S3: Package Content Verification", () => {
     it("AC5: CI workflow should include .npmignore guard check", () => {
       const ciYml = readProjectFile(".github/workflows/ci.yml");
       expect(ciYml).toMatch(/\.npmignore/);
-      expect(ciYml).toMatch(
-        /files.*field|package\.json.*files|Remove.*\.npmignore/i,
-      );
+      expect(ciYml).toMatch(/files.*field|package\.json.*files|Remove.*\.npmignore/i);
     });
   });
 

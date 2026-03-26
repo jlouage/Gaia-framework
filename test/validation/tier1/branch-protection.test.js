@@ -15,30 +15,22 @@ describe("Branch Protection Configuration (E4-S5)", () => {
 
     it("should require maintainer review for .github/workflows/", () => {
       const content = readFileSync(CODEOWNERS_PATH, "utf8");
-      expect(content).toMatch(
-        /.github\/workflows\/\s+@gaia-framework\/maintainers/,
-      );
+      expect(content).toMatch(/.github\/workflows\/\s+@gaia-framework\/maintainers/);
     });
 
     it("should require maintainer review for package.json", () => {
       const content = readFileSync(CODEOWNERS_PATH, "utf8");
-      expect(content).toMatch(
-        /package\.json\s+@gaia-framework\/maintainers/,
-      );
+      expect(content).toMatch(/package\.json\s+@gaia-framework\/maintainers/);
     });
 
     it("should require maintainer review for package-lock.json", () => {
       const content = readFileSync(CODEOWNERS_PATH, "utf8");
-      expect(content).toMatch(
-        /package-lock\.json\s+@gaia-framework\/maintainers/,
-      );
+      expect(content).toMatch(/package-lock\.json\s+@gaia-framework\/maintainers/);
     });
 
     it("should require maintainer review for gaia-install.sh", () => {
       const content = readFileSync(CODEOWNERS_PATH, "utf8");
-      expect(content).toMatch(
-        /gaia-install\.sh\s+@gaia-framework\/maintainers/,
-      );
+      expect(content).toMatch(/gaia-install\.sh\s+@gaia-framework\/maintainers/);
     });
 
     it("should require maintainer review for bin/", () => {
@@ -71,7 +63,7 @@ describe("Branch Protection Configuration (E4-S5)", () => {
     it("should document no direct push policy", () => {
       const content = readFileSync(CONTRIBUTING_PATH, "utf8");
       expect(content.toLowerCase()).toMatch(
-        /no direct push|direct push.*blocked|pull request.*required/,
+        /no direct push|direct push.*blocked|pull request.*required/
       );
     });
 

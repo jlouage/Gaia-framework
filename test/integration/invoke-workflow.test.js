@@ -19,13 +19,7 @@ const FRAMEWORK_ROOT = resolve(PROJECT_ROOT, "..");
 const GAIA_DIR = join(FRAMEWORK_ROOT, "_gaia");
 const ENGINE_PATH = join(GAIA_DIR, "core", "engine", "workflow.xml");
 const LIFECYCLE_TEMPLATES = join(GAIA_DIR, "lifecycle", "templates");
-const BRAINSTORM_TEMPLATE = join(
-  GAIA_DIR,
-  "core",
-  "workflows",
-  "brainstorming",
-  "template.md",
-);
+const BRAINSTORM_TEMPLATE = join(GAIA_DIR, "core", "workflows", "brainstorming", "template.md");
 
 // ─── Helpers ─────────────────────────────────────────────────────
 
@@ -146,7 +140,7 @@ describe("E9-S15: invoke-workflow integration tests", () => {
         for (const tag of tags) {
           expect(
             tag.ref || tag.target,
-            `invoke-workflow missing both ref and target attributes in ${file}: ${tag.raw}`,
+            `invoke-workflow missing both ref and target attributes in ${file}: ${tag.raw}`
           ).toBeTruthy();
         }
       }
@@ -176,14 +170,14 @@ describe("E9-S15: invoke-workflow integration tests", () => {
             // ref-based: workflow name must be known
             expect(
               knownWorkflows.has(tag.ref),
-              `invoke-workflow ref="${tag.ref}" in ${file} does not match any known workflow name`,
+              `invoke-workflow ref="${tag.ref}" in ${file} does not match any known workflow name`
             ).toBe(true);
           }
           if (tag.target) {
             // target-based: path should contain workflow.yaml
             expect(
               tag.target,
-              `invoke-workflow target in ${file} should reference a workflow.yaml path`,
+              `invoke-workflow target in ${file} should reference a workflow.yaml path`
             ).toContain("workflow.yaml");
           }
         }
@@ -197,10 +191,9 @@ describe("E9-S15: invoke-workflow integration tests", () => {
         const tags = parseInvokeWorkflowTags(content);
         for (const tag of tags) {
           if (tag.mode) {
-            expect(
-              validModes,
-              `Invalid mode="${tag.mode}" in ${file}: ${tag.raw}`,
-            ).toContain(tag.mode);
+            expect(validModes, `Invalid mode="${tag.mode}" in ${file}: ${tag.raw}`).toContain(
+              tag.mode
+            );
           }
         }
       }
@@ -232,9 +225,7 @@ describe("E9-S15: invoke-workflow integration tests", () => {
         const content = readFileSync(wfPath, "utf8");
         const templateMatch = content.match(/^template:\s*"?(.+?)"?\s*$/m);
         if (templateMatch) {
-          const tplPath = templateMatch[1]
-            .replace(/\{[^}]+\}/g, "")
-            .replace(/^\/+/, "");
+          const tplPath = templateMatch[1].replace(/\{[^}]+\}/g, "").replace(/^\/+/, "");
           const tplName = basename(tplPath);
           if (tplName) referencedTemplates.add(tplName);
         }
@@ -251,7 +242,7 @@ describe("E9-S15: invoke-workflow integration tests", () => {
       for (const tpl of FORMERLY_ORPHANED) {
         expect(
           referencedTemplates.has(tpl),
-          `Template ${tpl} should be referenced by at least one workflow`,
+          `Template ${tpl} should be referenced by at least one workflow`
         ).toBe(true);
       }
     });
@@ -263,7 +254,7 @@ describe("E9-S15: invoke-workflow integration tests", () => {
     it("should exist at the expected path", () => {
       expect(
         existsSync(BRAINSTORM_TEMPLATE),
-        `Brainstorming template not found at ${BRAINSTORM_TEMPLATE}`,
+        `Brainstorming template not found at ${BRAINSTORM_TEMPLATE}`
       ).toBe(true);
     });
 
@@ -272,12 +263,9 @@ describe("E9-S15: invoke-workflow integration tests", () => {
       const frontmatter = extractFrontmatter(content);
       expect(
         frontmatter,
-        "Brainstorming template should have YAML frontmatter (--- delimited)",
+        "Brainstorming template should have YAML frontmatter (--- delimited)"
       ).not.toBeNull();
-      expect(
-        frontmatter,
-        "Frontmatter should contain used_by field",
-      ).toMatch(/used_by/);
+      expect(frontmatter, "Frontmatter should contain used_by field").toMatch(/used_by/);
     });
   });
 
@@ -287,13 +275,11 @@ describe("E9-S15: invoke-workflow integration tests", () => {
     it("should mention [v] in the execution-modes section", () => {
       const content = readFileSync(ENGINE_PATH, "utf8");
       // Extract execution-modes section
-      const modesMatch = content.match(
-        /<execution-modes>([\s\S]*?)<\/execution-modes>/,
-      );
+      const modesMatch = content.match(/<execution-modes>([\s\S]*?)<\/execution-modes>/);
       expect(modesMatch, "execution-modes section should exist").not.toBeNull();
       expect(
         modesMatch[1],
-        "execution-modes section should document the [v] Review with Val option",
+        "execution-modes section should document the [v] Review with Val option"
       ).toContain("[v]");
     });
   });
