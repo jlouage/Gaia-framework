@@ -9,6 +9,11 @@ installed_path: "{project-root}/_gaia/lifecycle/workflows/4-implementation/val-r
 instructions: "{installed_path}/instructions.xml"
 validation: "{installed_path}/checklist.md"
 parameters:
+  agent:
+    flag: "--agent"
+    description: "Which Tier 1 agent's ground truth to refresh. Defaults to val for backward compatibility."
+    default: "val"
+    allowed_values: [val, theo, derek, nate, all]
   incremental:
     flag: "--incremental"
     description: "Only scan files modified since last refresh timestamp. Full refresh is default."

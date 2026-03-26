@@ -7,95 +7,166 @@
   <mandate>Behavior must be identical whether called standalone or as sub-step from another workflow</mandate>
 </critical>
 
-<step n="1" title="Initialize Validator Sidecar">
-  <action>Check if {memory_path}/validator-sidecar/ directory exists</action>
-  <action if="directory missing">Create {memory_path}/validator-sidecar/ directory</action>
-  <action if="ground-truth.md missing">Create {memory_path}/validator-sidecar/ground-truth.md with empty header containing last-refresh timestamp set to "never"</action>
-  <action if="decision-log.md missing">Create {memory_path}/validator-sidecar/decision-log.md with header: "# Val Decision Log" and empty entries</action>
-  <action if="conversation-context.md missing">Create {memory_path}/validator-sidecar/conversation-context.md with header: "# Val Conversation Context" and empty rolling state</action>
+<step n="1" title="Resolve Agent Target">
+  <action>Parse $ARGUMENTS for --agent value. If --agent is absent, default to "val" for backward compatibility.</action>
+  <action>Validate agent name against allowed values: val, theo, derek, nate, all.
+    If the agent name is not in the allowed values list: HALT with error:
+    "Unknown agent '{agent_name}'. Valid values: val, theo, derek, nate, all."</action>
+  <action>Resolve target sidecar path and inventory source files based on agent:
+    - val: sidecar = {memory_path}/validator-sidecar/, inventory = 6-target scan (existing)
+    - theo: sidecar = {memory_path}/architect-sidecar/, inventory = filesystem structure + {planning_artifacts}/architecture.md
+    - derek: sidecar = {memory_path}/pm-sidecar/, inventory = {planning_artifacts}/prd.md + {planning_artifacts}/epics-and-stories.md + {implementation_artifacts}/sprint-status.yaml
+    - nate: sidecar = {memory_path}/sm-sidecar/, inventory = {implementation_artifacts}/sprint-status.yaml + story files in {implementation_artifacts}/
+    - all: run sequentially for val, theo, derek, nate (see Step 13)</action>
+  <action if="agent == all">Set agent_queue = [val, theo, derek, nate]. Proceed to Step 13 for orchestration.</action>
 </step>
 
-<step n="2" title="Determine Refresh Mode">
+<step n="2" title="Initialize Agent Sidecar">
+  <action>Check if the resolved target sidecar directory exists (e.g., {memory_path}/validator-sidecar/ for val, {memory_path}/architect-sidecar/ for theo, {memory_path}/pm-sidecar/ for derek, {memory_path}/sm-sidecar/ for nate)</action>
+  <action if="directory missing">Create the resolved sidecar directory</action>
+  <action if="ground-truth.md missing">Create ground-truth.md in the resolved sidecar directory with empty header containing last-refresh timestamp set to "never"</action>
+  <action if="decision-log.md missing">Create decision-log.md in the resolved sidecar directory with header: "# {agent_display_name} Decision Log" and empty entries</action>
+  <action if="conversation-context.md missing">Create conversation-context.md in the resolved sidecar directory with header: "# {agent_display_name} Conversation Context" and empty rolling state</action>
+</step>
+
+<step n="3" title="Determine Refresh Mode">
   <action>Check if --incremental flag was passed</action>
   <action if="incremental">Set mode to incremental — only scan files modified since last-refresh timestamp from ground-truth.md header</action>
   <action if="not incremental">Set mode to full — scan all targets completely. Full refresh catches deletions and renames that incremental would miss.</action>
 </step>
 
-<step n="3" title="Load Entry Structure">
+<step n="4" title="Load Entry Structure">
   <action>Load ground-truth-management skill section: entry-structure (JIT)</action>
   <action>Use entry-structure format for all ground truth entries written in subsequent steps</action>
 </step>
 
-<step n="4" title="Parse Previous State">
-  <action>Read existing {memory_path}/validator-sidecar/ground-truth.md</action>
+<step n="5" title="Parse Previous State">
+  <action>Read existing ground-truth.md from the resolved target sidecar directory</action>
   <action>Extract last-refresh timestamp from header</action>
   <action>Parse all existing entries into a lookup map keyed by file path for diff comparison</action>
   <action if="incremental mode">Filter scan targets to only files modified after last-refresh timestamp</action>
 </step>
 
-<step n="5" title="Scan Inventory Targets">
+<step n="6" title="Scan Inventory Targets">
   <action>Load ground-truth-management skill section based on mode: full-refresh or incremental-refresh (JIT)</action>
-  <action>Scan the following 6 inventory targets, showing section-by-section progress to the user after each target completes.</action>
 
-  <action title="Exclusion list">
-    ALWAYS exclude these directories and files from scanning — they are framework internals, not project code:
-    _gaia/, .claude/, bin/, _memory/, node_modules/, .git/, build/, dist/, .DS_Store, *.lock
+  <action if="agent == val">
+    Scan the following 6 inventory targets (existing Val scan — unchanged for backward compatibility), showing section-by-section progress to the user after each target completes.
+
+    <action title="Exclusion list">
+      ALWAYS exclude these directories and files from scanning — they are framework internals, not project code:
+      _gaia/, .claude/, bin/, _memory/, node_modules/, .git/, build/, dist/, .DS_Store, *.lock
+    </action>
+
+    <action title="Target 1: Project Source Files">
+      Scan {project-path}/**/* (excluding the exclusion list above)
+      Extract: file inventory, directory structure, languages used, entry points
+      Report progress: "Scanning project source files... found N files across N directories."
+    </action>
+
+    <action title="Target 2: Project Config Files">
+      Scan {project-path}/*.{json,yaml,yml,toml,xml,env.example} (root-level config files)
+      Extract: config keys, settings, dependency declarations
+      Report progress: "Scanning project config files... found N config files."
+    </action>
+
+    <action title="Target 3: Project Package Manifests">
+      Scan {project-path}/**/package.json, pubspec.yaml, pom.xml, build.gradle, requirements.txt, Cargo.toml, go.mod, Gemfile, *.csproj (whichever exist)
+      Extract: dependencies, versions, scripts, build targets
+      Report progress: "Scanning package manifests... found N manifests."
+    </action>
+
+    <action title="Target 4: Planning Artifacts">
+      Scan {project-root}/docs/planning-artifacts/*.md
+      Extract: artifact name, type, date
+      Report progress: "Scanning planning artifacts... found N artifacts."
+    </action>
+
+    <action title="Target 5: Implementation Artifacts">
+      Scan {project-root}/docs/implementation-artifacts/*.md
+      Extract: artifact name, type, story key if applicable
+      Report progress: "Scanning implementation artifacts... found N artifacts."
+    </action>
+
+    <action title="Target 6: Test Artifacts">
+      Scan {project-root}/docs/test-artifacts/*.md
+      Extract: artifact name, type, coverage area
+      Report progress: "Scanning test artifacts... found N artifacts."
+    </action>
   </action>
 
-  <action title="Target 1: Project Source Files">
-    Scan {project-path}/**/* (excluding the exclusion list above)
-    Extract: file inventory, directory structure, languages used, entry points
-    Report progress: "Scanning project source files... found N files across N directories."
+  <action if="agent == theo">
+    Scan theo-specific inventory targets (architecture ground truth):
+
+    <action title="Target 1: Filesystem Structure">
+      Scan {project-path}/ for directory structure, file types, and project layout.
+      Extract: tech stack, components, module boundaries, entry points, build configuration.
+      Report progress: "Scanning filesystem structure for Theo... found N directories, N files."
+    </action>
+
+    <action title="Target 2: Architecture Document">
+      Scan {planning_artifacts}/architecture.md
+      Extract: ADRs, architectural decisions, component diagrams, dependency info, integration points, tech stack decisions.
+      Report progress: "Scanning architecture.md for Theo... extracted N ADRs, N components."
+    </action>
   </action>
 
-  <action title="Target 2: Project Config Files">
-    Scan {project-path}/*.{json,yaml,yml,toml,xml,env.example} (root-level config files)
-    Extract: config keys, settings, dependency declarations
-    Report progress: "Scanning project config files... found N config files."
+  <action if="agent == derek">
+    Scan derek-specific inventory targets (product ground truth):
+
+    <action title="Target 1: Product Requirements">
+      Scan {planning_artifacts}/prd.md
+      Extract: functional requirements, non-functional requirements, user stories overview, feature list, product goals.
+      Report progress: "Scanning prd.md for Derek... extracted N requirements."
+    </action>
+
+    <action title="Target 2: Epics and Stories">
+      Scan {planning_artifacts}/epics-and-stories.md
+      Extract: epic list, story breakdown, acceptance criteria summaries, dependency graph, sizing data.
+      Report progress: "Scanning epics-and-stories.md for Derek... extracted N epics, N stories."
+    </action>
+
+    <action title="Target 3: Sprint Status">
+      Scan {implementation_artifacts}/sprint-status.yaml
+      Extract: current sprint state, story statuses, velocity data, blocked items, completion rates.
+      Report progress: "Scanning sprint-status.yaml for Derek... extracted sprint state."
+    </action>
   </action>
 
-  <action title="Target 3: Project Package Manifests">
-    Scan {project-path}/**/package.json, pubspec.yaml, pom.xml, build.gradle, requirements.txt, Cargo.toml, go.mod, Gemfile, *.csproj (whichever exist)
-    Extract: dependencies, versions, scripts, build targets
-    Report progress: "Scanning package manifests... found N manifests."
-  </action>
+  <action if="agent == nate">
+    Scan nate-specific inventory targets (sprint ground truth):
 
-  <action title="Target 4: Planning Artifacts">
-    Scan {project-root}/docs/planning-artifacts/*.md
-    Extract: artifact name, type, date
-    Report progress: "Scanning planning artifacts... found N artifacts."
-  </action>
+    <action title="Target 1: Sprint Status">
+      Scan {implementation_artifacts}/sprint-status.yaml
+      Extract: sprint metadata, story statuses, velocity metrics, blocked items, wave assignments.
+      Report progress: "Scanning sprint-status.yaml for Nate... extracted sprint state."
+    </action>
 
-  <action title="Target 5: Implementation Artifacts">
-    Scan {project-root}/docs/implementation-artifacts/*.md
-    Extract: artifact name, type, story key if applicable
-    Report progress: "Scanning implementation artifacts... found N artifacts."
-  </action>
-
-  <action title="Target 6: Test Artifacts">
-    Scan {project-root}/docs/test-artifacts/*.md
-    Extract: artifact name, type, coverage area
-    Report progress: "Scanning test artifacts... found N artifacts."
+    <action title="Target 2: Story Files">
+      Scan all story files in {implementation_artifacts}/ matching pattern *-*.md (story files)
+      Extract: story statuses, completion rates, subtask progress, blockers, review gate states.
+      Report progress: "Scanning story files in implementation-artifacts for Nate... found N stories."
+    </action>
   </action>
 </step>
 
-<step n="6" title="Compare and Detect Changes">
-  <action>Compare scan results against previous state from Step 4</action>
+<step n="7" title="Compare and Detect Changes">
+  <action>Compare scan results against previous state from Step 5</action>
   <action>Classify each entry as: ADDED (new file not in previous state), UPDATED (file exists but metadata changed), UNCHANGED (no changes detected)</action>
   <action if="full mode">For entries in previous state not found in scan results: mark as REMOVED with detection date (e.g., "REMOVED (file deleted, detected 2026-03-19)"). Do NOT silently delete entries.</action>
   <action if="incremental mode">Skip deletion detection — incremental mode cannot detect deletions. This is a documented limitation.</action>
   <action>Load ground-truth-management skill section: conflict-resolution (JIT) if any conflicts are detected between scan results and existing entries</action>
 </step>
 
-<step n="7" title="Write Ground Truth">
-  <action>Update {memory_path}/validator-sidecar/ground-truth.md with all scan results</action>
+<step n="8" title="Write Ground Truth">
+  <action>Update ground-truth.md in the resolved target agent's sidecar directory with all scan results</action>
   <action>Write header with last-refresh timestamp set to current date/time</action>
-  <action>Organize entries by category: Agents, Workflows, Skills, Commands, Manifests, Config, Artifacts</action>
+  <action>Organize entries by category appropriate to the target agent</action>
   <action>Include verified counts, locations, and structural patterns for each category</action>
   <action>Preserve REMOVED entries with their detection dates — do not purge</action>
 </step>
 
-<step n="8" title="Generate Diff Report">
+<step n="9" title="Generate Diff Report">
   <action>Generate diff/delta report summarizing changes since last refresh</action>
   <action>Include counts by category: added, removed, updated entries</action>
   <action>Include total entry count across all categories</action>
@@ -103,23 +174,48 @@
   <action>Present the full diff report to the user</action>
 </step>
 
-<step n="9" title="Log to Decision Log">
-  <action>Append the diff/delta report to {memory_path}/validator-sidecar/decision-log.md</action>
-  <action>Include date, refresh mode (full or incremental), and summary</action>
-  <action>Format: "## Refresh — {date} ({mode})\n{summary}"</action>
+<step n="10" title="Log to Decision Log">
+  <action>Append the diff/delta report to the target agent's own decision-log.md in the resolved sidecar directory.
+    Route to the correct file based on resolved agent target:
+    - val: {memory_path}/validator-sidecar/decision-log.md
+    - theo: {memory_path}/architect-sidecar/decision-log.md
+    - derek: {memory_path}/pm-sidecar/decision-log.md
+    - nate: {memory_path}/sm-sidecar/decision-log.md
+    Never write to another agent's decision-log.md — this would violate cross-agent write isolation.</action>
+  <action>Include date, refresh mode (full or incremental), target agent name, and summary</action>
+  <action>Format: "## Refresh — {date} ({mode}) — Agent: {agent_name}\n{summary}"</action>
 </step>
 
-<step n="10" title="Check Token Budget">
+<step n="11" title="Check Token Budget">
   <action>Load ground-truth-management skill section: token-budget (JIT)</action>
-  <action>Estimate token count of ground-truth.md</action>
-  <action>If token count exceeds budget threshold: trigger archival of oldest REMOVED entries per token-budget skill guidance</action>
+  <action>Load the correct per-agent ground_truth_budget from {memory_path}/config.yaml based on target agent:
+    - Val: 200K (200,000 tokens)
+    - Theo: 150K (150,000 tokens)
+    - Derek: 100K (100,000 tokens)
+    - Nate: 100K (100,000 tokens)
+    These are distinct from the 300K session_budget — ground_truth_budget controls only ground-truth.md size.</action>
+  <action>Estimate token count of the target agent's ground-truth.md</action>
+  <action>If token count exceeds the per-agent budget threshold: trigger archival of oldest REMOVED entries per token-budget skill guidance</action>
+  <action if="agent == all">Report per-agent usage separately (e.g., "Theo: 42K/150K, Derek: 18K/100K")</action>
   <action>Report token usage to user</action>
 </step>
 
-<step n="11" title="Present Results">
+<step n="12" title="Present Results">
   <template-output file="{memory_path}/validator-sidecar/ground-truth.md">
-    Ground truth refreshed with verified inventory of all framework components.
+    Ground truth refreshed for the target agent with verified inventory.
+    Output path is resolved at runtime based on --agent parameter (defaults to validator-sidecar).
     Includes last-refresh timestamp, categorized entries, and REMOVED markers for deleted files.
   </template-output>
+</step>
+
+<step n="13" title="Orchestrate --agent all" if="agent == all">
+  <action>Run refresh sequentially for each agent in order: val, theo, derek, nate.
+    Each agent's refresh completes fully (Steps 2-12) before the next begins.
+    No cross-contamination of sidecar writes — each agent writes only to its own sidecar.</action>
+  <action>On per-agent failure (e.g., missing source file like prd.md): log the error with reason, continue with remaining agents. Do not halt the entire sequence.</action>
+  <action>After all agents complete: present a combined summary with per-agent status:
+    - Which agents succeeded and their entry counts
+    - Which agents failed and the failure reasons
+    Format: "Refresh complete. Results: Val: OK (N entries), Theo: OK (N entries), Derek: FAILED (prd.md not found), Nate: OK (N entries)."</action>
 </step>
 </workflow>
