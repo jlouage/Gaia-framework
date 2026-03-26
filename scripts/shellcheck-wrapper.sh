@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# shellcheck-wrapper.sh — Runs ShellCheck on provided files.
+# Wrapper script — Runs ShellCheck on provided files.
 # Fails with a clear error if ShellCheck is not installed.
 # Used by lint-staged for pre-commit hook validation of .sh files.
 
