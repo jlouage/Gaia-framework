@@ -25,10 +25,10 @@
   </template-output>
 </step>
 <step n="5" title="Adversarial Review">
-  <ask>The PRD has been updated. Would you like to run an adversarial review? This spawns a subagent in a separate context — recommended for significant changes. (yes / skip for minor edits)</ask>
-  <action>If yes: spawn a subagent using the Agent tool: "Load {project-root}/_gaia/core/tasks/review-adversarial.xml. Read its entire contents. Target: {planning_artifacts}/prd.md. Target label: prd. Follow the task instructions EXACTLY."</action>
-  <action>If skip: proceed to step 7 — mark "Review Findings Incorporated" as "Incremental edit — adversarial review skipped (minor change)"</action>
-  <action>If ok: wait for user to confirm adversarial-review-prd-{date}.md exists</action>
+  <action>Read {project-root}/_gaia/_config/adversarial-triggers.yaml to evaluate trigger rules. Determine the current change_type: if this workflow was invoked with a change_type context (e.g., from add-feature triage), use that value. If no context is available, infer from the change scope: minor edits map to "low-risk-enhancement", significant feature additions map to "feature".</action>
+  <action>Look up the trigger rule for change_type + artifact "prd". If adversarial is false: skip adversarial review — mark "Review Findings Incorporated" as "Adversarial review not triggered — change type: {change_type} per adversarial-triggers.yaml". Proceed to step 7.</action>
+  <action>If adversarial is true: spawn a subagent using the Agent tool: "Load {project-root}/_gaia/core/tasks/review-adversarial.xml. Read its entire contents. Target: {planning_artifacts}/prd.md. Target label: prd. Follow the task instructions EXACTLY."</action>
+  <action>When subagent returns: verify adversarial-review-prd-{date}.md exists in {planning_artifacts}/</action>
 </step>
 <step n="6" title="Incorporate Review Findings" optional="true" condition="adversarial_completed">
   <action>Read {planning_artifacts}/adversarial-review-prd-{date}.md — extract critical and high severity findings</action>

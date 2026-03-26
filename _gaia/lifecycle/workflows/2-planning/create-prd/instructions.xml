@@ -63,7 +63,9 @@
   </template-output>
 </step>
 <step n="12" title="Adversarial Review">
-  <action>Spawn a subagent using the Agent tool: "Load {project-root}/_gaia/core/tasks/review-adversarial.xml. Read its entire contents. Target: {planning_artifacts}/prd.md. Target label: prd. Follow the task instructions EXACTLY." This is required — findings will be incorporated back into the PRD.</action>
+  <action>Read {project-root}/_gaia/_config/adversarial-triggers.yaml to evaluate trigger rules. Determine the current change_type: if this workflow was invoked with a change_type context (e.g., from add-feature triage), use that value. If no context is available (standalone PRD creation), default to "feature".</action>
+  <action>Look up the trigger rule for change_type + artifact "prd". If adversarial is false for this combination: skip the adversarial review — log "Adversarial review skipped: change_type={change_type} does not trigger for PRD per adversarial-triggers.yaml" and proceed to next step. Add a "## Review Findings Incorporated" section with "Adversarial review not triggered — change type: {change_type}".</action>
+  <action>If adversarial is true: Spawn a subagent using the Agent tool: "Load {project-root}/_gaia/core/tasks/review-adversarial.xml. Read its entire contents. Target: {planning_artifacts}/prd.md. Target label: prd. Follow the task instructions EXACTLY." This is required — findings will be incorporated back into the PRD.</action>
   <action>When subagent returns: verify adversarial-review-prd-{date}.md exists in {planning_artifacts}/</action>
 </step>
 <step n="13" title="Incorporate Adversarial Findings">

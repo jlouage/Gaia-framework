@@ -57,8 +57,10 @@
   <template-output file="{planning_artifacts}/architecture.md">
     Save updated architecture document with all edits applied, new ADRs appended, version incremented, and version note added.
   </template-output>
-  <check if="change_scope == SIGNIFICANT OR change_scope == BREAKING">
-    <action>Adversarial review is REQUIRED for SIGNIFICANT/BREAKING changes.</action>
+  <action>Read {project-root}/_gaia/_config/adversarial-triggers.yaml to evaluate trigger rules. Determine the current change_type: if this workflow was invoked with a change_type context (e.g., from add-feature triage), use that value. If no context is available, infer from the change scope and driver: adversarial-finding or technical-discovery maps to "feature", change-request depends on the CR classification.</action>
+  <action>Look up the trigger rule for change_type + artifact "architecture". If adversarial is false for this combination: skip adversarial review — mark "Review Findings Incorporated" as "Adversarial review not triggered — change type: {change_type} per adversarial-triggers.yaml". If adversarial is true but the rule has a magnitude_threshold and change_scope is below it (e.g., MINOR is below SIGNIFICANT): skip — mark "Review Findings Incorporated" as "Adversarial review not triggered — magnitude {change_scope} below threshold per adversarial-triggers.yaml".</action>
+  <check if="adversarial trigger rule is true AND magnitude meets or exceeds threshold">
+    <action>Adversarial review triggered per adversarial-triggers.yaml: change_type={change_type}, magnitude={change_scope}.</action>
     <action>Spawn a subagent using the Agent tool: "Load {project-root}/_gaia/core/tasks/review-adversarial.xml. Read its entire contents. Target: {planning_artifacts}/architecture.md. Target label: architecture. Follow the task instructions EXACTLY. Focus review on changed sections: {sections_affected}."</action>
     <action>When subagent returns: verify adversarial-review-architecture-{date}.md exists.</action>
     <action>Read findings — extract critical and high severity items.</action>
@@ -67,11 +69,6 @@
     <template-output file="{planning_artifacts}/architecture.md">
       Update architecture with adversarial review findings incorporated. Append to existing "Review Findings Incorporated" section with amendment date.
     </template-output>
-  </check>
-  <check if="change_scope == MINOR">
-    <ask>The architecture has been updated with MINOR changes. Would you like to run an adversarial review? (yes / skip for minor edits)</ask>
-    <action>If yes: spawn subagent as above, incorporate findings.</action>
-    <action>If skip: mark "Review Findings Incorporated" as "Incremental edit — adversarial review skipped (minor change)"</action>
   </check>
 </step>
 <step n="7" title="Cascade Impact Analysis">

@@ -1,5 +1,6 @@
 path,type,module,description
 "_gaia/_config/global.yaml","config","core","Global framework configuration"
+"_gaia/_config/adversarial-triggers.yaml","config","core","Declarative trigger rules for adversarial reviews"
 "_gaia/core/config.yaml","config","core","Core module configuration"
 "_gaia/lifecycle/config.yaml","config","lifecycle","Lifecycle module configuration"
 "_gaia/dev/config.yaml","config","dev","Developer module configuration"
