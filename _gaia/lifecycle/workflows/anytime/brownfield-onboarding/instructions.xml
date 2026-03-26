@@ -82,7 +82,7 @@
   /gaia-review-api (optional, if APIs) → /gaia-adversarial → /gaia-test-design → /gaia-test-framework (optional) → /gaia-create-epics → /gaia-threat-model → /gaia-infra-design → /gaia-trace → /gaia-ci-setup → /gaia-readiness-check</action>
 </step>
 
-<step n="7" title="Bootstrap Val Ground Truth" optional="true">
+<step n="7" title="Bootstrap Agent Ground Truth" optional="true">
   <action>Check if Val is installed: verify {project-root}/_gaia/lifecycle/agents/validator.md exists AND {memory_path}/validator-sidecar/ directory exists</action>
   <check if="validator.md not found OR validator-sidecar/ not found">Skip Step 7 silently — Val is not installed. Brownfield onboarding continues without ground truth bootstrap.</check>
 
@@ -102,6 +102,74 @@
 
   <action>Write extracted project facts to {memory_path}/validator-sidecar/ground-truth.md. If ground-truth.md already exists with content: merge new facts with existing entries — add new facts, update changed facts, flag removed facts — never destructive overwrite. Follow merge semantics from ground-truth-management conflict-resolution section. If ground-truth.md is empty or new: write all extracted facts as initial seed entries with verification count = 1.</action>
   <action>Report: "Seeded {N} ground-truth entries from brownfield artifacts + filesystem scan"</action>
+
+  <!-- Step 7d/7e/7f: Tier 1 Agent Ground Truth Bootstrap (E9-S12) -->
+
+  <ask>Bootstrap Tier 1 agent ground truth (Theo, Derek, Nate)? [y/n]</ask>
+
+  <action>JIT load ground-truth-management skill sections from {project-root}/_gaia/lifecycle/skills/ground-truth-management.md: entry-structure, conflict-resolution, brownfield-extraction. All ground-truth entries must follow the canonical entry format from the entry-structure section. When the same fact appears in multiple source documents with conflicting values (e.g., different version numbers), annotate the entry with "conflicting sources: {source1} says X, {source2} says Y" and use the higher-precedence source (brownfield-assessment.md > project-documentation.md for tech stack facts).</action>
+
+  <!-- Step 7d: Theo (Architect) ground truth extraction (AC1) -->
+  <action>Step 7d — Theo ground truth extraction.
+    Read {planning_artifacts}/architecture.md and extract:
+    — Tech stack (languages, frameworks, runtime versions) → variable-inventory entries
+    — ADRs (architecture decision records — ID, title, status, rationale) → structural-pattern entries
+    — Component inventory (modules, packages, services) → file-inventory entries
+    — Dependency map (internal and external dependencies) → cross-reference entries
+
+    If {planning_artifacts}/architecture.md does not exist: fall back to {planning_artifacts}/brownfield-assessment.md for Theo. Extract tech stack, file counts, and project structure from the brownfield assessment instead.
+
+    Token budget guard: Theo has a 150K token budget (150,000 tokens). Estimate extraction size (characters / 4). If estimated tokens exceed 60% threshold (90,000 tokens), trim to highest-signal entries — prioritize ADRs and tech stack over detailed file inventories.
+
+    Write extracted entries to {memory_path}/architect-sidecar/ground-truth.md.
+    If the {memory_path}/architect-sidecar/ directory does not exist, create it along with a new ground-truth.md file with standard headers.
+    If ground-truth.md already exists with content: follow merge semantics from the conflict-resolution section — add new entries, update changed entries, preserve existing entries. Never perform a destructive overwrite.</action>
+
+  <!-- Step 7e: Derek (Product Manager) ground truth extraction (AC2) -->
+  <action>Step 7e — Derek ground truth extraction.
+    Read {planning_artifacts}/prd.md and extract:
+    — Functional requirements (feature list, requirement IDs) → structural-pattern entries
+    — User stories and acceptance criteria summaries → cross-reference entries
+
+    If {planning_artifacts}/prd.md does not exist: fall back to {planning_artifacts}/prd-brownfield-gaps.md as the alternate PRD path for Derek.
+
+    Read {planning_artifacts}/epics-and-stories.md and extract for Derek:
+    — Epic overview (epic IDs, titles, story counts) → file-inventory entries
+    — Story-to-epic mappings → cross-reference entries
+
+    Read {test_artifacts}/nfr-assessment.md (if present) and extract for Derek:
+    — Quality baselines (performance targets, security posture, test coverage) → variable-inventory entries
+    If {test_artifacts}/nfr-assessment.md does not exist: log warning "nfr-assessment.md not found in test_artifacts — skipping quality baselines for Derek" and continue without error.
+
+    Token budget guard: Derek has a 100K token budget (100,000 tokens). Estimate extraction size (characters / 4). If estimated tokens exceed 60% threshold (60,000 tokens), trim to highest-signal entries — prioritize functional requirements and epic summaries over detailed story mappings.
+
+    Write extracted entries to {memory_path}/pm-sidecar/ground-truth.md.
+    If the {memory_path}/pm-sidecar/ directory does not exist, create it along with a new ground-truth.md file with standard headers.
+    If ground-truth.md already exists with content: follow merge semantics from the conflict-resolution section — add new entries, update changed entries, preserve existing entries. Never perform a destructive overwrite.</action>
+
+  <!-- Step 7f: Nate (Scrum Master) ground truth extraction (AC3) -->
+  <action>Step 7f — Nate ground truth extraction.
+    Read {implementation_artifacts}/sprint-status.yaml (if it exists) and extract for Nate:
+    — Current sprint ID, story count, points total → variable-inventory entries
+    — Story status distribution → structural-pattern entries
+
+    Read {memory_path}/sm-sidecar/velocity-data.md (if it exists) and extract for Nate:
+    — Velocity history (sprint-over-sprint) → variable-inventory entries
+    — Capacity data → variable-inventory entries
+
+    If neither {implementation_artifacts}/sprint-status.yaml nor {memory_path}/sm-sidecar/velocity-data.md exists: complete this step gracefully with a log message "insufficient sprint data, velocity unavailable" and write ground-truth.md omitting velocity entries. Do not raise an error.
+
+    Token budget guard: Nate has a 100K token budget (100,000 tokens). Estimate extraction size (characters / 4). If estimated tokens exceed 60% threshold (60,000 tokens), trim to highest-signal entries — prioritize current sprint status over historical velocity data.
+
+    Write extracted entries to {memory_path}/sm-sidecar/ground-truth.md.
+    If the {memory_path}/sm-sidecar/ directory does not exist, create it along with a new ground-truth.md file with standard headers.
+    If ground-truth.md already exists with content: follow merge semantics from the conflict-resolution section — add new entries, update changed entries, preserve existing entries. Never perform a destructive overwrite.</action>
+
+  <!-- Summary report (AC6) -->
+  <action>After all Tier 1 extractions complete, output a summary report:
+    "Seeded {N} entries for Theo, {M} entries for Derek, {K} entries for Nate"
+    If sprint data was absent for Nate, append a note: "(sprint data absent — velocity entries omitted)"
+    Include token budget status for each agent (GREEN/YELLOW/RED).</action>
 </step>
 
 <next-step command="/gaia-review-api">
