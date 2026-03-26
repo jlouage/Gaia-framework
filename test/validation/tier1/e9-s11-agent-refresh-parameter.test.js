@@ -87,9 +87,7 @@ describe("E9-S11: Resolve Agent Target step in instructions.xml (AC5, AC6)", () 
   });
 
   it("should halt on unrecognized agent name (AC6)", () => {
-    expect(xml).toMatch(
-      /[Hh][Aa][Ll][Tt].*([Uu]nknown|[Uu]nrecognized|[Ii]nvalid).*agent/is
-    );
+    expect(xml).toMatch(/[Hh][Aa][Ll][Tt].*([Uu]nknown|[Uu]nrecognized|[Ii]nvalid).*agent/is);
   });
 });
 
@@ -115,9 +113,7 @@ describe("E9-S11: Per-agent sidecar initialization in Step 2 (AC7)", () => {
   });
 
   it("should handle missing ground-truth.md creation", () => {
-    expect(xml).toMatch(
-      /ground-truth\.md.*missing|missing.*ground-truth\.md/is
-    );
+    expect(xml).toMatch(/ground-truth\.md.*missing|missing.*ground-truth\.md/is);
   });
 });
 
@@ -143,21 +139,15 @@ describe("E9-S11: Agent-specific inventory scans in Step 6 (AC1, AC2, AC3)", () 
   });
 
   it("should scan epics-and-stories.md for derek (AC2)", () => {
-    expect(xml).toMatch(
-      /derek.*epics-and-stories\.md|epics-and-stories\.md.*derek/is
-    );
+    expect(xml).toMatch(/derek.*epics-and-stories\.md|epics-and-stories\.md.*derek/is);
   });
 
   it("should scan sprint-status.yaml for derek (AC2)", () => {
-    expect(xml).toMatch(
-      /derek.*sprint-status\.yaml|sprint-status\.yaml.*derek/is
-    );
+    expect(xml).toMatch(/derek.*sprint-status\.yaml|sprint-status\.yaml.*derek/is);
   });
 
   it("should scan sprint-status.yaml for nate (AC3)", () => {
-    expect(xml).toMatch(
-      /nate.*sprint-status\.yaml|sprint-status\.yaml.*nate/is
-    );
+    expect(xml).toMatch(/nate.*sprint-status\.yaml|sprint-status\.yaml.*nate/is);
   });
 
   it("should scan story files for nate (AC3)", () => {
@@ -199,9 +189,7 @@ describe("E9-S11: Per-agent token budgets in Step 11 (AC9)", () => {
   }
 
   it("should reference per-agent budget from _memory/config.yaml", () => {
-    expect(xml).toMatch(
-      /ground_truth_budget|per-agent.*budget|agent.*budget/is
-    );
+    expect(xml).toMatch(/ground_truth_budget|per-agent.*budget|agent.*budget/is);
   });
 
   it("should mention Val 200K budget", () => {
@@ -239,9 +227,7 @@ describe("E9-S11: --agent all orchestration (AC4, AC8)", () => {
   });
 
   it("should present combined summary (AC4)", () => {
-    expect(xml).toMatch(
-      /combined.*summary|summary.*all|per-agent.*status/is
-    );
+    expect(xml).toMatch(/combined.*summary|summary.*all|per-agent.*status/is);
   });
 });
 

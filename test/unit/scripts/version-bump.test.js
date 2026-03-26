@@ -20,20 +20,20 @@ function createFixtures(version = "1.0.0") {
   // 1. package.json
   fs.writeFileSync(
     path.join(dir, "package.json"),
-    JSON.stringify({ name: "test", version, scripts: {} }, null, 2) + "\n",
+    JSON.stringify({ name: "test", version, scripts: {} }, null, 2) + "\n"
   );
 
   // 2. gaia-install.sh
   fs.writeFileSync(
     path.join(dir, "gaia-install.sh"),
-    `#!/usr/bin/env bash\nreadonly VERSION="${version}"\n`,
+    `#!/usr/bin/env bash\nreadonly VERSION="${version}"\n`
   );
 
   // 3. _gaia/_config/global.yaml
   fs.mkdirSync(path.join(dir, "_gaia", "_config"), { recursive: true });
   fs.writeFileSync(
     path.join(dir, "_gaia", "_config", "global.yaml"),
-    `framework_name: "GAIA"\nframework_version: "${version}"\n`,
+    `framework_name: "GAIA"\nframework_version: "${version}"\n`
   );
 
   // 4. _gaia/_config/manifest.yaml
@@ -41,29 +41,29 @@ function createFixtures(version = "1.0.0") {
     path.join(dir, "_gaia", "_config", "manifest.yaml"),
     [
       "modules:",
-      '  - name: core',
+      "  - name: core",
       '    version: "1.0.0"',
       '    path: "_gaia/core"',
-      '  - name: lifecycle',
+      "  - name: lifecycle",
       '    version: "1.0.0"',
       '    path: "_gaia/lifecycle"',
-      '  - name: dev',
+      "  - name: dev",
       '    version: "1.0.0"',
       '    path: "_gaia/dev"',
-      '  - name: creative',
+      "  - name: creative",
       '    version: "1.0.0"',
       '    path: "_gaia/creative"',
-      '  - name: testing',
+      "  - name: testing",
       '    version: "1.0.0"',
       '    path: "_gaia/testing"',
       "",
-    ].join("\n"),
+    ].join("\n")
   );
 
   // 5. CLAUDE.md
   fs.writeFileSync(
     path.join(dir, "CLAUDE.md"),
-    `\n# GAIA Framework v${version}\n\nSome content here.\n`,
+    `\n# GAIA Framework v${version}\n\nSome content here.\n`
   );
 
   // 6. README.md
@@ -76,7 +76,7 @@ function createFixtures(version = "1.0.0") {
       `framework_version: "${version}"`,
       "```",
       "",
-    ].join("\n"),
+    ].join("\n")
   );
 
   // Module config.yaml files
@@ -84,7 +84,7 @@ function createFixtures(version = "1.0.0") {
     fs.mkdirSync(path.join(dir, "_gaia", mod), { recursive: true });
     fs.writeFileSync(
       path.join(dir, "_gaia", mod, "config.yaml"),
-      `module_name: ${mod}\nmodule_version: "1.0.0"\n`,
+      `module_name: ${mod}\nmodule_version: "1.0.0"\n`
     );
   }
 
@@ -241,7 +241,7 @@ describe("version-bump.js", () => {
       // Set global.yaml to a different version
       fs.writeFileSync(
         path.join(dir, "_gaia", "_config", "global.yaml"),
-        'framework_name: "GAIA"\nframework_version: "1.0.1"\n',
+        'framework_name: "GAIA"\nframework_version: "1.0.1"\n'
       );
 
       const result = runBumpError(dir, ["patch"]);

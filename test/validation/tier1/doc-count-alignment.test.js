@@ -72,9 +72,7 @@ function parseOverviewTable(content) {
  * Returns the text from "### Story {key}" up to the next story or epic section.
  */
 function extractStorySection(content, storyKey) {
-  const pattern = new RegExp(
-    `### Story ${storyKey}[\\s\\S]*?(?=### Story \\w|---\\s*\\n## E|$)`
-  );
+  const pattern = new RegExp(`### Story ${storyKey}[\\s\\S]*?(?=### Story \\w|---\\s*\\n## E|$)`);
   const match = content.match(pattern);
   return match ? match[0] : null;
 }
@@ -89,7 +87,10 @@ describe("E2-S7: Documentation Count Alignment", () => {
       const section = extractStorySection(epicsContent, "E2-S5");
       expect(section, "E2-S5 section not found in epics-and-stories.md").not.toBeNull();
       const countMatch = section.match(/all\s+(\d+)\s+quality\s+gate/i);
-      expect(countMatch, "No 'all N quality gate' pattern found in E2-S5 description").not.toBeNull();
+      expect(
+        countMatch,
+        "No 'all N quality gate' pattern found in E2-S5 description"
+      ).not.toBeNull();
       const documentedCount = parseInt(countMatch[1], 10);
       expect(documentedCount).toBe(actualCount);
     });
@@ -100,8 +101,10 @@ describe("E2-S7: Documentation Count Alignment", () => {
       const section = extractStorySection(epicsContent, "E2-S5");
       expect(section, "E2-S5 section not found in epics-and-stories.md").not.toBeNull();
       expect(section).toMatch(/tier1\/quality-gates\.test\.js/);
-      expect(section, "E2-S5 AC4 should reference ADR-001 or Tier 1 programmatic classification")
-        .toMatch(/[Tt]ier\s*1.*programmatic|programmatic.*[Tt]ier\s*1|ADR-001/);
+      expect(
+        section,
+        "E2-S5 AC4 should reference ADR-001 or Tier 1 programmatic classification"
+      ).toMatch(/[Tt]ier\s*1.*programmatic|programmatic.*[Tt]ier\s*1|ADR-001/);
     });
   });
 
@@ -109,7 +112,9 @@ describe("E2-S7: Documentation Count Alignment", () => {
     it("E2-S2 Dev Notes include a test file path", () => {
       const section = extractStorySection(epicsContent, "E2-S2");
       expect(section, "E2-S2 section not found in epics-and-stories.md").not.toBeNull();
-      expect(section, "E2-S2 Dev Notes should contain a test file path").toMatch(/[Tt]est\s*file.*test\//);
+      expect(section, "E2-S2 Dev Notes should contain a test file path").toMatch(
+        /[Tt]est\s*file.*test\//
+      );
     });
   });
 

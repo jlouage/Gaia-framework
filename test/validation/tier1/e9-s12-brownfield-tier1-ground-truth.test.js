@@ -41,9 +41,7 @@ describe("E9-S12: Confirmation prompt before Tier 1 bootstrap (AC7)", () => {
 
 describe("E9-S12: Theo ground truth extraction — Step 7d (AC1)", () => {
   it("should extract from architecture.md for Theo", () => {
-    expect(xml).toMatch(
-      /[Tt]heo.*architecture\.md|architecture\.md.*[Tt]heo/is
-    );
+    expect(xml).toMatch(/[Tt]heo.*architecture\.md|architecture\.md.*[Tt]heo/is);
   });
 
   it("should extract tech stack from architecture.md", () => {
@@ -63,9 +61,7 @@ describe("E9-S12: Theo ground truth extraction — Step 7d (AC1)", () => {
   });
 
   it("should fall back to brownfield-assessment.md for Theo", () => {
-    expect(xml).toMatch(
-      /[Tt]heo.*brownfield-assessment\.md|brownfield-assessment\.md.*fallback/is
-    );
+    expect(xml).toMatch(/[Tt]heo.*brownfield-assessment\.md|brownfield-assessment\.md.*fallback/is);
   });
 
   it("should write to architect-sidecar/ground-truth.md", () => {
@@ -83,15 +79,11 @@ describe("E9-S12: Derek ground truth extraction — Step 7e (AC2)", () => {
   });
 
   it("should extract from epics-and-stories.md for Derek", () => {
-    expect(xml).toMatch(
-      /[Dd]erek.*epics-and-stories\.md|epics-and-stories\.md.*[Dd]erek/is
-    );
+    expect(xml).toMatch(/[Dd]erek.*epics-and-stories\.md|epics-and-stories\.md.*[Dd]erek/is);
   });
 
   it("should extract from nfr-assessment.md for Derek", () => {
-    expect(xml).toMatch(
-      /[Dd]erek.*nfr-assessment\.md|nfr-assessment\.md.*[Dd]erek/is
-    );
+    expect(xml).toMatch(/[Dd]erek.*nfr-assessment\.md|nfr-assessment\.md.*[Dd]erek/is);
   });
 
   it("should write to pm-sidecar/ground-truth.md", () => {
@@ -101,15 +93,11 @@ describe("E9-S12: Derek ground truth extraction — Step 7e (AC2)", () => {
 
 describe("E9-S12: Nate ground truth extraction — Step 7f (AC3)", () => {
   it("should extract from sprint-status.yaml for Nate", () => {
-    expect(xml).toMatch(
-      /[Nn]ate.*sprint-status\.yaml|sprint-status\.yaml.*[Nn]ate/is
-    );
+    expect(xml).toMatch(/[Nn]ate.*sprint-status\.yaml|sprint-status\.yaml.*[Nn]ate/is);
   });
 
   it("should extract from velocity-data.md for Nate", () => {
-    expect(xml).toMatch(
-      /[Nn]ate.*velocity-data\.md|velocity-data\.md.*[Nn]ate/is
-    );
+    expect(xml).toMatch(/[Nn]ate.*velocity-data\.md|velocity-data\.md.*[Nn]ate/is);
   });
 
   it("should handle missing sprint data gracefully with log message", () => {
@@ -141,31 +129,23 @@ describe("E9-S12: Merge-safe write logic (AC4)", () => {
   });
 
   it("should specify merge semantics — no destructive overwrite", () => {
-    expect(xml).toMatch(
-      /merge|[Nn]o.*destructive.*overwrite|destructive.*overwrite.*never/is
-    );
+    expect(xml).toMatch(/merge|[Nn]o.*destructive.*overwrite|destructive.*overwrite.*never/is);
   });
 });
 
 describe("E9-S12: Directory auto-creation for missing sidecars (AC5)", () => {
   it("should handle missing sidecar directories", () => {
-    expect(xml).toMatch(
-      /directory.*creat|creat.*directory|sidecar.*missing.*creat|mkdir/is
-    );
+    expect(xml).toMatch(/directory.*creat|creat.*directory|sidecar.*missing.*creat|mkdir/is);
   });
 
   it("should create ground-truth.md with standard headers if missing", () => {
-    expect(xml).toMatch(
-      /ground-truth\.md.*creat|creat.*ground-truth\.md|standard\s+header/is
-    );
+    expect(xml).toMatch(/ground-truth\.md.*creat|creat.*ground-truth\.md|standard\s+header/is);
   });
 });
 
 describe("E9-S12: Summary report output (AC6)", () => {
   it("should output a summary with entry counts per agent", () => {
-    expect(xml).toMatch(
-      /[Ss]eeded.*entries.*Theo|Theo.*entries|entry\s+counts/is
-    );
+    expect(xml).toMatch(/[Ss]eeded.*entries.*Theo|Theo.*entries|entry\s+counts/is);
   });
 
   it("should mention all three agents in the summary", () => {
@@ -174,9 +154,7 @@ describe("E9-S12: Summary report output (AC6)", () => {
   });
 
   it("should note when sprint data was absent in summary", () => {
-    expect(xml).toMatch(
-      /sprint\s+data.*absent|absent.*sprint|velocity.*absent|note.*sprint/is
-    );
+    expect(xml).toMatch(/sprint\s+data.*absent|absent.*sprint|velocity.*absent|note.*sprint/is);
   });
 });
 
@@ -191,9 +169,7 @@ describe("E9-S12: Token budget guards (Task 5)", () => {
 
   it("should mention Nate 100K budget", () => {
     // This will match the same 100K as Derek but both agents should be referenced
-    expect(xml).toMatch(
-      /[Nn]ate.*100[,.]?000|[Nn]ate.*100K/is
-    );
+    expect(xml).toMatch(/[Nn]ate.*100[,.]?000|[Nn]ate.*100K/is);
   });
 
   it("should enforce 60% budget threshold", () => {
@@ -201,9 +177,7 @@ describe("E9-S12: Token budget guards (Task 5)", () => {
   });
 
   it("should trim to highest-signal entries if budget exceeded", () => {
-    expect(xml).toMatch(
-      /trim.*highest.?signal|highest.?signal.*trim|budget.*exceed.*trim/is
-    );
+    expect(xml).toMatch(/trim.*highest.?signal|highest.?signal.*trim|budget.*exceed.*trim/is);
   });
 });
 
