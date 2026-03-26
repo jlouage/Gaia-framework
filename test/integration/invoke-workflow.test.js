@@ -18,7 +18,7 @@ const PROJECT_ROOT = resolve(import.meta.dirname, "../..");
 const FRAMEWORK_ROOT = resolve(PROJECT_ROOT, "..");
 const GAIA_DIR = join(FRAMEWORK_ROOT, "_gaia");
 const ENGINE_PATH = join(GAIA_DIR, "core", "engine", "workflow.xml");
-const LIFECYCLE_TEMPLATES = join(GAIA_DIR, "lifecycle", "templates");
+const _LIFECYCLE_TEMPLATES = join(GAIA_DIR, "lifecycle", "templates");
 const BRAINSTORM_TEMPLATE = join(GAIA_DIR, "core", "workflows", "brainstorming", "template.md");
 
 // ─── Helpers ─────────────────────────────────────────────────────
