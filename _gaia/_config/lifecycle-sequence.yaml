@@ -72,11 +72,11 @@ sequence:
     phase: 2-planning
     command: /gaia-create-prd
     next:
-      primary: /gaia-validate-prd
+      primary: /gaia-val-validate
 
-  validate-prd:
+  val-validate:
     phase: 2-planning
-    command: /gaia-validate-prd
+    command: /gaia-val-validate
     next:
       on_pass: /gaia-create-ux
       on_fail: /gaia-edit-prd
@@ -85,7 +85,7 @@ sequence:
     phase: 2-planning
     command: /gaia-edit-prd
     next:
-      primary: /gaia-validate-prd
+      primary: /gaia-val-validate
 
   create-ux-design:
     phase: 2-planning
@@ -458,6 +458,21 @@ sequence:
       suggestions:
         - command: /gaia-dev-story
           context: "To implement performance fixes"
+
+  # -- Deprecated (kept for manifest consistency until workflows are removed) --
+  validate-prd:
+    module: lifecycle
+    command: /gaia-validate-prd
+    next:
+      standalone: true
+      note: "Deprecated — superseded by /gaia-val-validate. Will be removed in E10-S3."
+
+  edit-ux-design:
+    module: lifecycle
+    command: /gaia-edit-ux
+    next:
+      standalone: true
+      note: "Standalone UX design editor"
 
   # -- Quick flow --
   quick-spec:
