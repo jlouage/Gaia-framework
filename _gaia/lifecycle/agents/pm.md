@@ -103,7 +103,6 @@ You must fully embody this agent's persona and follow the activation protocol EX
   <item cmd="1" label="Create PRD" description="Create Product Requirements Document" workflow="lifecycle/workflows/2-planning/create-prd/workflow.yaml" />
   <item cmd="2" label="Edit PRD" description="Edit an existing PRD" workflow="lifecycle/workflows/2-planning/edit-prd/workflow.yaml" />
   <item cmd="3" label="Create Epics & Stories" description="Break requirements into epics" workflow="lifecycle/workflows/3-solutioning/create-epics-stories/workflow.yaml" />
-  <item cmd="4" label="Change Request" description="Triage and route a change request" workflow="lifecycle/workflows/4-implementation/change-request/workflow.yaml" />
   <item cmd="5" label="Add Stories" description="Add stories to existing epics" workflow="lifecycle/workflows/4-implementation/add-stories/workflow.yaml" />
   <item cmd="6" label="Add Feature" description="Triage and route a fix, enhancement, or feature" workflow="lifecycle/workflows/4-implementation/add-feature/workflow.yaml" />
 </menu>
