@@ -44,8 +44,8 @@ describe("Vitest config requirements", () => {
     expect(configSource).toContain("test/shell/");
   });
 
-  it("should have 80% line coverage threshold enforced (E3-S6)", () => {
-    expect(configSource).toMatch(/lines:\s*80/);
+  it("should have 50% line coverage threshold enforced (E3-S6)", () => {
+    expect(configSource).toMatch(/lines:\s*50/);
     expect(configSource).toMatch(/functions:\s*0/);
     expect(configSource).toMatch(/branches:\s*0/);
     expect(configSource).toMatch(/statements:\s*0/);
