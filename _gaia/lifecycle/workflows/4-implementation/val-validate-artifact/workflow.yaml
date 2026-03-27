@@ -8,6 +8,17 @@ config_source: "{project-root}/_gaia/lifecycle/config.yaml"
 installed_path: "{project-root}/_gaia/lifecycle/workflows/4-implementation/val-validate-artifact"
 instructions: "{installed_path}/instructions.xml"
 validation: "{installed_path}/checklist.md"
+required_skills:
+  - "{project-root}/_gaia/lifecycle/skills/validation-patterns.md"
+  - "{project-root}/_gaia/lifecycle/skills/document-rulesets.md"
+required_skill_sections:
+  - "document-rulesets:type-detection"
+  - "document-rulesets:prd-rules"
+  - "document-rulesets:arch-rules"
+  - "document-rulesets:ux-rules"
+  - "document-rulesets:test-plan-rules"
+  - "document-rulesets:epics-rules"
+  - "document-rulesets:two-pass-logic"
 input_file_patterns:
   artifact:
     whole: "{artifact_path}"
