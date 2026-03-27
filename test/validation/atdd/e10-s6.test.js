@@ -4,12 +4,7 @@ import { join, resolve } from "path";
 
 const PROJECT_ROOT = resolve(import.meta.dirname, "../../..");
 const GAIA_DIR = join(PROJECT_ROOT, "_gaia");
-const SLASH_CMD = join(
-  PROJECT_ROOT,
-  ".claude",
-  "commands",
-  "gaia-change-request.md",
-);
+const SLASH_CMD = join(PROJECT_ROOT, ".claude", "commands", "gaia-change-request.md");
 const PM_AGENT = join(GAIA_DIR, "lifecycle", "agents", "pm.md");
 const MANIFEST_CSV = join(GAIA_DIR, "_config", "workflow-manifest.csv");
 const HELP_CSV = join(GAIA_DIR, "_config", "gaia-help.csv");
@@ -28,9 +23,7 @@ describe("E10-S6: Redirect change-request to add-feature", () => {
       // Must reference the add-feature workflow path
       expect(content).toContain("add-feature/workflow.yaml");
       // Must NOT reference the old change-request workflow path as the primary invocation
-      expect(content).not.toMatch(
-        /process.*change-request\/workflow\.yaml.*as.*workflow-config/,
-      );
+      expect(content).not.toMatch(/process.*change-request\/workflow\.yaml.*as.*workflow-config/);
     });
 
     it("test_ac1_deprecation_notice — gaia-change-request.md contains deprecation notice", () => {
@@ -58,7 +51,7 @@ describe("E10-S6: Redirect change-request to add-feature", () => {
       expect(content).not.toBeNull();
       // Must NOT have a menu item with label "Change Request"
       expect(content).not.toMatch(
-        /<item[^>]*label="Change Request"[^>]*workflow="[^"]*change-request[^"]*"[^>]*\/>/,
+        /<item[^>]*label="Change Request"[^>]*workflow="[^"]*change-request[^"]*"[^>]*\/>/
       );
     });
   });
