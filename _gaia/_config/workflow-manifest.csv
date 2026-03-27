@@ -11,6 +11,7 @@ name,displayName,description,module,phase,path,command,agent
 "validate-prd","Validate PRD","Validate PRD against standards","lifecycle","2-planning","_gaia/lifecycle/workflows/2-planning/validate-prd/workflow.yaml","gaia-validate-prd","pm"
 "edit-prd","Edit PRD","Edit an existing PRD","lifecycle","2-planning","_gaia/lifecycle/workflows/2-planning/edit-prd/workflow.yaml","gaia-edit-prd","pm"
 "create-ux-design","Create UX Design","Plan UX patterns and design specs","lifecycle","2-planning","_gaia/lifecycle/workflows/2-planning/create-ux-design/workflow.yaml","gaia-create-ux","ux-designer"
+"edit-ux-design","Edit UX Design","Edit an existing UX design","lifecycle","2-planning","_gaia/lifecycle/workflows/2-planning/edit-ux-design/workflow.yaml","gaia-edit-ux","ux-designer"
 "create-architecture","Create Architecture","Design system architecture","lifecycle","3-solutioning","_gaia/lifecycle/workflows/3-solutioning/create-architecture/workflow.yaml","gaia-create-arch","architect"
 "edit-architecture","Edit Architecture","Edit an existing architecture document","lifecycle","3-solutioning","_gaia/lifecycle/workflows/3-solutioning/edit-architecture/workflow.yaml","gaia-edit-arch","architect"
 "create-epics-stories","Create Epics and Stories","Break requirements into epics and stories","lifecycle","3-solutioning","_gaia/lifecycle/workflows/3-solutioning/create-epics-stories/workflow.yaml","gaia-create-epics","pm"
