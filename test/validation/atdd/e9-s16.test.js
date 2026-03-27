@@ -3,7 +3,7 @@ import { readFileSync, existsSync, readdirSync } from "fs";
 import { resolve, join } from "path";
 import { PROJECT_ROOT } from "../../helpers/project-root.js";
 
-const MEMORY_ROOT = resolve(PROJECT_ROOT, "../_memory");
+const MEMORY_ROOT = join(PROJECT_ROOT, "_memory");
 const CONFIG_PATH = join(MEMORY_ROOT, "config.yaml");
 
 // The 9 untiered agents that E9-S16 must formalize
