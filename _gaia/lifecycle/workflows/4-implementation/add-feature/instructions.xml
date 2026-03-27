@@ -1,0 +1,196 @@
+<workflow name="add-feature">
+<critical>
+  <mandate>This is a PM-owned triage workflow — classify the change before cascading</mandate>
+  <mandate>Only cascade through AFFECTED artifacts — patches skip most steps</mandate>
+  <mandate>Cascade follows corrected lifecycle order: PRD → UX → Architecture → Test Plan → Threat Model → Traceability</mandate>
+  <mandate>Each cascade step spawns the owning agent's workflow as a subagent — do not perform edits directly</mandate>
+  <mandate>In yolo mode: auto-proceed through all steps EXCEPT CRITICAL Val findings which require user confirmation</mandate>
+  <mandate>On cascade failure: halt at the failed step, record partial state in assessment doc and checkpoint, present retry/skip/abort options (FR-89a)</mandate>
+  <mandate>Track cascade state via a lightweight manifest — do not hold subagent context in memory. Stay within the 40K token framework budget (FR-89b)</mandate>
+</critical>
+
+<step n="1" title="Intake">
+  <ask>Describe the fix, enhancement, or feature you want to add.</ask>
+  <ask>What is driving this change? (user feedback / stakeholder request / technical discovery / market shift / regulatory)</ask>
+  <ask>Urgency level? (critical — blocks current sprint / high — next sprint / normal — backlog)</ask>
+  <action>Assign a feature ID: AF-{date}-{seq} (e.g., AF-2026-03-26-1). Check {planning_artifacts}/ for existing add-feature-*.md files to determine next sequence number.</action>
+  <action>Record: feature_id, description, driver, urgency</action>
+</step>
+
+<step n="2" title="Classify">
+  <action>Analyze the user's description against the classification matrix:
+
+  **Patch** — bug fix, typo, config correction. Characteristics:
+  - Affects 1-2 files in a single module
+  - No new requirements (FR/NFR) needed
+  - No architecture changes
+  - No UX changes
+  - Existing tests cover the fix (or need minor additions)
+
+  **Enhancement** — improvement to existing feature. Characteristics:
+  - Modifies existing requirements or adds minor new ones
+  - May require architecture adjustments (MINOR)
+  - May affect UX flows
+  - Needs test updates for changed behavior
+
+  **Feature** — wholly new capability. Characteristics:
+  - Adds new requirements (FR/NFR)
+  - Requires architecture review (SIGNIFICANT)
+  - Adds new UX flows or screens
+  - Needs new test cases and possibly threat model updates
+  </action>
+  <action>Determine classification: patch | enhancement | feature</action>
+  <action>Build the affected artifacts list based on classification:
+  - **Patch**: PRD (optional — if wording fix), Traceability (if test changes)
+  - **Enhancement**: PRD, UX (if UI changes), Architecture (if technical changes), Test Plan, Traceability
+  - **Feature**: PRD, UX, Architecture, Test Plan, Threat Model, Traceability (all artifacts)
+  </action>
+  <action>Present classification and affected artifacts list to user for confirmation.</action>
+</step>
+
+<step n="3" title="Impact Scan">
+  <action>For each affected artifact, scan current content to identify specific sections impacted:</action>
+  <action>— PRD: identify affected requirement IDs (FR-*, NFR-*), feature sections, user personas</action>
+  <action>— UX Design: identify affected screens, interaction patterns, navigation flows</action>
+  <action>— Architecture: identify affected components, APIs, data models, ADRs</action>
+  <action>— Test Plan: identify affected test suites, risk areas, coverage gaps</action>
+  <action>— Threat Model: identify new attack surfaces or changed trust boundaries</action>
+  <action>— Traceability: identify requirement-to-test-to-story linkages that will change</action>
+  <action>Build impact summary: for each affected artifact, list specific sections and what will change.</action>
+</step>
+
+<step n="4" title="Val Review">
+  <action>Present the proposed changes (classification, affected artifacts, impact summary) to Val for validation.</action>
+  <action>Invoke val-validate-artifact as a subagent, passing the impact summary as the artifact to validate.</action>
+  <action>If Val returns CRITICAL findings: present findings to user. In yolo mode, HALT and require user confirmation before proceeding. In normal mode, present [c]ontinue / [r]evise / [x]abort options.</action>
+  <action>If Val returns WARNING findings: present findings. In yolo mode, auto-proceed with findings noted. In normal mode, present options.</action>
+  <action>If Val returns no findings or INFO only: auto-proceed.</action>
+</step>
+
+<step n="5" title="User Approval">
+  <action>Present the complete triage plan:
+
+  **Add-Feature Triage: {feature_id}**
+
+  | Field | Value |
+  |-------|-------|
+  | Description | {description} |
+  | Classification | {patch/enhancement/feature} |
+  | Driver | {driver} |
+  | Urgency | {urgency} |
+
+  **Affected Artifacts:**
+  {list each artifact and what will change}
+
+  **Cascade Steps:**
+  {numbered list of cascade steps that will execute, with skipped steps noted}
+
+  **Val Review:** {passed/warnings noted/findings summary}
+  </action>
+  <ask>Review the triage plan above. Do you APPROVE or REJECT? [approve / reject / revise]</ask>
+  <check if="user_rejects">Set status = REJECTED. Skip steps 6-8 — proceed directly to step 9 (Assessment Doc) to record the rejection.</check>
+</step>
+
+<step n="6" title="CR Record" optional="true" condition="classification != patch">
+  <action>Skip if classification is 'patch' — patches do not need a formal change request record.</action>
+  <action>For enhancements and features: create a change request record.</action>
+  <action>Assign CR ID: CR-{date}-{seq}. Check {planning_artifacts}/ for existing CR files.</action>
+  <action>Record: cr_id, feature_id, classification, driver, urgency, affected_artifacts, impact_summary.</action>
+</step>
+
+<step n="7" title="Cascade">
+  <action>Initialize cascade manifest:
+  ```yaml
+  cascade_manifest:
+    feature_id: "{feature_id}"
+    classification: "{classification}"
+    steps_total: {count of affected artifacts}
+    steps_completed: 0
+    steps_failed: 0
+    status: "in_progress"
+    steps: []
+  ```
+  </action>
+
+  <action>Execute cascade in corrected lifecycle order, skipping unaffected artifacts:
+
+  **7a. PRD Update** (if affected)
+  Spawn subagent: "Load {project-root}/_gaia/core/engine/workflow.xml, then process {project-root}/_gaia/lifecycle/workflows/2-planning/edit-prd/workflow.yaml as workflow-config. Run in YOLO mode. Context: {classification} — {description}. Impact: {prd_impact}. Feature ID: {feature_id}."
+  On success: record prd_diff (new FR/NFR IDs), update cascade manifest.
+  On failure: record failure in manifest, present retry/skip/abort to user (FR-89a). If skip: note in assessment. If abort: halt cascade, save checkpoint.
+
+  **7b. UX Update** (if affected — skip for patches)
+  Spawn subagent: "Load {project-root}/_gaia/core/engine/workflow.xml, then process {project-root}/_gaia/lifecycle/workflows/3-solutioning/edit-ux/workflow.yaml as workflow-config. Run in YOLO mode. Context: {classification} — {description}. PRD changes: {prd_diff}. Impact: {ux_impact}. Feature ID: {feature_id}."
+  On success: record ux_diff, update manifest. On failure: retry/skip/abort.
+
+  **7c. Architecture Update** (if affected — skip for patches)
+  Spawn subagent: "Load {project-root}/_gaia/core/engine/workflow.xml, then process {project-root}/_gaia/lifecycle/workflows/3-solutioning/edit-architecture/workflow.yaml as workflow-config. Run in YOLO mode. Context: {classification} — {description}. PRD changes: {prd_diff}. UX changes: {ux_diff}. Impact: {arch_impact}. Feature ID: {feature_id}."
+  On success: record arch_diff, update manifest. On failure: retry/skip/abort.
+
+  **7d. Test Plan Update via test-design** (if affected — skip for patches unless test changes needed)
+  Spawn subagent: "Load {project-root}/_gaia/core/engine/workflow.xml, then process {project-root}/_gaia/testing/workflows/edit-test-plan/workflow.yaml as workflow-config. Run in YOLO mode. Context: {classification} — {description}. PRD changes: {prd_diff}. Architecture changes: {arch_diff}. Feature ID: {feature_id}." Alternative: use /gaia-test-design for full test plan regeneration when the scope warrants it.
+  On success: record test_diff, update manifest. On failure: retry/skip/abort.
+
+  **7e. Threat Model Update** (if affected — features only, skip for patches and enhancements)
+  Spawn subagent: "Load {project-root}/_gaia/core/engine/workflow.xml, then process {project-root}/_gaia/testing/workflows/threat-model/workflow.yaml as workflow-config. Run in YOLO mode. Context: {classification} — {description}. Architecture changes: {arch_diff}. Feature ID: {feature_id}."
+  On success: record threat_diff, update manifest. On failure: retry/skip/abort.
+
+  **7f. Traceability Update** (if affected)
+  Spawn subagent: "Load {project-root}/_gaia/core/engine/workflow.xml, then process {project-root}/_gaia/testing/workflows/traceability/workflow.yaml as workflow-config. Run in YOLO mode. Context: Regenerate traceability to include changes from {feature_id}."
+  On success: record trace_updated, update manifest. On failure: retry/skip/abort.
+  </action>
+
+  <action>After all cascade steps complete (or are skipped/failed): finalize cascade manifest with status summary.</action>
+  <action>Save cascade checkpoint to {checkpoint_path}/add-feature-{feature_id}.yaml for /gaia-resume recovery.</action>
+</step>
+
+<step n="8" title="Story">
+  <action>If classification is 'feature' or 'enhancement': spawn subagent to create implementation stories.</action>
+  <action>Spawn subagent: "Load {project-root}/_gaia/core/engine/workflow.xml, then process {project-root}/_gaia/lifecycle/workflows/4-implementation/add-stories/workflow.yaml as workflow-config. Run in YOLO mode. Context: {classification} — {description}. New requirements: {prd_diff}. Architecture changes: {arch_diff}. Feature ID: {feature_id}."</action>
+  <action>When subagent returns: capture new story keys and epic assignments.</action>
+  <action>If classification is 'patch': create a single fix story inline or recommend /gaia-create-story.</action>
+</step>
+
+<step n="9" title="Assessment Doc">
+  <template-output file="{planning_artifacts}/add-feature-{feature_id}.md">
+    Generate assessment document with YAML frontmatter:
+    ---
+    feature_id: "{feature_id}"
+    date: "{date}"
+    classification: "{patch|enhancement|feature}"
+    status: "{APPROVED|REJECTED}"
+    urgency: "{critical|high|normal}"
+    driver: "{source}"
+    cr_id: "{cr_id or null}"
+    ---
+    Then detailed sections:
+    - Description: what was requested and why
+    - Classification: how it was classified with reasoning
+    - Impact Analysis: per-artifact impact summary
+    - Val Review: findings summary
+    - Cascade Results: for each artifact — updated/skipped/failed with details
+    - Stories Created: list of new story keys (or N/A for patches)
+    - Cascade Manifest: final manifest state (steps completed, failed, skipped)
+    - Recommended Next Actions: what to do next based on outcome
+    If REJECTED: include rejection reason and impact analysis for future reference.
+  </template-output>
+</step>
+
+<step n="10" title="Next Steps">
+  <action>Present summary and recommended next actions based on classification and outcome:
+
+  **Patch:**
+  - If story created: "Run /gaia-dev-story {story_key} to implement the fix."
+  - If no story: "The patch is straightforward — apply directly or create a story with /gaia-create-story."
+
+  **Enhancement:**
+  - "New stories created: {story_keys}. Run /gaia-sprint-plan or /gaia-correct-course to schedule."
+  - If architecture updated: "Architecture changes recorded. Review with /gaia-agent-architect."
+
+  **Feature:**
+  - "Full cascade complete. New stories: {story_keys}."
+  - "Run /gaia-sprint-plan to schedule implementation."
+  - "Consider running /gaia-implementation-readiness to verify consistency."
+  </action>
+</step>
+</workflow>

@@ -37,6 +37,7 @@ const VALID_VARIABLE_REFS = [
   "{project_name}",
   "{sprint_id}",
   "{cr_id}",
+  "{feature_id}",
   "{version}",
   "{spec_name}",
   "{plan_artifact_path}",

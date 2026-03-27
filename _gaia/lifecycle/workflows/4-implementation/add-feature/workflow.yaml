@@ -1,0 +1,47 @@
+name: add-feature
+description: 'PM-owned triage workflow for adding a fix, enhancement, or feature — classifies, scans impact, cascades only through affected artifacts'
+module: lifecycle
+agent: pm
+execution_mode: planning
+val_auto_in_yolo: true
+val_auto_in_yolo_steps: [4, 9]
+config_resolved: "{installed_path}/.resolved/add-feature.yaml"
+config_source: "{project-root}/_gaia/lifecycle/config.yaml"
+installed_path: "{project-root}/_gaia/lifecycle/workflows/4-implementation/add-feature"
+instructions: "{installed_path}/instructions.xml"
+validation: "{installed_path}/checklist.md"
+input_file_patterns:
+  prd:
+    whole: "{planning_artifacts}/prd.md"
+    load_strategy: "SELECTIVE_LOAD"
+  architecture:
+    whole: "{planning_artifacts}/architecture.md"
+    load_strategy: "SELECTIVE_LOAD"
+  ux_design:
+    whole: "{planning_artifacts}/ux-design.md"
+    load_strategy: "INDEX_GUIDED"
+  epics:
+    whole: "{planning_artifacts}/epics-and-stories.md"
+    load_strategy: "SELECTIVE_LOAD"
+  sprint_status:
+    whole: "{implementation_artifacts}/sprint-status.yaml"
+    load_strategy: "SELECTIVE_LOAD"
+  test_plan:
+    whole: "{test_artifacts}/test-plan.md"
+    load_strategy: "SELECTIVE_LOAD"
+  threat_model:
+    whole: "{test_artifacts}/threat-model.md"
+    load_strategy: "SELECTIVE_LOAD"
+  traceability:
+    whole: "{test_artifacts}/traceability-matrix.md"
+    load_strategy: "SELECTIVE_LOAD"
+quality_gates:
+  pre_start:
+    - check: "prd_exists"
+      on_fail: "HALT: prd.md does not exist. Run /gaia-create-prd first."
+on_error:
+  missing_file: "ask_user"
+  unresolved_variable: "halt"
+
+output:
+  primary: "{planning_artifacts}/add-feature-{feature_id}.md"
