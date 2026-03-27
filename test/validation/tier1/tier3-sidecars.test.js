@@ -70,7 +70,7 @@ const UNTIERED_AGENTS = [
   "problem-solver",
 ];
 
-const MEMORY_ROOT = resolve(PROJECT_ROOT, "../_memory");
+const MEMORY_ROOT = join(PROJECT_ROOT, "_memory");
 
 describe("E9-S5: Tier 3 Dev Agent Sidecars", () => {
   // AC1: Dev agent decision-log.md files
