@@ -8,14 +8,11 @@ const sharedRules = {
   "no-console": "off",
   "no-eval": "error",
   "no-empty": ["error", { allowEmptyCatch: true }],
-  "no-unused-vars": [
-    "error",
-    {
-      argsIgnorePattern: "^_",
-      varsIgnorePattern: "^_",
-      caughtErrors: "none",
-    },
-  ],
+  "no-unused-vars": ["error", {
+    argsIgnorePattern: "^_",
+    varsIgnorePattern: "^_",
+    caughtErrors: "none",
+  }],
 };
 
 module.exports = [
