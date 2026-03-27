@@ -2,6 +2,7 @@ name: test-design
 description: 'Create system-level or epic-level test plans'
 module: testing
 agent: test-architect
+val_validate_output: true
 config_resolved: "{installed_path}/.resolved/test-design.yaml"
 config_source: "{project-root}/_gaia/testing/config.yaml"
 installed_path: "{project-root}/_gaia/testing/workflows/test-design"
