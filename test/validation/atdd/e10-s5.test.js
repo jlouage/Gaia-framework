@@ -5,13 +5,7 @@ import yaml from "js-yaml";
 
 const PROJECT_ROOT = resolve(import.meta.dirname, "../../..");
 const GAIA_DIR = join(PROJECT_ROOT, "_gaia");
-const ADD_FEATURE_DIR = join(
-  GAIA_DIR,
-  "lifecycle",
-  "workflows",
-  "4-implementation",
-  "add-feature",
-);
+const ADD_FEATURE_DIR = join(GAIA_DIR, "lifecycle", "workflows", "4-implementation", "add-feature");
 const WORKFLOW_YAML = join(ADD_FEATURE_DIR, "workflow.yaml");
 const INSTRUCTIONS_XML = join(ADD_FEATURE_DIR, "instructions.xml");
 const CHECKLIST_MD = join(ADD_FEATURE_DIR, "checklist.md");
@@ -280,8 +274,7 @@ describe("E10-S5: Add-Feature Triage Workflow", () => {
       const wf = loadYaml(WORKFLOW_YAML);
       expect(wf).not.toBeNull();
       expect(wf.output).toBeDefined();
-      const outputPath =
-        typeof wf.output === "string" ? wf.output : wf.output.primary || "";
+      const outputPath = typeof wf.output === "string" ? wf.output : wf.output.primary || "";
       expect(outputPath).toMatch(/planning.artifacts/);
       expect(outputPath).toMatch(/add-feature/);
     });
