@@ -1,11 +1,23 @@
 ---
 name: 'change-request'
-description: 'Document and analyze a change request with impact analysis, approval gate, and cascade artifact updates.'
+description: 'DEPRECATED — Redirects to /gaia-add-feature. Use /gaia-add-feature directly.'
 model: opus
 ---
 
-Document and analyze a change request with impact analysis, approval gate, and cascade artifact updates.
+> **DEPRECATED:** `/gaia-change-request` has been replaced by `/gaia-add-feature`.
+> This command now redirects to the add-feature workflow automatically.
+>
+> **Note:** SIGNIFICANT or larger changes are fully supported by the add-feature workflow,
+> which classifies changes as patch/enhancement/feature and cascades accordingly.
 
-Load $ARGUMENTS as additional context.
+IT IS CRITICAL THAT YOU FOLLOW THESE STEPS:
 
-Load {project-root}/_gaia/core/engine/workflow.xml and process {project-root}/_gaia/lifecycle/workflows/4-implementation/change-request/workflow.yaml as workflow-config. Follow the workflow engine instructions EXACTLY.
+<steps CRITICAL="TRUE">
+1. LOAD the FULL {project-root}/_gaia/core/engine/workflow.xml
+2. READ its entire contents — this is the CORE OS
+3. Pass {project-root}/_gaia/lifecycle/workflows/cross-phase/add-feature/workflow.yaml as 'workflow-config'
+4. Follow workflow.xml instructions EXACTLY
+5. Save outputs after EACH section
+</steps>
+
+$ARGUMENTS
