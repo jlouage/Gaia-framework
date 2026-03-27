@@ -50,9 +50,7 @@ describe("AC1: PM agent menu", () => {
   it("should not contain validate-prd menu item", () => {
     const pmContent = readFile("_gaia/lifecycle/agents/pm.md");
     // Should not have a menu item referencing validate-prd workflow
-    const menuItemMatch = pmContent.match(
-      /<item[^>]*workflow="[^"]*validate-prd[^"]*"[^>]*\/>/
-    );
+    const menuItemMatch = pmContent.match(/<item[^>]*workflow="[^"]*validate-prd[^"]*"[^>]*\/>/);
     expect(menuItemMatch).toBeNull();
   });
 });
@@ -60,12 +58,7 @@ describe("AC1: PM agent menu", () => {
 // ─── AC2: Slash command redirects to /gaia-val-validate ──────
 
 describe("AC2: Slash command redirect", () => {
-  const cmdPath = join(
-    PROJECT_ROOT,
-    ".claude",
-    "commands",
-    "gaia-validate-prd.md"
-  );
+  const cmdPath = join(PROJECT_ROOT, ".claude", "commands", "gaia-validate-prd.md");
 
   it("slash command file should exist", () => {
     expect(existsSync(cmdPath)).toBe(true);
@@ -106,9 +99,7 @@ describe("AC4: lifecycle-sequence.yaml", () => {
   it("validate-prd entry should be marked as deprecated", () => {
     const content = readFile("_gaia/_config/lifecycle-sequence.yaml");
     // The entry should exist but be marked deprecated
-    const block = content.match(
-      /validate-prd:[\s\S]*?(?=\n\s{2}\w|\n$)/
-    );
+    const block = content.match(/validate-prd:[\s\S]*?(?=\n\s{2}\w|\n$)/);
     expect(block).not.toBeNull();
     expect(block[0]).toContain("deprecated: true");
   });
@@ -116,18 +107,13 @@ describe("AC4: lifecycle-sequence.yaml", () => {
   it("no other entry should reference /gaia-validate-prd as a next step", () => {
     const content = readFile("_gaia/_config/lifecycle-sequence.yaml");
     // Remove the validate-prd block itself, then check no remaining content references it
-    const withoutBlock = content.replace(
-      /\s{2}validate-prd:[\s\S]*?(?=\n\s{2}\w|\n$)/,
-      ""
-    );
+    const withoutBlock = content.replace(/\s{2}validate-prd:[\s\S]*?(?=\n\s{2}\w|\n$)/, "");
     expect(withoutBlock).not.toContain("/gaia-validate-prd");
   });
 
   it("create-prd next should not reference /gaia-validate-prd", () => {
     const content = readFile("_gaia/_config/lifecycle-sequence.yaml");
-    const createPrdBlock = content.match(
-      /create-prd:[\s\S]*?(?=\n\s{2}\w|\n$)/
-    );
+    const createPrdBlock = content.match(/create-prd:[\s\S]*?(?=\n\s{2}\w|\n$)/);
     if (createPrdBlock) {
       expect(createPrdBlock[0]).not.toContain("/gaia-validate-prd");
     }
@@ -135,9 +121,7 @@ describe("AC4: lifecycle-sequence.yaml", () => {
 
   it("edit-prd next should not reference /gaia-validate-prd", () => {
     const content = readFile("_gaia/_config/lifecycle-sequence.yaml");
-    const editPrdBlock = content.match(
-      /edit-prd:[\s\S]*?(?=\n\s{2}\w|\n$)/
-    );
+    const editPrdBlock = content.match(/edit-prd:[\s\S]*?(?=\n\s{2}\w|\n$)/);
     if (editPrdBlock) {
       expect(editPrdBlock[0]).not.toContain("/gaia-validate-prd");
     }
