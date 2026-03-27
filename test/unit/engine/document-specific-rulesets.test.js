@@ -51,25 +51,19 @@ describe("E10-S2: Document-Specific Validation Rulesets", () => {
     it("maps architecture.md to arch-rules", () => {
       const content = readFileSync(RULESETS_SKILL_PATH, "utf8");
       const section = extractSection(content, "type-detection");
-      expect(section).toMatch(
-        /architecture\.md.*arch-rules|arch-rules.*architecture\.md/s
-      );
+      expect(section).toMatch(/architecture\.md.*arch-rules|arch-rules.*architecture\.md/s);
     });
 
     it("maps ux-design.md to ux-rules", () => {
       const content = readFileSync(RULESETS_SKILL_PATH, "utf8");
       const section = extractSection(content, "type-detection");
-      expect(section).toMatch(
-        /ux-design\.md.*ux-rules|ux-rules.*ux-design\.md/s
-      );
+      expect(section).toMatch(/ux-design\.md.*ux-rules|ux-rules.*ux-design\.md/s);
     });
 
     it("maps test-plan.md to test-plan-rules", () => {
       const content = readFileSync(RULESETS_SKILL_PATH, "utf8");
       const section = extractSection(content, "type-detection");
-      expect(section).toMatch(
-        /test-plan\.md.*test-plan-rules|test-plan-rules.*test-plan\.md/s
-      );
+      expect(section).toMatch(/test-plan\.md.*test-plan-rules|test-plan-rules.*test-plan\.md/s);
     });
 
     it("maps epics-and-stories.md to epics-rules", () => {
@@ -209,22 +203,13 @@ describe("E10-S2: Document-Specific Validation Rulesets", () => {
     it("document-specific rules run before factual claim verification", () => {
       const content = readFileSync(VAL_INSTRUCTIONS_PATH, "utf8");
       // The type detection / document rules step must come before the existing claim extraction step
-      const typeDetectionIdx = content.search(
-        /artifact.?type|type.?detect|document.?specific/i
-      );
+      const typeDetectionIdx = content.search(/artifact.?type|type.?detect|document.?specific/i);
       const claimExtractionIdx = content.search(/Extract Claims|claim.?extraction/i);
-      expect(
-        typeDetectionIdx,
-        "Type detection not found in instructions"
-      ).toBeGreaterThan(-1);
-      expect(
-        claimExtractionIdx,
-        "Claim extraction not found in instructions"
-      ).toBeGreaterThan(-1);
-      expect(
-        typeDetectionIdx,
-        "Type detection must come before claim extraction"
-      ).toBeLessThan(claimExtractionIdx);
+      expect(typeDetectionIdx, "Type detection not found in instructions").toBeGreaterThan(-1);
+      expect(claimExtractionIdx, "Claim extraction not found in instructions").toBeGreaterThan(-1);
+      expect(typeDetectionIdx, "Type detection must come before claim extraction").toBeLessThan(
+        claimExtractionIdx
+      );
     });
 
     it("findings from both passes are merged", () => {
@@ -244,9 +229,7 @@ describe("E10-S2: Document-Specific Validation Rulesets", () => {
     it("unknown types skip document-specific rules, run factual claims only", () => {
       const content = readFileSync(RULESETS_SKILL_PATH, "utf8");
       const section = extractSection(content, "type-detection");
-      expect(section).toMatch(
-        /skip.*document|factual.*only|claim.*verification.*only/i
-      );
+      expect(section).toMatch(/skip.*document|factual.*only|claim.*verification.*only/i);
     });
 
     it("val-validate-artifact instructions handle unknown type gracefully", () => {
@@ -300,17 +283,13 @@ describe("E10-S2: Document-Specific Validation Rulesets", () => {
         "two-pass-logic",
       ];
       for (const section of expectedSections) {
-        expect(frontmatter, `Frontmatter missing section: ${section}`).toContain(
-          section
-        );
+        expect(frontmatter, `Frontmatter missing section: ${section}`).toContain(section);
       }
     });
 
     it("has matching section start and end markers", () => {
       const content = readFileSync(RULESETS_SKILL_PATH, "utf8");
-      const sectionStarts = (
-        content.match(/<!-- SECTION: [\w-]+ -->/g) || []
-      ).length;
+      const sectionStarts = (content.match(/<!-- SECTION: [\w-]+ -->/g) || []).length;
       const sectionEnds = (content.match(/<!-- END SECTION -->/g) || []).length;
       expect(sectionStarts).toBe(7);
       expect(sectionEnds).toBe(7);
@@ -351,10 +330,9 @@ describe("E10-S2: Document-Specific Validation Rulesets", () => {
   describe("Skill manifest integration", () => {
     it("skill-manifest.csv has a document-rulesets entry", () => {
       const manifest = readFileSync(SKILL_MANIFEST_PATH, "utf8");
-      expect(
-        manifest,
-        "skill-manifest.csv missing document-rulesets entry"
-      ).toContain("document-rulesets");
+      expect(manifest, "skill-manifest.csv missing document-rulesets entry").toContain(
+        "document-rulesets"
+      );
     });
 
     it("manifest entry references correct path", () => {
@@ -362,9 +340,7 @@ describe("E10-S2: Document-Specific Validation Rulesets", () => {
       const lines = manifest.split("\n");
       const entry = lines.find((l) => l.includes("document-rulesets"));
       expect(entry, "No manifest entry found").toBeTruthy();
-      expect(entry).toContain(
-        "_gaia/lifecycle/skills/document-rulesets.md"
-      );
+      expect(entry).toContain("_gaia/lifecycle/skills/document-rulesets.md");
     });
 
     it("manifest entry lists validator as applicable agent", () => {

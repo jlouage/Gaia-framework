@@ -5,13 +5,7 @@ import yaml from "js-yaml";
 
 const PROJECT_ROOT = resolve(import.meta.dirname, "../../..");
 const GAIA_DIR = join(PROJECT_ROOT, "_gaia");
-const EDIT_UX_DIR = join(
-  GAIA_DIR,
-  "lifecycle",
-  "workflows",
-  "2-planning",
-  "edit-ux-design",
-);
+const EDIT_UX_DIR = join(GAIA_DIR, "lifecycle", "workflows", "2-planning", "edit-ux-design");
 const WORKFLOW_YAML = join(EDIT_UX_DIR, "workflow.yaml");
 const INSTRUCTIONS_XML = join(EDIT_UX_DIR, "instructions.xml");
 const CHECKLIST_MD = join(EDIT_UX_DIR, "checklist.md");

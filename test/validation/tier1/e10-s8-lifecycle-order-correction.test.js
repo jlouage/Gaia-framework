@@ -88,15 +88,11 @@ describe("Lifecycle Order Correction (E10-S8)", () => {
 
     it("val-validate should exist in Phase 2 and point to /gaia-create-ux on pass", () => {
       // There should be a val-validate entry that routes to create-ux
-      expect(content).toMatch(
-        /val-validate:[\s\S]*?on_pass:\s*\/gaia-create-ux/
-      );
+      expect(content).toMatch(/val-validate:[\s\S]*?on_pass:\s*\/gaia-create-ux/);
     });
 
     it("val-validate should point to /gaia-edit-prd on fail", () => {
-      expect(content).toMatch(
-        /val-validate:[\s\S]*?on_fail:\s*\/gaia-edit-prd/
-      );
+      expect(content).toMatch(/val-validate:[\s\S]*?on_fail:\s*\/gaia-edit-prd/);
     });
 
     it("create-ux-design should appear after val-validate and before create-architecture in key order", () => {
@@ -129,9 +125,7 @@ describe("Lifecycle Order Correction (E10-S8)", () => {
       const nextTargets = noComments.match(
         /(?:primary|on_pass|on_fail|on_all_passed|on_failures|on_pending):\s*(\S+)/g
       );
-      const targetValues = (nextTargets || []).map((m) =>
-        m.replace(/^.*:\s*/, "")
-      );
+      const targetValues = (nextTargets || []).map((m) => m.replace(/^.*:\s*/, ""));
       expect(targetValues).not.toContain("/gaia-validate-prd");
     });
 
