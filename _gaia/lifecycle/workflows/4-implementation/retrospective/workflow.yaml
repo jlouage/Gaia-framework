@@ -2,6 +2,7 @@ name: retrospective
 description: 'Post-sprint retrospective with learning loop'
 module: lifecycle
 agent: sm
+val_validate_output: true
 template_output_prompt: "auto"
 config_resolved: "{installed_path}/.resolved/retrospective.yaml"
 config_source: "{project-root}/_gaia/lifecycle/config.yaml"

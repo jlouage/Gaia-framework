@@ -2,6 +2,7 @@ name: edit-test-plan
 description: 'Edit an existing test plan — add test cases for new features without regenerating'
 module: testing
 agent: test-architect
+val_validate_output: true
 config_resolved: "{installed_path}/.resolved/edit-test-plan.yaml"
 config_source: "{project-root}/_gaia/testing/config.yaml"
 installed_path: "{project-root}/_gaia/testing/workflows/edit-test-plan"

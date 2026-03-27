@@ -2,6 +2,7 @@ name: add-feature
 description: 'Guided orchestrator for adding a new feature — cascades through PRD, architecture, test plan, stories, traceability, and readiness'
 module: lifecycle
 agent: orchestrator
+val_validate_output: true
 config_resolved: "{installed_path}/.resolved/add-feature.yaml"
 config_source: "{project-root}/_gaia/lifecycle/config.yaml"
 installed_path: "{project-root}/_gaia/lifecycle/workflows/cross-phase/add-feature"

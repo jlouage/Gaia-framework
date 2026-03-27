@@ -2,6 +2,7 @@ name: triage-findings
 description: 'Triage development findings into backlog stories'
 module: lifecycle
 agent: sm
+val_validate_output: true
 config_resolved: "{installed_path}/.resolved/triage-findings.yaml"
 config_source: "{project-root}/_gaia/lifecycle/config.yaml"
 installed_path: "{project-root}/_gaia/lifecycle/workflows/4-implementation/triage-findings"

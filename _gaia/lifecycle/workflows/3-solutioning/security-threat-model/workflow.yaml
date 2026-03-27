@@ -2,6 +2,7 @@ name: security-threat-model
 description: 'Create security threat model using STRIDE/DREAD methodology'
 module: lifecycle
 agent: security
+val_validate_output: true
 config_resolved: "{installed_path}/.resolved/security-threat-model.yaml"
 config_source: "{project-root}/_gaia/lifecycle/config.yaml"
 installed_path: "{project-root}/_gaia/lifecycle/workflows/3-solutioning/security-threat-model"

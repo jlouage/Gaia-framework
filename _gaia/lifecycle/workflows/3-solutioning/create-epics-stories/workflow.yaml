@@ -2,6 +2,7 @@ name: create-epics-stories
 description: 'Break requirements into epics and user stories'
 module: lifecycle
 agent: pm
+val_validate_output: true
 config_resolved: "{installed_path}/.resolved/create-epics-stories.yaml"
 config_source: "{project-root}/_gaia/lifecycle/config.yaml"
 installed_path: "{project-root}/_gaia/lifecycle/workflows/3-solutioning/create-epics-stories"

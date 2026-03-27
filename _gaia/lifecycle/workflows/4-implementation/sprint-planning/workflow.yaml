@@ -2,6 +2,7 @@ name: sprint-planning
 description: 'Generate sprint plan from epics and stories'
 module: lifecycle
 agent: sm
+val_validate_output: true
 template_output_prompt: "auto"
 config_resolved: "{installed_path}/.resolved/sprint-planning.yaml"
 config_source: "{project-root}/_gaia/lifecycle/config.yaml"

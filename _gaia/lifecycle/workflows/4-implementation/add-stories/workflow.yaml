@@ -2,6 +2,7 @@ name: add-stories
 description: 'Add new stories to existing epics or create new epics with stories'
 module: lifecycle
 agent: pm
+val_validate_output: true
 config_resolved: "{installed_path}/.resolved/add-stories.yaml"
 config_source: "{project-root}/_gaia/lifecycle/config.yaml"
 installed_path: "{project-root}/_gaia/lifecycle/workflows/4-implementation/add-stories"
