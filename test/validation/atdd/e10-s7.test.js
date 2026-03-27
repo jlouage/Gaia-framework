@@ -5,19 +5,14 @@ import { join, resolve } from "path";
 const PROJECT_ROOT = resolve(import.meta.dirname, "../../..");
 const GAIA_DIR = join(PROJECT_ROOT, "_gaia");
 
-const STORY_TEMPLATE = join(
-  GAIA_DIR,
-  "lifecycle",
-  "templates",
-  "story-template.md",
-);
+const STORY_TEMPLATE = join(GAIA_DIR, "lifecycle", "templates", "story-template.md");
 const CREATE_STORY_INSTRUCTIONS = join(
   GAIA_DIR,
   "lifecycle",
   "workflows",
   "4-implementation",
   "create-story",
-  "instructions.xml",
+  "instructions.xml"
 );
 const CREATE_STORY_CHECKLIST = join(
   GAIA_DIR,
@@ -25,7 +20,7 @@ const CREATE_STORY_CHECKLIST = join(
   "workflows",
   "4-implementation",
   "create-story",
-  "checklist.md",
+  "checklist.md"
 );
 const ADD_FEATURE_INSTRUCTIONS = join(
   GAIA_DIR,
@@ -33,7 +28,7 @@ const ADD_FEATURE_INSTRUCTIONS = join(
   "workflows",
   "cross-phase",
   "add-feature",
-  "instructions.xml",
+  "instructions.xml"
 );
 const SPRINT_PLANNING_INSTRUCTIONS = join(
   GAIA_DIR,
@@ -41,7 +36,7 @@ const SPRINT_PLANNING_INSTRUCTIONS = join(
   "workflows",
   "4-implementation",
   "sprint-planning",
-  "instructions.xml",
+  "instructions.xml"
 );
 
 function loadFile(path) {
@@ -146,9 +141,7 @@ describe("E10-S7: Sprint priority_flag Integration", () => {
       const content = loadFile(SPRINT_PLANNING_INSTRUCTIONS);
       expect(content).not.toBeNull();
       // Must contain logic to clear/reset priority_flag to null
-      expect(content).toMatch(
-        /priority_flag.*null|clear.*priority_flag|reset.*priority_flag/is,
-      );
+      expect(content).toMatch(/priority_flag.*null|clear.*priority_flag|reset.*priority_flag/is);
     });
   });
 
