@@ -1,10 +1,9 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync, existsSync, readdirSync } from "fs";
-import { join, resolve, basename } from "path";
+import { join, basename } from "path";
+import { PROJECT_ROOT } from "../../helpers/project-root.js";
 
-// Framework root is where _gaia/ lives (one level above Gaia-framework/)
-const FRAMEWORK_ROOT = resolve(import.meta.dirname, "../../../..");
-const GAIA_DIR = join(FRAMEWORK_ROOT, "_gaia");
+const GAIA_DIR = join(PROJECT_ROOT, "_gaia");
 
 // ── Helpers ──────────────────────────────────────────────────
 
@@ -119,13 +118,7 @@ describe("E1-S8: Validation Coverage Gaps", () => {
     }
 
     it("all core XML files should be well-formed", async () => {
-      const validatorPath = join(
-        FRAMEWORK_ROOT,
-        "Gaia-framework",
-        "test",
-        "validators",
-        "instruction-validator.js"
-      );
+      const validatorPath = join(PROJECT_ROOT, "test", "validators", "instruction-validator.js");
       const { validateWellFormedness } = await import(validatorPath);
 
       for (const file of coreXmlFiles) {

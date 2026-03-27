@@ -1,9 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "fs";
-import { resolve, relative, basename } from "path";
-
-// Framework root is where _gaia/ lives (one level above Gaia-framework/)
-const FRAMEWORK_ROOT = resolve(import.meta.dirname, "../../../..");
+import { relative, basename } from "path";
+import { PROJECT_ROOT } from "../../helpers/project-root.js";
 
 // ─── File Content Cache ──────────────────────────────────────
 
@@ -31,8 +29,8 @@ import {
 // ─── AC1: Template Reference Coverage ────────────────────────
 
 describe("AC1: Every template referenced by at least one workflow", () => {
-  const templates = discoverTemplates(FRAMEWORK_ROOT);
-  const references = scanReferences(FRAMEWORK_ROOT);
+  const templates = discoverTemplates(PROJECT_ROOT);
+  const references = scanReferences(PROJECT_ROOT);
 
   it("should discover templates from both lifecycle and co-located locations", () => {
     expect(templates.length, "Expected templates from dual-glob discovery").toBeGreaterThan(0);
@@ -92,8 +90,8 @@ describe("AC1: Every template referenced by at least one workflow", () => {
 // ─── AC2: Variable Placeholder Validation ────────────────────
 
 describe("AC2: System/config variable placeholders validated", () => {
-  const registry = buildKnownVariableRegistry(FRAMEWORK_ROOT);
-  const templates = discoverTemplates(FRAMEWORK_ROOT);
+  const registry = buildKnownVariableRegistry(PROJECT_ROOT);
+  const templates = discoverTemplates(PROJECT_ROOT);
 
   it("should build a non-empty known-variable registry from global.yaml", () => {
     expect(registry.size, "Registry should contain variables from global.yaml").toBeGreaterThan(0);
@@ -146,7 +144,7 @@ describe("AC2: System/config variable placeholders validated", () => {
     const formatted = unknowns
       .map(
         (r) =>
-          `  ${relative(FRAMEWORK_ROOT, r.file)}:\n${r.unknowns.map((u) => `    - {${u}}`).join("\n")}`
+          `  ${relative(PROJECT_ROOT, r.file)}:\n${r.unknowns.map((u) => `    - {${u}}`).join("\n")}`
       )
       .join("\n");
     expect(unknowns, `Templates with unknown system/config variables:\n${formatted}`).toHaveLength(
@@ -212,8 +210,8 @@ describe("AC5: Unknown system/config variable detection", () => {
 // ─── AC6: used_by Frontmatter Cross-check ────────────────────
 
 describe("AC6: used_by frontmatter bidirectional consistency", () => {
-  const templates = discoverTemplates(FRAMEWORK_ROOT);
-  const references = scanReferences(FRAMEWORK_ROOT);
+  const templates = discoverTemplates(PROJECT_ROOT);
+  const references = scanReferences(PROJECT_ROOT);
 
   it("should parse used_by arrays from template frontmatter", () => {
     const results = checkUsedByFrontmatter(templates, references);
@@ -315,7 +313,7 @@ describe("Edge cases: findOrphans with empty inputs", () => {
 
 describe("Edge cases: buildKnownVariableRegistry content", () => {
   it("should include global.yaml configuration keys in the registry", () => {
-    const registry = buildKnownVariableRegistry(FRAMEWORK_ROOT);
+    const registry = buildKnownVariableRegistry(PROJECT_ROOT);
     // These are top-level keys in global.yaml that should be in the registry
     expect(registry.has("project_name"), "project_name from global.yaml").toBe(true);
     expect(registry.has("framework_name"), "framework_name from global.yaml").toBe(true);
@@ -330,7 +328,7 @@ describe("Edge cases: buildKnownVariableRegistry content", () => {
   });
 
   it("should include both system and workflow variables in the registry", () => {
-    const registry = buildKnownVariableRegistry(FRAMEWORK_ROOT);
+    const registry = buildKnownVariableRegistry(PROJECT_ROOT);
     // System variables
     expect(registry.has("project-root")).toBe(true);
     expect(registry.has("installed_path")).toBe(true);

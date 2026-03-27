@@ -1,10 +1,9 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync, existsSync, readdirSync } from "fs";
-import { join, resolve, basename } from "path";
+import { join, basename } from "path";
+import { PROJECT_ROOT } from "../../helpers/project-root.js";
 
-// Framework root is where _gaia/ lives (one level above Gaia-framework/)
-const FRAMEWORK_ROOT = resolve(import.meta.dirname, "../../../..");
-const GAIA_DIR = join(FRAMEWORK_ROOT, "_gaia");
+const GAIA_DIR = join(PROJECT_ROOT, "_gaia");
 
 // Agent directories to scan (5 modules)
 const AGENT_MODULE_DIRS = ["core", "lifecycle", "dev", "creative", "testing"];
@@ -121,7 +120,7 @@ function extractFragmentPaths(content) {
  */
 function resolveSkillPath(skillRef) {
   if (skillRef.includes("/")) {
-    const fullPath = join(FRAMEWORK_ROOT, skillRef);
+    const fullPath = join(PROJECT_ROOT, skillRef);
     return existsSync(fullPath) ? fullPath : null;
   }
   const devPath = join(DEV_SKILLS_DIR, `${skillRef}.md`);
@@ -211,7 +210,7 @@ describe("Agent Persona Validation (E1-S2, FR-31)", () => {
       }
 
       it.each(fragmentPaths)("should resolve fragment path: %s", (fragmentPath) => {
-        const fullPath = join(FRAMEWORK_ROOT, fragmentPath);
+        const fullPath = join(PROJECT_ROOT, fragmentPath);
         expect(
           existsSync(fullPath),
           `${basename(filePath)}: knowledge fragment "${fragmentPath}" not found at ${fullPath}`

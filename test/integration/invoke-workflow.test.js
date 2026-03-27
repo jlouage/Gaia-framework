@@ -11,12 +11,11 @@
 
 import { describe, it, expect, beforeAll } from "vitest";
 import { readFileSync, existsSync, readdirSync } from "fs";
-import { join, resolve, basename } from "path";
+import { join, basename } from "path";
 import { PROJECT_ROOT } from "../helpers/project-root.js";
 
 // ─── Path constants ──────────────────────────────────────────────
-const FRAMEWORK_ROOT = resolve(PROJECT_ROOT, "..");
-const GAIA_DIR = join(FRAMEWORK_ROOT, "_gaia");
+const GAIA_DIR = join(PROJECT_ROOT, "_gaia");
 const ENGINE_PATH = join(GAIA_DIR, "core", "engine", "workflow.xml");
 const _LIFECYCLE_TEMPLATES = join(GAIA_DIR, "lifecycle", "templates");
 const BRAINSTORM_TEMPLATE = join(GAIA_DIR, "core", "workflows", "brainstorming", "template.md");

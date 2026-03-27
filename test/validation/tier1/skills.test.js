@@ -1,11 +1,10 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync, existsSync, readdirSync } from "fs";
 import { join, resolve, basename } from "path";
+import { PROJECT_ROOT } from "../../helpers/project-root.js";
 
-// Framework root is where _gaia/ lives (one level above Gaia-framework/)
-const FRAMEWORK_ROOT = resolve(import.meta.dirname, "../../../..");
-const DEV_SKILLS_DIR = join(FRAMEWORK_ROOT, "_gaia", "dev", "skills");
-const LIFECYCLE_SKILLS_DIR = join(FRAMEWORK_ROOT, "_gaia", "lifecycle", "skills");
+const DEV_SKILLS_DIR = join(PROJECT_ROOT, "_gaia", "dev", "skills");
+const LIFECYCLE_SKILLS_DIR = join(PROJECT_ROOT, "_gaia", "lifecycle", "skills");
 const SKILLS_DIR = DEV_SKILLS_DIR; // backward-compat alias for index tests
 const SKILL_INDEX_PATH = join(DEV_SKILLS_DIR, "_skill-index.yaml");
 
@@ -69,7 +68,7 @@ function _discoverSkillFilesInDir(dir) {
  * Discover all agent directories under _gaia/ (dev/agents/, lifecycle/agents/, etc.).
  */
 function discoverAllAgentDirs() {
-  const gaiaDir = join(FRAMEWORK_ROOT, "_gaia");
+  const gaiaDir = join(PROJECT_ROOT, "_gaia");
   const dirs = [];
   for (const module of readdirSync(gaiaDir)) {
     const agentsDir = join(gaiaDir, module, "agents");

@@ -9,19 +9,17 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { resolve, join } from "path";
-import { readFileSync } from "fs";
+import { join } from "path";
+import { readFileSync, existsSync } from "fs";
 import { getWorkflowPaths } from "../helpers/workflow-paths.js";
 import { loadYaml } from "../../validators/config-validator.js";
-
-// FRAMEWORK_ROOT: outer project root where _gaia/ and docs/ live
-const FRAMEWORK_ROOT = resolve(import.meta.dirname, "../../../..");
+import { PROJECT_ROOT } from "../../helpers/project-root.js";
 
 /**
  * Count total quality gate checks across all non-backup workflow.yaml files.
  */
 function countQualityGateChecks() {
-  const workflowPaths = getWorkflowPaths(FRAMEWORK_ROOT);
+  const workflowPaths = getWorkflowPaths(PROJECT_ROOT);
   let totalChecks = 0;
 
   for (const wfPath of workflowPaths) {
@@ -78,10 +76,13 @@ function extractStorySection(content, storyKey) {
 }
 
 describe("E2-S7: Documentation Count Alignment", () => {
-  const epicsPath = join(FRAMEWORK_ROOT, "docs/planning-artifacts/epics-and-stories.md");
-  const epicsContent = readFileSync(epicsPath, "utf8");
+  const epicsPath = join(PROJECT_ROOT, "docs/planning-artifacts/epics-and-stories.md");
+  // docs/planning-artifacts/ lives at {project-root} which may be above the git repo.
+  // Skip all tests if the file is not available (e.g., in CI).
+  const epicsExists = existsSync(epicsPath);
+  const epicsContent = epicsExists ? readFileSync(epicsPath, "utf8") : "";
 
-  describe("AC1: Quality gate count accuracy", () => {
+  describe.skipIf(!epicsExists)("AC1: Quality gate count accuracy", () => {
     it("E2-S5 description references the correct quality gate count", () => {
       const actualCount = countQualityGateChecks();
       const section = extractStorySection(epicsContent, "E2-S5");
@@ -96,7 +97,7 @@ describe("E2-S7: Documentation Count Alignment", () => {
     });
   });
 
-  describe("AC2: Tier path classification", () => {
+  describe.skipIf(!epicsExists)("AC2: Tier path classification", () => {
     it("E2-S5 AC4 has tier classification consistent with ADR-001", () => {
       const section = extractStorySection(epicsContent, "E2-S5");
       expect(section, "E2-S5 section not found in epics-and-stories.md").not.toBeNull();
@@ -108,7 +109,7 @@ describe("E2-S7: Documentation Count Alignment", () => {
     });
   });
 
-  describe("AC3: E2-S2 test file path", () => {
+  describe.skipIf(!epicsExists)("AC3: E2-S2 test file path", () => {
     it("E2-S2 Dev Notes include a test file path", () => {
       const section = extractStorySection(epicsContent, "E2-S2");
       expect(section, "E2-S2 section not found in epics-and-stories.md").not.toBeNull();
@@ -118,7 +119,7 @@ describe("E2-S7: Documentation Count Alignment", () => {
     });
   });
 
-  describe("AC4: Epic overview story counts", () => {
+  describe.skipIf(!epicsExists)("AC4: Epic overview story counts", () => {
     it("all epic overview table counts match actual story counts", () => {
       const documentedCounts = parseOverviewTable(epicsContent);
       const actualCounts = countStoriesPerEpic(epicsContent);
