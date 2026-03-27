@@ -150,10 +150,7 @@ describe("E10-S10: val_validate_output Flag in 17 Workflows", () => {
         const config = yaml.load(content);
 
         expect(config.name, `${name} must still have name field`).toBeTruthy();
-        expect(
-          config.instructions,
-          `${name} must still have instructions field`
-        ).toBeTruthy();
+        expect(config.instructions, `${name} must still have instructions field`).toBeTruthy();
       }
     });
   });
