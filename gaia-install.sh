@@ -6,7 +6,6 @@ set -euo pipefail
 # Installs, updates, validates, and reports on GAIA installations.
 # ─────────────────────────────────────────────────────────────────────────────
 
-readonly VERSION="1.58.2"
 readonly GITHUB_REPO="https://github.com/jlouage/Gaia-framework.git"
 readonly MANIFEST_REL="_gaia/_config/manifest.yaml"
 
@@ -296,6 +295,23 @@ extract_yaml_value() {
   grep "^${key}:" "$file" 2>/dev/null | sed "s/^${key}:[[:space:]]*//" | sed 's/^"//;s/"$//' || echo ""
 }
 
+read_package_version() {
+  local script_dir
+  script_dir="$(cd "$(dirname "$0")" && pwd)"
+  local pkg="$script_dir/package.json"
+  if [[ ! -f "$pkg" ]]; then
+    error "package.json not found at $pkg"
+    return 1
+  fi
+  local ver
+  ver="$(grep -E '^\s*"version"\s*:' "$pkg" | sed 's/.*"version":[[:space:]]*"\([^"]*\)".*/\1/')"
+  if [[ -z "$ver" ]]; then
+    error "version field is empty or missing in $pkg"
+    return 1
+  fi
+  echo "$ver"
+}
+
 count_files() {
   local dir="$1" pattern="${2:-*}"
   find "$dir" -name "$pattern" -type f 2>/dev/null | wc -l | tr -d ' '
@@ -311,7 +327,9 @@ cmd_init() {
   local src_version
   src_version="$(extract_yaml_value "$source/_gaia/_config/global.yaml" "framework_version")"
 
-  printf "\n${BOLD}GAIA Framework Installer v%s${RESET}\n" "$VERSION"
+  local pkg_version
+  pkg_version="$(read_package_version)"
+  printf "\n${BOLD}GAIA Framework Installer v%s${RESET}\n" "$pkg_version"
   printf "  Source:  %s\n" "$source"
   printf "  Target:  %s\n" "$TARGET"
   printf "  Version: %s\n\n" "${src_version:-unknown}"
@@ -547,10 +565,14 @@ cmd_update() {
 
   local src_version
   src_version="$(extract_yaml_value "$source/_gaia/_config/global.yaml" "framework_version")"
+  if [[ -z "$src_version" ]]; then
+    error "framework_version not found in $source/_gaia/_config/global.yaml"
+    exit 1
+  fi
   local cur_version
   cur_version="$(extract_yaml_value "$TARGET/_gaia/_config/global.yaml" "framework_version")"
 
-  printf "\n${BOLD}GAIA Framework Updater v%s${RESET}\n" "$VERSION"
+  printf "\n${BOLD}GAIA Framework Updater v%s${RESET}\n" "$src_version"
   printf "  Source:  %s (v%s)\n" "$source" "${src_version:-unknown}"
   printf "  Target:  %s (v%s)\n\n" "$TARGET" "${cur_version:-unknown}"
 
@@ -881,8 +903,10 @@ cmd_status() {
 # ─── Usage & Argument Parsing ───────────────────────────────────────────────
 
 usage() {
+  local pkg_ver
+  pkg_ver="$(read_package_version)"
   cat <<EOF
-${BOLD}GAIA Framework Installer v${VERSION}${RESET}
+${BOLD}GAIA Framework Installer v${pkg_ver}${RESET}
 
 Usage: gaia-install.sh <command> [options] [target]
 
@@ -931,7 +955,9 @@ parse_args() {
       exit 0
       ;;
     --version|-v)
-      echo "gaia-install.sh v${VERSION}"
+      local ver
+      ver="$(read_package_version)"
+      echo "$ver"
       exit 0
       ;;
     *)

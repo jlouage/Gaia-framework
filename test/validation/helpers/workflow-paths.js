@@ -45,6 +45,7 @@ export const VALID_VARIABLE_REFS = [
   "{cr_id}",
   "{version}",
   "{agent}",
+  "{feature_id}",
 ];
 
 /**

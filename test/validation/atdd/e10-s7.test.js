@@ -26,7 +26,7 @@ const ADD_FEATURE_INSTRUCTIONS = join(
   GAIA_DIR,
   "lifecycle",
   "workflows",
-  "cross-phase",
+  "4-implementation",
   "add-feature",
   "instructions.xml"
 );

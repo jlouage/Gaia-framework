@@ -149,6 +149,7 @@
   <action>Spawn subagent: "Load {project-root}/_gaia/core/engine/workflow.xml, then process {project-root}/_gaia/lifecycle/workflows/4-implementation/add-stories/workflow.yaml as workflow-config. Run in YOLO mode. Context: {classification} — {description}. New requirements: {prd_diff}. Architecture changes: {arch_diff}. Feature ID: {feature_id}."</action>
   <action>When subagent returns: capture new story keys and epic assignments.</action>
   <action>If classification is 'patch': create a single fix story inline or recommend /gaia-create-story.</action>
+  <action>Priority flag integration: if the feature driver is high-urgency (P0 priority, business-critical, or regulatory driver), set priority_flag: "next-sprint" in each created story's frontmatter. This signals sprint planning to auto-include these stories in the next sprint cycle. For non-urgent features, priority_flag remains null (default).</action>
 </step>
 
 <step n="9" title="Assessment Doc">

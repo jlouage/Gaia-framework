@@ -30,6 +30,7 @@ export const VALID_VARIABLES = new Set([
   "plan_artifact_path",
   "target_file",
   "memory_path",
+  "feature_id",
 ]);
 
 // Parser configured per ADR-010: preserve attributes, handle CDATA

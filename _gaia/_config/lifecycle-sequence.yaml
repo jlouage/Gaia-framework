@@ -81,13 +81,6 @@ sequence:
       on_pass: /gaia-create-ux
       on_fail: /gaia-edit-prd
 
-  validate-prd:
-    phase: 2-planning
-    command: /gaia-validate-prd
-    deprecated: true
-    next:
-      standalone: "DEPRECATED — Use /gaia-val-validate instead"
-
   edit-prd:
     phase: 2-planning
     command: /gaia-edit-prd
@@ -470,6 +463,7 @@ sequence:
   validate-prd:
     module: lifecycle
     command: /gaia-validate-prd
+    deprecated: true
     next:
       standalone: true
       note: "Deprecated — superseded by /gaia-val-validate. Will be removed in E10-S3."

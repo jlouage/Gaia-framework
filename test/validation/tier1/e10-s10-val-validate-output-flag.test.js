@@ -80,7 +80,7 @@ const ARTIFACT_PRODUCING_WORKFLOWS = [
   },
   {
     name: "add-feature",
-    path: "_gaia/lifecycle/workflows/cross-phase/add-feature/workflow.yaml",
+    path: "_gaia/lifecycle/workflows/4-implementation/add-feature/workflow.yaml",
   },
 ];
 

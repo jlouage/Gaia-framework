@@ -3,6 +3,7 @@ description: 'PM-owned triage workflow for adding a fix, enhancement, or feature
 module: lifecycle
 agent: pm
 execution_mode: planning
+val_validate_output: true
 val_auto_in_yolo: true
 val_auto_in_yolo_steps: [4, 9]
 config_resolved: "{installed_path}/.resolved/add-feature.yaml"

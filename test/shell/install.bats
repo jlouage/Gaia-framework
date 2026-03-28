@@ -984,3 +984,238 @@ SH
 
   rm -rf "$SRC_DIR" "$FAKE_BIN"
 }
+
+# ─── E4-S8: Dynamic Version Tests ─────────────────────────────────────────
+
+# Helper: create a mock package.json in a given directory
+create_mock_package_json() {
+  local dir="$1" version="${2:-1.65.0}"
+  cat > "$dir/package.json" <<PJSON
+{
+  "name": "gaia-framework",
+  "version": "${version}",
+  "description": "test"
+}
+PJSON
+}
+
+# Helper: set up a temp copy of the installer with a mock package.json
+setup_versioned_script() {
+  local tmp="$1" version="${2:-1.65.0}"
+  cp "$SCRIPT" "$tmp/gaia-install.sh"
+  chmod +x "$tmp/gaia-install.sh"
+  create_mock_package_json "$tmp" "$version"
+}
+
+@test "E4-S8: no hardcoded readonly VERSION line exists" {
+  run grep -n '^readonly VERSION=' "$SCRIPT"
+  [ "$status" -ne 0 ]
+}
+
+@test "E4-S8: --version flag reads version from package.json" {
+  local TMP="$(mktemp -d)"
+  setup_versioned_script "$TMP" "2.99.0"
+
+  run bash "$TMP/gaia-install.sh" --version
+  [ "$status" -eq 0 ]
+  echo "$output" | grep -q "2.99.0"
+
+  rm -rf "$TMP"
+}
+
+@test "E4-S8: init banner displays version from package.json" {
+  local SRC_DIR="$(mktemp -d)"
+  local TMP="$(mktemp -d)"
+  create_mock_source "$SRC_DIR"
+  setup_versioned_script "$TMP" "3.0.0"
+
+  run bash "$TMP/gaia-install.sh" init --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+  echo "$output" | grep -q "Installer v3.0.0"
+
+  rm -rf "$SRC_DIR" "$TMP"
+}
+
+@test "E4-S8: update banner displays version from global.yaml" {
+  local SRC_DIR="$(mktemp -d)"
+  local TMP="$(mktemp -d)"
+  create_mock_source "$SRC_DIR"
+  setup_versioned_script "$TMP" "3.0.0"
+
+  # Set up a pre-existing GAIA install at TEST_DIR
+  mkdir -p "$TEST_DIR/_gaia/_config"
+  cp "$SRC_DIR/_gaia/_config/manifest.yaml" "$TEST_DIR/_gaia/_config/manifest.yaml"
+  # Set framework_version in target global.yaml to a specific value
+  cat > "$TEST_DIR/_gaia/_config/global.yaml" <<'YAML'
+framework_name: "GAIA"
+framework_version: "1.50.0"
+project_name: "test"
+user_name: "tester"
+project_path: "."
+YAML
+  for mod in core lifecycle dev creative testing; do
+    mkdir -p "$TEST_DIR/_gaia/$mod"
+  done
+
+  run bash "$TMP/gaia-install.sh" update --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+  # The updater banner should show the source framework_version, NOT the package.json version
+  echo "$output" | grep -q "Updater v1.0.0"
+
+  rm -rf "$SRC_DIR" "$TMP"
+}
+
+@test "E4-S8: --version fails with missing package.json" {
+  local TMP="$(mktemp -d)"
+  cp "$SCRIPT" "$TMP/gaia-install.sh"
+  chmod +x "$TMP/gaia-install.sh"
+  # No package.json created
+
+  run bash "$TMP/gaia-install.sh" --version
+  [ "$status" -ne 0 ]
+  echo "$output" | grep -q "package.json"
+
+  rm -rf "$TMP"
+}
+
+@test "E4-S8: --version fails with empty version field in package.json" {
+  local TMP="$(mktemp -d)"
+  cp "$SCRIPT" "$TMP/gaia-install.sh"
+  chmod +x "$TMP/gaia-install.sh"
+  cat > "$TMP/package.json" <<'PJSON'
+{
+  "name": "gaia-framework",
+  "version": "",
+  "description": "test"
+}
+PJSON
+
+  run bash "$TMP/gaia-install.sh" --version
+  [ "$status" -ne 0 ]
+  echo "$output" | grep -q "version"
+
+  rm -rf "$TMP"
+}
+
+@test "E4-S8: update fails when source global.yaml missing framework_version" {
+  local SRC_DIR="$(mktemp -d)"
+  local TMP="$(mktemp -d)"
+  create_mock_source "$SRC_DIR"
+  setup_versioned_script "$TMP" "1.0.0"
+
+  # Remove framework_version from SOURCE global.yaml
+  cat > "$SRC_DIR/_gaia/_config/global.yaml" <<'YAML'
+framework_name: "GAIA"
+project_name: "test"
+user_name: "tester"
+YAML
+
+  # Set up a pre-existing GAIA install at TEST_DIR
+  mkdir -p "$TEST_DIR/_gaia/_config"
+  cp "$SRC_DIR/_gaia/_config/manifest.yaml" "$TEST_DIR/_gaia/_config/manifest.yaml"
+  cat > "$TEST_DIR/_gaia/_config/global.yaml" <<'YAML'
+framework_name: "GAIA"
+framework_version: "1.0.0"
+project_name: "test"
+user_name: "tester"
+YAML
+  for mod in core lifecycle dev creative testing; do
+    mkdir -p "$TEST_DIR/_gaia/$mod"
+  done
+
+  run bash "$TMP/gaia-install.sh" update --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -ne 0 ]
+  echo "$output" | grep -qE "framework_version|global.yaml"
+
+  rm -rf "$SRC_DIR" "$TMP"
+}
+
+# ─── E4-S8 Test Automation: Additional Coverage ──────────────────────────────
+
+@test "E4-S8-TA: read_package_version helper function exists in installer" {
+  run grep -c 'read_package_version()' "$SCRIPT"
+  [ "$status" -eq 0 ]
+  [ "$output" -ge 1 ]
+}
+
+@test "E4-S8-TA: usage banner displays version from package.json (AC2)" {
+  local TMP="$(mktemp -d)"
+  setup_versioned_script "$TMP" "4.5.6"
+
+  run bash "$TMP/gaia-install.sh" --help
+  [ "$status" -eq 0 ]
+  echo "$output" | grep -q "Installer v4.5.6"
+
+  rm -rf "$TMP"
+}
+
+@test "E4-S8-TA: init fails when package.json is missing (AC5 init path)" {
+  local SRC_DIR="$(mktemp -d)"
+  local TMP="$(mktemp -d)"
+  create_mock_source "$SRC_DIR"
+  # Copy script but do NOT create package.json
+  cp "$SCRIPT" "$TMP/gaia-install.sh"
+  chmod +x "$TMP/gaia-install.sh"
+
+  run bash "$TMP/gaia-install.sh" init --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -ne 0 ]
+  echo "$output" | grep -q "package.json"
+
+  rm -rf "$SRC_DIR" "$TMP"
+}
+
+@test "E4-S8-TA: version byte-for-byte matches package.json value (AC4)" {
+  local TMP="$(mktemp -d)"
+  setup_versioned_script "$TMP" "7.8.9"
+
+  run bash "$TMP/gaia-install.sh" --version
+  [ "$status" -eq 0 ]
+  # Trim whitespace and compare exact version string
+  local trimmed
+  trimmed="$(echo "$output" | tr -d '[:space:]')"
+  [ "$trimmed" = "7.8.9" ]
+
+  rm -rf "$TMP"
+}
+
+@test "E4-S8-TA: version read uses grep/sed only — no jq, python, or node (AC2 constraint)" {
+  # The read_package_version function must not use jq, python, or node
+  local func_body
+  func_body="$(sed -n '/^read_package_version()/,/^}/p' "$SCRIPT")"
+  echo "$func_body" | grep -vq 'jq '
+  echo "$func_body" | grep -vq 'python '
+  echo "$func_body" | grep -vq 'node '
+}
+
+@test "E4-S8-TA: update banner version comes from source global.yaml not package.json (AC3 isolation)" {
+  local SRC_DIR="$(mktemp -d)"
+  local TMP="$(mktemp -d)"
+  create_mock_source "$SRC_DIR"
+  # Set package.json to a DIFFERENT version than global.yaml
+  setup_versioned_script "$TMP" "99.0.0"
+  # Source global.yaml has framework_version: 1.0.0 (from create_mock_source)
+
+  mkdir -p "$TEST_DIR/_gaia/_config"
+  cp "$SRC_DIR/_gaia/_config/manifest.yaml" "$TEST_DIR/_gaia/_config/manifest.yaml"
+  cat > "$TEST_DIR/_gaia/_config/global.yaml" <<'YAML'
+framework_name: "GAIA"
+framework_version: "0.9.0"
+project_name: "test"
+user_name: "tester"
+project_path: "."
+YAML
+  for mod in core lifecycle dev creative testing; do
+    mkdir -p "$TEST_DIR/_gaia/$mod"
+  done
+
+  run bash "$TMP/gaia-install.sh" update --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+  # Update banner must show source global.yaml version (1.0.0), NOT package.json (99.0.0)
+  echo "$output" | grep -q "Updater v1.0.0"
+  # Must NOT show the package.json version in the updater banner
+  local banner_line
+  banner_line="$(echo "$output" | grep "Updater v")"
+  echo "$banner_line" | grep -vq "99.0.0"
+
+  rm -rf "$SRC_DIR" "$TMP"
+}

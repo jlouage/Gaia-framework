@@ -2,6 +2,7 @@ const path = require("path");
 const fs = require("fs");
 const { execFileSync } = require("child_process");
 const crypto = require("crypto");
+const os = require("os");
 
 // Uses Vitest globals (describe, it, expect) — configured via globals: true in vitest.config.js
 
@@ -10,12 +11,53 @@ const SCRIPT = path.join(ROOT, "bin/generate-checksums.js");
 const CHECKSUMS_FILE = path.join(ROOT, "checksums.txt");
 
 /**
+ * Create an isolated temp project with a copy of generate-checksums.js
+ * and a minimal package.json. Used by error-handling tests to avoid
+ * mutating the real gaia-install.sh (which causes race conditions
+ * with parallel Vitest forks — see AF-2026-03-28-1).
+ *
+ * @param {object} opts
+ * @param {string[]} opts.files - files array for the temp package.json
+ * @param {object} [opts.fileContents] - map of relative path → content to create
+ * @returns {{ root: string, script: string, cleanup: () => void }}
+ */
+function createIsolatedProject({ files, fileContents = {} }) {
+  const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), "gaia-checksum-test-"));
+  const binDir = path.join(tmpRoot, "bin");
+  fs.mkdirSync(binDir, { recursive: true });
+
+  // Copy the real generate-checksums.js script
+  fs.copyFileSync(SCRIPT, path.join(binDir, "generate-checksums.js"));
+
+  // Write a minimal package.json with the requested files array
+  fs.writeFileSync(
+    path.join(tmpRoot, "package.json"),
+    JSON.stringify({ name: "test-project", version: "0.0.0", files }, null, 2)
+  );
+
+  // Create any requested files
+  for (const [relPath, content] of Object.entries(fileContents)) {
+    const fullPath = path.join(tmpRoot, relPath);
+    fs.mkdirSync(path.dirname(fullPath), { recursive: true });
+    fs.writeFileSync(fullPath, content);
+  }
+
+  const script = path.join(binDir, "generate-checksums.js");
+
+  return {
+    root: tmpRoot,
+    script,
+    cleanup: () => fs.rmSync(tmpRoot, { recursive: true, force: true }),
+  };
+}
+
+/**
  * Helper: run the generator script and return { stdout, exitCode }.
  * Throws on non-zero exit unless `expectFailure` is true.
  */
-function runGenerator({ expectFailure = false, cwd = ROOT } = {}) {
+function runGenerator({ expectFailure = false, cwd = ROOT, script = SCRIPT } = {}) {
   try {
-    const stdout = execFileSync(process.execPath, [SCRIPT], {
+    const stdout = execFileSync(process.execPath, [script], {
       cwd,
       encoding: "utf8",
       env: { ...process.env },
@@ -136,37 +178,28 @@ describe("generate-checksums.js", () => {
 
   describe("error handling", () => {
     it("should exit non-zero when a file in files array is missing", () => {
-      // Temporarily rename gaia-install.sh to simulate a missing file
-      const target = path.join(ROOT, "gaia-install.sh");
-      const backup = target + ".bak";
-      let renamed = false;
+      // Use an isolated temp project so we never mutate the real gaia-install.sh.
+      // The package.json lists "gaia-install.sh" but we don't create the file.
+      const iso = createIsolatedProject({ files: ["gaia-install.sh"] });
       try {
-        if (fs.existsSync(target)) {
-          fs.renameSync(target, backup);
-          renamed = true;
-        }
-        const result = runGenerator({ expectFailure: true });
+        const result = runGenerator({ expectFailure: true, cwd: iso.root, script: iso.script });
         expect(result.exitCode).not.toBe(0);
       } finally {
-        if (renamed) {
-          fs.renameSync(backup, target);
-        }
+        iso.cleanup();
       }
     });
 
     it("should exit non-zero when a file is zero bytes", () => {
-      // Temporarily replace gaia-install.sh with an empty file
-      const target = path.join(ROOT, "gaia-install.sh");
-      const backup = target + ".bak";
-      const originalContent = fs.readFileSync(target);
+      // Use an isolated temp project with a zero-byte gaia-install.sh.
+      const iso = createIsolatedProject({
+        files: ["gaia-install.sh"],
+        fileContents: { "gaia-install.sh": "" },
+      });
       try {
-        fs.copyFileSync(target, backup);
-        fs.writeFileSync(target, "");
-        const result = runGenerator({ expectFailure: true });
+        const result = runGenerator({ expectFailure: true, cwd: iso.root, script: iso.script });
         expect(result.exitCode).not.toBe(0);
       } finally {
-        fs.writeFileSync(target, originalContent);
-        if (fs.existsSync(backup)) fs.unlinkSync(backup);
+        iso.cleanup();
       }
     });
   });
