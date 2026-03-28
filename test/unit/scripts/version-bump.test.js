@@ -270,4 +270,63 @@ describe("version-bump.js", () => {
       expect(stdout).toContain("gaia-build-configs");
     });
   });
+
+  // E4-S7 AC5: explicit version mode
+  describe("AC5 — explicit version mode", () => {
+    it("accepts explicit version '1.65.0' and updates all 6 files", () => {
+      runBump(dir, ["1.65.0"]); // explicit version mode
+
+      const pkg = JSON.parse(readVersion(dir, "package.json"));
+      expect(pkg.version).toBe("1.65.0");
+
+      const installer = readVersion(dir, "gaia-install.sh");
+      expect(installer).toContain('readonly VERSION="1.65.0"');
+
+      const global = readVersion(dir, "_gaia/_config/global.yaml");
+      expect(global).toContain('framework_version: "1.65.0"');
+
+      const claude = readVersion(dir, "CLAUDE.md");
+      expect(claude).toContain("# GAIA Framework v1.65.0");
+
+      const readme = readVersion(dir, "README.md");
+      expect(readme).toContain("framework-v1.65.0-blue");
+      expect(readme).toContain('framework_version: "1.65.0"');
+    });
+
+    it("rejects invalid explicit version string with non-zero exit", () => {
+      const result = runBumpError(dir, ["abc"]);
+      expect(result.exitCode).not.toBe(0);
+    });
+
+    it("logs drift as warning but syncs to explicit version regardless", () => {
+      // Set global.yaml to a different version to create drift
+      fs.writeFileSync(
+        path.join(dir, "_gaia", "_config", "global.yaml"),
+        'framework_name: "GAIA"\nframework_version: "1.0.1"\n'
+      );
+
+      const stdout = runBump(dir, ["1.65.0"]);
+
+      // Should report drift but still succeed
+      expect(stdout).toMatch(/drift/i);
+
+      // All 6 files should be synced to 1.65.0
+      const pkg = JSON.parse(readVersion(dir, "package.json"));
+      expect(pkg.version).toBe("1.65.0");
+
+      const global = readVersion(dir, "_gaia/_config/global.yaml");
+      expect(global).toContain('framework_version: "1.65.0"');
+    });
+
+    it("explicit version with --dry-run shows planned changes without modifying files", () => {
+      const stdout = runBump(dir, ["1.65.0", "--dry-run"]);
+
+      expect(stdout).toContain("1.0.0");
+      expect(stdout).toContain("1.65.0");
+
+      // Files should NOT be modified
+      const pkg = JSON.parse(readVersion(dir, "package.json"));
+      expect(pkg.version).toBe("1.0.0");
+    });
+  });
 });

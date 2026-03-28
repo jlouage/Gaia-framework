@@ -1,8 +1,10 @@
 # Publish Pipeline — triggers on GitHub Release creation
-# E4-S2: Automated npm publish with provenance attestation
+# E4-S2: Automated npm packaging with provenance attestation
+# E4-S7: CI-driven version sync from git tag (ADR-019)
 # ADR-008: GitHub Actions for CI/CD
-# ADR-009: Release-triggered publish (not tag-triggered)
+# ADR-009: Release-triggered packaging (not tag-triggered)
 # ADR-011: Tier 2 staleness enforcement
+# ADR-019: CI-driven version derivation from git tag
 # See docs/planning-artifacts/architecture.md Section 10.4
 
 name: Publish
@@ -11,6 +13,10 @@ on:
   release:
     types: [created]
 
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
 jobs:
   publish:
     name: Publish to npm
@@ -18,12 +24,13 @@ jobs:
     if: github.event.release.draft == false
     permissions:
       id-token: write
-      contents: read
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: main
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -37,21 +44,93 @@ jobs:
       - name: Run full test suite
         run: npm test
 
-      - name: Verify version matches release tag
+      - name: Extract version from tag
+        id: extract-version
         run: |
           TAG_VERSION="${{ github.event.release.tag_name }}"
-          TAG_VERSION="${TAG_VERSION#v}"
-          PKG_VERSION=$(node -p "require('./package.json').version")
+          echo "Raw tag: $TAG_VERSION"
 
-          echo "Release tag version: $TAG_VERSION"
-          echo "package.json version: $PKG_VERSION"
-
-          if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
-            echo "::error::Version mismatch — release tag ($TAG_VERSION) does not match package.json ($PKG_VERSION)"
+          # Validate tag matches strict vX.Y.Z pattern (no pre-release, no extras)
+          if [[ ! "$TAG_VERSION" =~ ^v([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
+            echo "::error::Tag '$TAG_VERSION' does not match required vX.Y.Z format (e.g., v1.65.0). Pre-release tags (v1.0.0-rc.1), partial versions (v1.2), and non-v-prefixed tags are not supported."
             exit 1
           fi
 
-          echo "Version match confirmed: $TAG_VERSION"
+          TAG_VERSION="${TAG_VERSION#v}"
+          echo "Extracted version: $TAG_VERSION"
+          echo "version=$TAG_VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Sync version files
+        run: |
+          TAG_VERSION="${{ steps.extract-version.outputs.version }}"
+          echo "Syncing all version files to $TAG_VERSION..."
+          node scripts/version-bump.js $TAG_VERSION
+
+      - name: Verify all 6 version files synced
+        run: |
+          VERSION="${{ steps.extract-version.outputs.version }}"
+          echo "Verifying all 6 version files contain $VERSION..."
+
+          FAIL=0
+
+          # 1. package.json
+          PKG_VERSION=$(node -p "require('./package.json').version")
+          if [ "$PKG_VERSION" != "$VERSION" ]; then
+            echo "::error::package.json version ($PKG_VERSION) does not match $VERSION"
+            FAIL=1
+          fi
+
+          # 2. gaia-install.sh
+          if ! grep -q "readonly VERSION=\"$VERSION\"" gaia-install.sh; then
+            echo "::error::gaia-install.sh does not contain VERSION=\"$VERSION\""
+            FAIL=1
+          fi
+
+          # 3. _gaia/_config/global.yaml
+          if ! grep -q "framework_version: \"$VERSION\"" _gaia/_config/global.yaml; then
+            echo "::error::global.yaml does not contain framework_version: \"$VERSION\""
+            FAIL=1
+          fi
+
+          # 4. CLAUDE.md
+          if ! grep -q "# GAIA Framework v$VERSION" CLAUDE.md; then
+            echo "::error::CLAUDE.md does not contain '# GAIA Framework v$VERSION'"
+            FAIL=1
+          fi
+
+          # 5. README.md (badge)
+          if ! grep -q "framework-v$VERSION-blue" README.md; then
+            echo "::error::README.md badge does not contain framework-v$VERSION-blue"
+            FAIL=1
+          fi
+
+          # 6. README.md (code block)
+          if ! grep -q "framework_version: \"$VERSION\"" README.md; then
+            echo "::error::README.md code block does not contain framework_version: \"$VERSION\""
+            FAIL=1
+          fi
+
+          if [ "$FAIL" -ne 0 ]; then
+            echo "::error::Version sync verification failed — one or more files do not match $VERSION"
+            exit 1
+          fi
+
+          echo "All 6 version files verified: $VERSION"
+
+      - name: Commit version-synced files
+        run: |
+          VERSION="${{ steps.extract-version.outputs.version }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add package.json gaia-install.sh _gaia/_config/global.yaml CLAUDE.md README.md
+          if git diff --cached --quiet; then
+            echo "No version changes needed — files already at $VERSION"
+          else
+            git commit -m "chore: sync version files to $VERSION"
+            git push origin main
+            echo "Version sync committed and pushed"
+          fi
 
       - name: Tier 2 staleness check
         run: |
@@ -90,6 +169,10 @@ jobs:
 
           echo "All Tier 2 results are fresh"
 
+      # Provenance attestation signs the published artifact at this point.
+      # The version-sync commit (if any) happened before this step, so the
+      # working tree matches the committed state on main. Provenance signs
+      # the artifact built from THIS tree — not the original tag commit.
       - name: Publish to npm with provenance
         run: |
           npm publish --provenance 2>&1 || {

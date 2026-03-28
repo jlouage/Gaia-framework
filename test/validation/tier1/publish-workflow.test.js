@@ -242,12 +242,12 @@ describe("Publish Workflow Validation (E4-S2)", () => {
       expect(perms["id-token"]).toBe("write");
     });
 
-    it("publish job should declare contents: read", () => {
+    it("publish job should declare contents: write (required for version-sync commit)", () => {
       const jobs = publishConfig.jobs;
       const publishJob = jobs.publish || jobs["publish-and-verify"];
       const perms = publishJob.permissions;
       expect(perms).toBeDefined();
-      expect(perms.contents).toBe("read");
+      expect(perms.contents).toBe("write");
     });
 
     it("release asset upload should have contents: write permission", () => {
