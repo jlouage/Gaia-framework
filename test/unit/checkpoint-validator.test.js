@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { writeFileSync, unlinkSync, mkdirSync, existsSync } from "fs";
+import { writeFileSync, readFileSync, unlinkSync, mkdirSync, existsSync } from "fs";
 import { join, resolve } from "path";
-import { execSync } from "child_process";
+import { createHash } from "crypto";
 
 // Module under test — does not exist yet (RED phase)
 import {
@@ -250,9 +250,7 @@ describe("Checkpoint Validator", () => {
     });
 
     it("should report matched when file checksum matches", () => {
-      const checksum = execSync(`shasum -a 256 "${tmpFile}"`, {
-        encoding: "utf8",
-      }).split(" ")[0];
+      const checksum = createHash("sha256").update(readFileSync(tmpFile)).digest("hex");
       const filesTouched = [
         {
           path: tmpFile,
@@ -294,9 +292,7 @@ describe("Checkpoint Validator", () => {
     });
 
     it("should handle mixed matched, modified, and deleted files", () => {
-      const checksum = execSync(`shasum -a 256 "${tmpFile}"`, {
-        encoding: "utf8",
-      }).split(" ")[0];
+      const checksum = createHash("sha256").update(readFileSync(tmpFile)).digest("hex");
       const filesTouched = [
         {
           path: tmpFile,
