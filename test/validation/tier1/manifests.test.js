@@ -54,13 +54,23 @@ function parseCSVLine(line) {
  * @param {(abs: string) => string} [mapFn] - optional transform per result (default: relative path)
  */
 const GAIA_DIR = join(PROJECT_ROOT, "_gaia");
+// walkFiles returns forward-slash paths; normalize root for consistent relative path computation
+const ROOT_PREFIX = PROJECT_ROOT.replace(/\\/g, "/") + "/";
+
+function toRelative(absPath) {
+  return absPath.startsWith(ROOT_PREFIX) ? absPath.slice(ROOT_PREFIX.length) : absPath;
+}
 
 function findWorkflowDirsOnDisk() {
   const files = walkFiles(GAIA_DIR, {
     namePattern: "workflow.yaml",
     exclude: ["node_modules", "_backups", ".resolved"],
   });
-  return files.map((f) => relative(PROJECT_ROOT, dirname(f)));
+  return files.map((f) => {
+    const rel = toRelative(f);
+    // Remove trailing /workflow.yaml to get the directory
+    return rel.replace(/\/workflow\.yaml$/, "");
+  });
 }
 
 function findAgentFilesOnDisk() {
@@ -70,7 +80,7 @@ function findAgentFilesOnDisk() {
   });
   return files
     .filter((f) => f.includes("/agents/") && !f.includes("/_config/agents/"))
-    .map((f) => relative(PROJECT_ROOT, f));
+    .map(toRelative);
 }
 
 function findSkillFilesOnDisk() {
@@ -80,7 +90,7 @@ function findSkillFilesOnDisk() {
   });
   return files
     .filter((f) => f.includes("/skills/") && !f.endsWith("_skill-index.yaml"))
-    .map((f) => relative(PROJECT_ROOT, f));
+    .map(toRelative);
 }
 
 function findTaskFilesOnDisk() {
@@ -92,7 +102,7 @@ function findTaskFilesOnDisk() {
     namePattern: "*.xml",
     exclude: ["node_modules", "_backups"],
   }).filter((f) => f.includes("/tasks/"));
-  return [...mdFiles, ...xmlFiles].map((f) => relative(PROJECT_ROOT, f));
+  return [...mdFiles, ...xmlFiles].map(toRelative);
 }
 
 // ─── Load manifests ───────────────────────────────────────────────
