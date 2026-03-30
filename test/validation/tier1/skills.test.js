@@ -25,7 +25,8 @@ function readCached(filePath) {
  * Each entry is { text, lineNum } where lineNum is 1-based.
  */
 function getProseLines(content) {
-  const lines = content.split("\n");
+  // Normalize CRLF to LF for cross-platform compatibility (Windows)
+  const lines = content.replace(/\r\n/g, "\n").split("\n");
   const result = [];
   let inFence = false;
   for (let i = 0; i < lines.length; i++) {
@@ -96,7 +97,9 @@ function agentExists(agentId) {
  * Returns an object with key-value pairs, or null if no frontmatter.
  */
 function parseFrontmatter(content) {
-  const match = content.match(/^---\n([\s\S]*?)\n---/);
+  // Normalize CRLF to LF for cross-platform compatibility (Windows)
+  const normalized = content.replace(/\r\n/g, "\n");
+  const match = normalized.match(/^---\n([\s\S]*?)\n---/);
   if (!match) return null;
   const fm = {};
   const lines = match[1].split("\n");
@@ -128,8 +131,9 @@ function parseSkillIndex(content) {
   const entries = [];
   let current = null;
   let inSections = false;
-
-  for (const line of content.split("\n")) {
+  // Normalize CRLF to LF for cross-platform compatibility (Windows)
+  const normalized = content.replace(/\r\n/g, "\n");
+  for (const line of normalized.split("\n")) {
     const fileMatch = line.match(/^\s*-\s*file:\s*(.+)$/);
     if (fileMatch) {
       if (current) entries.push(current);
@@ -172,7 +176,8 @@ function extractH2Headings(content) {
  */
 function extractSectionMarkers(content) {
   const markers = [];
-  const lines = content.split("\n");
+  // Normalize CRLF to LF for cross-platform compatibility (Windows)
+  const lines = content.replace(/\r\n/g, "\n").split("\n");
   for (let i = 0; i < lines.length; i++) {
     const match = lines[i].match(/<!--\s*SECTION:\s*([\w-]+)\s*-->/);
     if (match) {
@@ -216,7 +221,7 @@ describe("Skill File Validation (E1-S3, FR-32)", () => {
     describe.each(skillFiles)("%s", (filePath) => {
       it("should be within the 500-line limit", () => {
         const content = readCached(filePath);
-        const lineCount = content.split("\n").length;
+        const lineCount = content.replace(/\r\n/g, "\n").split("\n").length;
         expect(
           lineCount,
           `${basename(filePath)} is ${lineCount} lines — exceeds 500-line limit`
@@ -230,7 +235,7 @@ describe("Skill File Validation (E1-S3, FR-32)", () => {
     describe.each(skillFiles)("%s", (filePath) => {
       const content = readCached(filePath);
       const headings = extractH2Headings(content);
-      const rawLines = content.split("\n");
+      const rawLines = content.replace(/\r\n/g, "\n").split("\n");
 
       it("should have proper markdown heading hierarchy (H2 for sections, H3 for subsections)", () => {
         expect(headings.length, `${basename(filePath)} has no H2 sections`).toBeGreaterThan(0);
@@ -364,7 +369,7 @@ describe("Skill File Validation (E1-S3, FR-32)", () => {
       it("should have accurate line ranges for each section", () => {
         if (!existsSync(entryPath)) return;
         const content = readCached(entryPath);
-        const lines = content.split("\n");
+        const lines = content.replace(/\r\n/g, "\n").split("\n");
         const markers = extractSectionMarkers(content);
 
         for (const section of entry.sections) {

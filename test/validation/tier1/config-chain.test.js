@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { existsSync } from "fs";
 import { join, relative } from "path";
-import { execSync } from "child_process";
+import { walkFiles } from "../helpers/fs-walk.js";
 import {
   loadYaml,
   resolveConfigChain,
@@ -28,14 +28,12 @@ function findResolvedFiles() {
   for (const mod of MODULES) {
     const modDir = join(GAIA_DIR, mod);
     if (!existsSync(modDir)) continue;
-    const result = execSync(
-      `find -L "${modDir}" -path "*/.resolved/*.yaml" -not -path "*/_backups/*" -not -path "*/node_modules/*" 2>/dev/null || true`,
-      { encoding: "utf8" }
-    ).trim();
-    if (result) {
-      for (const f of result.split("\n").filter(Boolean)) {
-        files.push({ module: mod, path: f, name: f.split("/").pop() });
-      }
+    const found = walkFiles(modDir, {
+      namePattern: "*.yaml",
+      exclude: ["_backups", "node_modules"],
+    }).filter((f) => f.includes("/.resolved/"));
+    for (const f of found) {
+      files.push({ module: mod, path: f, name: f.split("/").pop() });
     }
   }
   return files;
@@ -75,14 +73,14 @@ describe("E2-S1: Config Chain Tier 1 Validation", () => {
 
           // Find the source workflow.yaml — .resolved/ is always a sibling of or near workflow.yaml
           const workflowName = fileName.replace(".yaml", "");
-          const searchResult = execSync(
-            `find -L "${join(GAIA_DIR, mod)}" -name "workflow.yaml" -path "*/${workflowName}/*" -not -path "*/.resolved/*" -not -path "*/_backups/*" 2>/dev/null || true`,
-            { encoding: "utf8" }
-          ).trim();
+          const matches = walkFiles(join(GAIA_DIR, mod), {
+            namePattern: "workflow.yaml",
+            exclude: [".resolved", "_backups", "node_modules"],
+          }).filter((f) => f.includes(`/${workflowName}/`));
 
-          if (!searchResult) return; // skip if source not found
+          if (matches.length === 0) return; // skip if source not found
 
-          const workflowPath = searchResult.split("\n")[0];
+          const workflowPath = matches[0];
           const workflowConfig = loadYaml(workflowPath);
           const moduleConfig = loadYaml(join(GAIA_DIR, mod, "config.yaml"));
           const globalConfig = loadYaml(join(GAIA_DIR, "_config", "global.yaml"));
@@ -190,14 +188,14 @@ describe("E2-S2: Build-Configs Regeneration Verification", () => {
         if (!modCounts || modCounts.resolved === 0) return;
 
         // For each resolved file, verify no unresolved build-time variables remain
-        const result = execSync(
-          `find -L "${modDir}" -path "*/.resolved/*.yaml" -not -path "*/_backups/*" 2>/dev/null || true`,
-          { encoding: "utf8" }
-        ).trim();
+        const resolvedPaths = walkFiles(modDir, {
+          namePattern: "*.yaml",
+          exclude: ["_backups", "node_modules"],
+        }).filter((f) => f.includes("/.resolved/"));
 
-        if (!result) return;
+        if (resolvedPaths.length === 0) return;
 
-        for (const resolvedPath of result.split("\n").filter(Boolean)) {
+        for (const resolvedPath of resolvedPaths) {
           const config = loadYaml(resolvedPath);
           expect(config).not.toBeNull();
           const validation = validateNoUnresolved(config);

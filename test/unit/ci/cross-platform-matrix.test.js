@@ -167,7 +167,8 @@ describe("E6-S3: windows-validate.sh", () => {
     expect(scriptContent).toContain("set -euo pipefail");
   });
 
-  it("should be executable", () => {
+  // Windows does not have Unix-style execute permission bits
+  it.skipIf(process.platform === "win32")("should be executable", () => {
     const filePath = path.join(PROJECT_ROOT, "test/shell/windows-validate.sh");
     const stats = fs.statSync(filePath);
     // Check that at least one execute bit is set

@@ -106,6 +106,7 @@ describe("Transitive dependency budget (AC7)", () => {
     const result = execFileSync("npm", ["ls", "--all", "--parseable"], {
       cwd: ROOT,
       encoding: "utf8",
+      shell: true,
     });
     const depCount = result.trim().split("\n").length;
     expect(depCount).toBeLessThan(450);
@@ -115,6 +116,7 @@ describe("Transitive dependency budget (AC7)", () => {
     const result = execFileSync("npm", ["ls", "--all", "--parseable"], {
       cwd: ROOT,
       encoding: "utf8",
+      shell: true,
     });
     const depCount = result.trim().split("\n").length;
     // This is a soft gate — test passes but logs a warning

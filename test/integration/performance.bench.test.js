@@ -21,7 +21,7 @@ import {
   THRESHOLDS,
   checkThresholdBreach,
   generateAnnotations,
-} from "../../scripts/benchmark-runner.js";
+} from "../../scripts/benchmark-runner.mjs";
 
 const _PROJECT_ROOT = resolve(import.meta.dirname, "../..");
 

@@ -20,6 +20,7 @@
     "lint:fix": "eslint --fix bin/**/*.js test/**/*.js",
     "format:check": "prettier --check \"bin/**/*.js\" \"test/**/*.js\"",
     "format": "prettier --write \"bin/**/*.js\" \"test/**/*.js\"",
+    "bench": "node scripts/benchmark-runner.mjs",
     "prepare": "echo \"Husky hooks disabled - activate in follow-up PR\""
   },
   "keywords": [
