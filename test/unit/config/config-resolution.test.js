@@ -65,7 +65,8 @@ describe("E2-S1: Config Resolution Unit Tests", () => {
       const resolved = resolveVariables(config, PROJECT_ROOT, {
         project_path: "Gaia-framework",
       });
-      expect(resolved.path).toBe(join(PROJECT_ROOT, "Gaia-framework", "src"));
+      // resolveVariables does string substitution — the /src suffix keeps its original slash
+      expect(resolved.path).toBe(`${join(PROJECT_ROOT, "Gaia-framework")}/src`);
     });
 
     it("should resolve {installed_path} to framework install location", () => {

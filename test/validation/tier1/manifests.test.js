@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync, existsSync } from "fs";
 import { join, relative, dirname } from "path";
-import { execSync } from "child_process";
 import { PROJECT_ROOT } from "../../helpers/project-root.js";
+import { walkFiles } from "../helpers/fs-walk.js";
 const CONFIG_PATH = join(PROJECT_ROOT, "_gaia", "_config");
 
 /**
@@ -53,35 +53,46 @@ function parseCSVLine(line) {
  * @param {string} findArgs - arguments appended to `find -L _gaia/`
  * @param {(abs: string) => string} [mapFn] - optional transform per result (default: relative path)
  */
-function findOnDisk(findArgs, mapFn) {
-  const result = execSync(
-    `find -L "${PROJECT_ROOT}/_gaia" ${findArgs} -not -path "*/node_modules/*" -not -path "*/_backups/*"`,
-    { encoding: "utf8" }
-  );
-  const mapper = mapFn || ((f) => relative(PROJECT_ROOT, f));
-  return result
-    .trim()
-    .split("\n")
-    .filter((f) => f.length > 0)
-    .map(mapper);
-}
+const GAIA_DIR = join(PROJECT_ROOT, "_gaia");
 
 function findWorkflowDirsOnDisk() {
-  return findOnDisk('-name "workflow.yaml" -not -path "*/.resolved/*"', (f) =>
-    relative(PROJECT_ROOT, dirname(f))
-  );
+  const files = walkFiles(GAIA_DIR, {
+    namePattern: "workflow.yaml",
+    exclude: ["node_modules", "_backups", ".resolved"],
+  });
+  return files.map((f) => relative(PROJECT_ROOT, dirname(f)));
 }
 
 function findAgentFilesOnDisk() {
-  return findOnDisk('-path "*/agents/*.md" -not -path "*/_config/agents/*"');
+  const files = walkFiles(GAIA_DIR, {
+    namePattern: "*.md",
+    exclude: ["node_modules", "_backups"],
+  });
+  return files
+    .filter((f) => f.includes("/agents/") && !f.includes("/_config/agents/"))
+    .map((f) => relative(PROJECT_ROOT, f));
 }
 
 function findSkillFilesOnDisk() {
-  return findOnDisk('-path "*/skills/*.md" -not -name "_skill-index.yaml"');
+  const files = walkFiles(GAIA_DIR, {
+    namePattern: "*.md",
+    exclude: ["node_modules", "_backups"],
+  });
+  return files
+    .filter((f) => f.includes("/skills/") && !f.endsWith("_skill-index.yaml"))
+    .map((f) => relative(PROJECT_ROOT, f));
 }
 
 function findTaskFilesOnDisk() {
-  return findOnDisk('-path "*/tasks/*" \\( -name "*.md" -o -name "*.xml" \\)');
+  const mdFiles = walkFiles(GAIA_DIR, {
+    namePattern: "*.md",
+    exclude: ["node_modules", "_backups"],
+  }).filter((f) => f.includes("/tasks/"));
+  const xmlFiles = walkFiles(GAIA_DIR, {
+    namePattern: "*.xml",
+    exclude: ["node_modules", "_backups"],
+  }).filter((f) => f.includes("/tasks/"));
+  return [...mdFiles, ...xmlFiles].map((f) => relative(PROJECT_ROOT, f));
 }
 
 // ─── Load manifests ───────────────────────────────────────────────

@@ -103,20 +103,20 @@ describe("package-lock.json (AC8)", () => {
 
 describe("Transitive dependency budget (AC7)", () => {
   it("should have fewer than 450 transitive dependencies (hard fail)", () => {
-    const npmCmd = process.platform === "win32" ? "npm.cmd" : "npm";
-    const result = execFileSync(npmCmd, ["ls", "--all", "--parseable"], {
+    const result = execFileSync("npm", ["ls", "--all", "--parseable"], {
       cwd: ROOT,
       encoding: "utf8",
+      shell: true,
     });
     const depCount = result.trim().split("\n").length;
     expect(depCount).toBeLessThan(450);
   });
 
   it("should warn if transitive dependencies exceed 350 (soft gate)", () => {
-    const npmCmd = process.platform === "win32" ? "npm.cmd" : "npm";
-    const result = execFileSync(npmCmd, ["ls", "--all", "--parseable"], {
+    const result = execFileSync("npm", ["ls", "--all", "--parseable"], {
       cwd: ROOT,
       encoding: "utf8",
+      shell: true,
     });
     const depCount = result.trim().split("\n").length;
     // This is a soft gate — test passes but logs a warning
