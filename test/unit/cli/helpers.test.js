@@ -29,17 +29,20 @@ describe("findBash", () => {
     expect(findBash()).toBe("bash");
   });
 
-  it("should return 'bash' on Windows when bash is in PATH", async () => {
-    Object.defineProperty(process, "platform", { value: "win32" });
+  it.skipIf(process.platform === "win32")(
+    "should return 'bash' on Windows when bash is in PATH",
+    async () => {
+      Object.defineProperty(process, "platform", { value: "win32" });
 
-    const mockExecSync = vi.fn(); // succeeds (no throw)
-    const { findBash } = await loadHelpers({
-      execSync: mockExecSync,
-    });
+      const mockExecSync = vi.fn(); // succeeds (no throw)
+      const { findBash } = await loadHelpers({
+        execSync: mockExecSync,
+      });
 
-    expect(findBash()).toBe("bash");
-    expect(mockExecSync).toHaveBeenCalledWith("bash --version", { stdio: "ignore" });
-  });
+      expect(findBash()).toBe("bash");
+      expect(mockExecSync).toHaveBeenCalledWith("bash --version", { stdio: "ignore" });
+    }
+  );
 
   it("should find Git for Windows bash when PATH bash unavailable", async () => {
     Object.defineProperty(process, "platform", { value: "win32" });

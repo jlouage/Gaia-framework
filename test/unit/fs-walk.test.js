@@ -85,8 +85,9 @@ afterAll(() => {
 describe("walkFiles — basic behavior", () => {
   it("should find all workflow.yaml files recursively (AC1)", () => {
     const results = walkFiles(FIXTURE_ROOT, { namePattern: "workflow.yaml" });
-    // Normalize to forward slashes for cross-platform comparison
-    const names = results.map((p) => p.replace(FIXTURE_ROOT, "").replace(/\\/g, "/"));
+    // Normalize FIXTURE_ROOT to forward slashes to match walkFiles output
+    const root = FIXTURE_ROOT.replace(/\\/g, "/");
+    const names = results.map((p) => p.replace(root, ""));
     // Should find: a/workflow.yaml, a/nested/workflow.yaml, b/workflow.yaml,
     // node_modules/pkg/workflow.yaml, _backups/workflow.yaml, symlinked-target/workflow.yaml,
     // and possibly linked/workflow.yaml

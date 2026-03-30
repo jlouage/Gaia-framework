@@ -126,7 +126,7 @@ export function scanReferences(frameworkRoot) {
         const resolved = join(frameworkRoot, "_gaia", "lifecycle", "templates", filename);
         if (existsSync(resolved)) {
           refs.push({
-            normalizedPath: resolved,
+            normalizedPath: resolved.split("\\").join("/"),
             source: "instructions.xml",
             rawMatch: actionMatch[0].substring(0, 120),
             workflow: relative(gaiaDir, instrFile),
@@ -161,7 +161,8 @@ function resolveTemplatePath(templatePath, sourceFile, frameworkRoot) {
     resolved = resolved.replace(/\{installed_path\}/g, installedPath);
   }
 
-  return resolve(resolved);
+  // Normalize to forward slashes for cross-platform consistency with walkFiles output
+  return resolve(resolved).split("\\").join("/");
 }
 
 // ─── T1.3: Orphan Detection ─────────────────────────────────

@@ -108,6 +108,7 @@ describe("ESLint Configuration (E5-S1)", () => {
         execSync("npx eslint bin/**/*.js test/**/*.js", {
           cwd: ROOT,
           stdio: "pipe",
+          shell: true,
         });
       }).not.toThrow();
     });
