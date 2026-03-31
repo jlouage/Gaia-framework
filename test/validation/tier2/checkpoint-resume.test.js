@@ -8,9 +8,9 @@
  * Covers test scenarios 1-10 from the E2-S4 story test matrix.
  */
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
-import { writeFileSync, unlinkSync, mkdirSync, rmSync } from "fs";
+import { writeFileSync, readFileSync, unlinkSync, mkdirSync, rmSync } from "fs";
 import { join } from "path";
-import { execSync } from "child_process";
+import { createHash } from "crypto";
 
 import {
   validateCheckpoint,
@@ -112,9 +112,7 @@ describe("Tier 2 — E2-S4: Checkpoint/Resume Reliability", () => {
 
     it("should detect checksum mismatch when file was modified — AC2a", () => {
       // Record original checksum
-      const originalChecksum = execSync(`shasum -a 256 "${tmpFile}"`, {
-        encoding: "utf8",
-      }).split(" ")[0];
+      const originalChecksum = createHash("sha256").update(readFileSync(tmpFile)).digest("hex");
 
       // Modify the file
       writeFileSync(tmpFile, "modified content", "utf8");
