@@ -260,7 +260,7 @@ describe("E10-S2: Document-Specific Validation Rulesets", () => {
   describe("Skill file structure", () => {
     it("has valid YAML frontmatter", () => {
       const content = readFileSync(RULESETS_SKILL_PATH, "utf8");
-      const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---/);
+      const frontmatterMatch = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
       expect(frontmatterMatch, "No YAML frontmatter found").toBeTruthy();
       const frontmatter = frontmatterMatch[1];
       expect(frontmatter).toMatch(/name:\s*document-rulesets/);
@@ -270,7 +270,7 @@ describe("E10-S2: Document-Specific Validation Rulesets", () => {
 
     it("lists all 7 sections in frontmatter", () => {
       const content = readFileSync(RULESETS_SKILL_PATH, "utf8");
-      const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---/);
+      const frontmatterMatch = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
       expect(frontmatterMatch, "No YAML frontmatter found").toBeTruthy();
       const frontmatter = frontmatterMatch[1];
       const expectedSections = [

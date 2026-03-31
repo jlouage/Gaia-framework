@@ -290,7 +290,7 @@ describe("Edge cases: validateVariables frontmatter stripping", () => {
     const registry = new Set(["project_name"]);
     // Simulate by checking classifyPlaceholders on stripped content
     const fullContent = "---\nused_by: [create-prd]\ntitle: test\n---\nBody with {project_name}";
-    const bodyOnly = fullContent.replace(/^---\n[\s\S]*?\n---\n?/, "");
+    const bodyOnly = fullContent.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, "");
     const result = classifyPlaceholders(bodyOnly, registry);
     expect(result.system).toContain("project_name");
     // Frontmatter content like "create-prd" should not appear as a placeholder

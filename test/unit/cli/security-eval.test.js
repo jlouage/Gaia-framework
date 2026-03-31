@@ -2,10 +2,11 @@
 // Validates AC1–AC4 from the story acceptance criteria.
 
 import { describe, it, expect } from "vitest";
-import { readFileSync, existsSync } from "fs";
+import { readFileSync, existsSync, rmSync } from "fs";
 import { join } from "path";
 import { execSync } from "child_process";
 import { PROJECT_ROOT } from "../../helpers/project-root.js";
+import { makeTempDir } from "../../helpers/platform.js";
 
 describe("ATDD E7-S1: Remove eval Usage", () => {
   // AC1: No eval in cmd_validate
@@ -71,7 +72,7 @@ describe("ATDD E7-S1: Remove eval Usage", () => {
   // that no side effects from the injected commands occur.
   describe("AC3: Command injection safely handled", () => {
     it("should handle malicious path with semicolons safely — no side effects", () => {
-      const tmpDir = execSync("mktemp -d", { encoding: "utf8" }).trim();
+      const tmpDir = makeTempDir("gaia-security-");
       const markerFile = join(tmpDir, "injection_marker");
       const result = execSync(
         `bash "${join(PROJECT_ROOT, "gaia-install.sh")}" validate '; touch ${markerFile} ;' 2>&1 || true`,
@@ -81,29 +82,29 @@ describe("ATDD E7-S1: Remove eval Usage", () => {
       expect(result).toContain("No GAIA installation found");
       // The injected touch command must NOT have executed
       expect(existsSync(markerFile)).toBe(false);
-      execSync(`rm -rf "${tmpDir}"`);
+      rmSync(tmpDir, { recursive: true, force: true });
     });
 
     it("should handle malicious path with backticks safely — no side effects", () => {
-      const tmpDir = execSync("mktemp -d", { encoding: "utf8" }).trim();
+      const tmpDir = makeTempDir("gaia-security-");
       const markerFile = join(tmpDir, "backtick_marker");
       execSync(
         `bash "${join(PROJECT_ROOT, "gaia-install.sh")}" validate '\`touch ${markerFile}\`' 2>&1 || true`,
         { encoding: "utf8" }
       );
       expect(existsSync(markerFile)).toBe(false);
-      execSync(`rm -rf "${tmpDir}"`);
+      rmSync(tmpDir, { recursive: true, force: true });
     });
 
     it("should handle malicious path with subshell syntax safely — no side effects", () => {
-      const tmpDir = execSync("mktemp -d", { encoding: "utf8" }).trim();
+      const tmpDir = makeTempDir("gaia-security-");
       const markerFile = join(tmpDir, "subshell_marker");
       execSync(
         `bash "${join(PROJECT_ROOT, "gaia-install.sh")}" validate '$(touch ${markerFile})' 2>&1 || true`,
         { encoding: "utf8" }
       );
       expect(existsSync(markerFile)).toBe(false);
-      execSync(`rm -rf "${tmpDir}"`);
+      rmSync(tmpDir, { recursive: true, force: true });
     });
   });
 

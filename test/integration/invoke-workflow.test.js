@@ -104,7 +104,7 @@ function findWorkflowFiles(rootDir) {
  * Returns null if no frontmatter found.
  */
 function extractFrontmatter(content) {
-  const match = content.match(/^---\n([\s\S]*?)\n---/);
+  const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
   return match ? match[1] : null;
 }
 

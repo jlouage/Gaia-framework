@@ -10,10 +10,17 @@ import { join } from "path";
 import { tmpdir } from "os";
 import { execFileSync } from "child_process";
 import { PROJECT_ROOT } from "../helpers/project-root.js";
+import { findBash } from "../helpers/platform.js";
 
 export { PROJECT_ROOT };
 export const SCRIPT_PATH = join(PROJECT_ROOT, "gaia-install.sh");
 export const MOCK_FRAMEWORK = join(PROJECT_ROOT, "test", "fixtures", "mock-framework");
+
+/**
+ * Resolved bash path for integration tests.
+ * If null, integration tests that require bash should be skipped.
+ */
+export const BASH_PATH = findBash();
 
 /**
  * Create an isolated temp directory for a test.
@@ -43,8 +50,13 @@ export function cleanupTempDir(dir) {
  * @returns {{ stdout: string, stderr: string, status: number }}
  */
 export function runInstaller(args, options = {}) {
+  if (!BASH_PATH) {
+    throw new Error(
+      "bash not found — integration tests require bash. Install Git Bash on Windows."
+    );
+  }
   try {
-    const stdout = execFileSync("bash", [SCRIPT_PATH, ...args], {
+    const stdout = execFileSync(BASH_PATH, [SCRIPT_PATH, ...args], {
       cwd: options.cwd || PROJECT_ROOT,
       encoding: "utf-8",
       stdio: ["pipe", "pipe", "pipe"],

@@ -11,17 +11,11 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { existsSync, mkdirSync, readdirSync } from "fs";
 import { join } from "path";
-import { execSync } from "child_process";
+import { findExecutable } from "../helpers/platform.js";
 import { MOCK_FRAMEWORK, createTempDir, cleanupTempDir, runInstaller } from "./helpers.js";
 
 // Skip integration tests if rsync is not available (e.g., Ubuntu CI runners)
-let hasRsync = false;
-try {
-  execSync("which rsync", { stdio: "pipe" });
-  hasRsync = true;
-} catch {
-  hasRsync = false;
-}
+const hasRsync = findExecutable("rsync") !== null;
 
 // Derive expected command count from mock-framework source (no magic numbers)
 const MOCK_CMD_DIR = join(MOCK_FRAMEWORK, ".claude", "commands");
