@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync, existsSync } from "fs";
 import { join } from "path";
-import { execSync } from "child_process";
+import { createHash } from "crypto";
 import yaml from "js-yaml";
 import { PROJECT_ROOT } from "../../helpers/project-root.js";
 const NEW_MEMORY = join(PROJECT_ROOT, "_memory");
@@ -104,7 +104,7 @@ describe("E8-S1: Memory Directory Migration", () => {
   // AC4: Existing sidecar content preserved (only devops + security have content)
   describe("AC4: Sidecar content preserved", () => {
     function sha256(filePath) {
-      return execSync(`shasum -a 256 "${filePath}"`, { encoding: "utf-8" }).split(" ")[0].trim();
+      return createHash("sha256").update(readFileSync(filePath)).digest("hex");
     }
 
     function expectMigratedContent(sidecar, oldFilename) {
