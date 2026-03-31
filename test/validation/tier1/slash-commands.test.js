@@ -31,7 +31,7 @@ function findCommandFiles() {
  */
 function parseFrontmatter(filePath) {
   const content = readCached(filePath);
-  const match = content.match(/^---\n([\s\S]*?)\n---/);
+  const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
   if (!match) return null;
 
   const result = {};

@@ -268,7 +268,7 @@ describe("E9-S2: Tier 1 Memory — Theo, Derek, Nate", () => {
         expect(
           content,
           `${sidecar}/conversation-context.md should start with YAML frontmatter`
-        ).toMatch(/^---\n/);
+        ).toMatch(/^---\r?\n/);
         expect(content).toMatch(/agent:/);
         expect(content).toMatch(/tier: 1/);
       }

@@ -236,7 +236,7 @@ describe("E8-S10: Validation Patterns Skill", () => {
   describe("Frontmatter", () => {
     it("should have valid YAML frontmatter with required fields", () => {
       const content = readFileSync(SKILL_PATH, "utf8");
-      const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---/);
+      const frontmatterMatch = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
       expect(frontmatterMatch, "No YAML frontmatter found").toBeTruthy();
       const frontmatter = frontmatterMatch[1];
       expect(frontmatter).toMatch(/name:\s*validation-patterns/);
@@ -247,7 +247,7 @@ describe("E8-S10: Validation Patterns Skill", () => {
 
     it("should list all 5 sections in frontmatter", () => {
       const content = readFileSync(SKILL_PATH, "utf8");
-      const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---/);
+      const frontmatterMatch = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
       expect(frontmatterMatch, "No YAML frontmatter found").toBeTruthy();
       const frontmatter = frontmatterMatch[1];
       for (const section of EXPECTED_SECTIONS) {

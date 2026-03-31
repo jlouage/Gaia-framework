@@ -51,7 +51,7 @@ describe("E10-S7: Sprint priority_flag Integration", () => {
       const content = loadFile(STORY_TEMPLATE);
       expect(content).not.toBeNull();
       // Extract YAML frontmatter (between --- delimiters)
-      const fmMatch = content.match(/^---\n([\s\S]*?)\n---/);
+      const fmMatch = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
       expect(fmMatch).not.toBeNull();
       const frontmatter = fmMatch[1];
       // Must contain priority_flag field with null default
