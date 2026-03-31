@@ -12,7 +12,8 @@ const SCRIPT = path.resolve(__dirname, "../../../scripts/version-bump.js");
 
 /**
  * Create a temporary directory with fixture files mimicking
- * the 6 global version files the script must update.
+ * the 5 global version files the script must update.
+ * gaia-install.sh was removed — it now reads version from package.json at runtime.
  */
 function createFixtures(version = "1.0.0") {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vbump-"));
@@ -23,20 +24,14 @@ function createFixtures(version = "1.0.0") {
     JSON.stringify({ name: "test", version, scripts: {} }, null, 2) + "\n"
   );
 
-  // 2. gaia-install.sh
-  fs.writeFileSync(
-    path.join(dir, "gaia-install.sh"),
-    `#!/usr/bin/env bash\nreadonly VERSION="${version}"\n`
-  );
-
-  // 3. _gaia/_config/global.yaml
+  // 2. _gaia/_config/global.yaml
   fs.mkdirSync(path.join(dir, "_gaia", "_config"), { recursive: true });
   fs.writeFileSync(
     path.join(dir, "_gaia", "_config", "global.yaml"),
     `framework_name: "GAIA"\nframework_version: "${version}"\n`
   );
 
-  // 4. _gaia/_config/manifest.yaml
+  // 3. _gaia/_config/manifest.yaml
   fs.writeFileSync(
     path.join(dir, "_gaia", "_config", "manifest.yaml"),
     [
@@ -60,13 +55,13 @@ function createFixtures(version = "1.0.0") {
     ].join("\n")
   );
 
-  // 5. CLAUDE.md
+  // 4. CLAUDE.md
   fs.writeFileSync(
     path.join(dir, "CLAUDE.md"),
     `\n# GAIA Framework v${version}\n\nSome content here.\n`
   );
 
-  // 6. README.md
+  // 5. README.md
   fs.writeFileSync(
     path.join(dir, "README.md"),
     [
@@ -129,16 +124,13 @@ describe("version-bump.js", () => {
     if (dir) fs.rmSync(dir, { recursive: true, force: true });
   });
 
-  // AC1: patch/minor/major bumps update all 6 global files atomically
-  describe("AC1 — bump type updates all 6 global files", () => {
-    it("patch bump: 1.0.0 → 1.0.1 across all 6 files", () => {
+  // AC1: patch/minor/major bumps update all 5 global files atomically
+  describe("AC1 — bump type updates all 5 global files", () => {
+    it("patch bump: 1.0.0 → 1.0.1 across all 5 files", () => {
       runBump(dir, ["patch"]);
 
       const pkg = JSON.parse(readVersion(dir, "package.json"));
       expect(pkg.version).toBe("1.0.1");
-
-      const installer = readVersion(dir, "gaia-install.sh");
-      expect(installer).toContain('readonly VERSION="1.0.1"');
 
       const global = readVersion(dir, "_gaia/_config/global.yaml");
       expect(global).toContain('framework_version: "1.0.1"');
@@ -273,14 +265,11 @@ describe("version-bump.js", () => {
 
   // E4-S7 AC5: explicit version mode
   describe("AC5 — explicit version mode", () => {
-    it("accepts explicit version '1.65.0' and updates all 6 files", () => {
+    it("accepts explicit version '1.65.0' and updates all 5 files", () => {
       runBump(dir, ["1.65.0"]); // explicit version mode
 
       const pkg = JSON.parse(readVersion(dir, "package.json"));
       expect(pkg.version).toBe("1.65.0");
-
-      const installer = readVersion(dir, "gaia-install.sh");
-      expect(installer).toContain('readonly VERSION="1.65.0"');
 
       const global = readVersion(dir, "_gaia/_config/global.yaml");
       expect(global).toContain('framework_version: "1.65.0"');
@@ -310,7 +299,7 @@ describe("version-bump.js", () => {
       // Should report drift but still succeed
       expect(stdout).toMatch(/drift/i);
 
-      // All 6 files should be synced to 1.65.0
+      // All 5 files should be synced to 1.65.0
       const pkg = JSON.parse(readVersion(dir, "package.json"));
       expect(pkg.version).toBe("1.65.0");
 

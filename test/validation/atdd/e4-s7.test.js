@@ -24,10 +24,6 @@ function createFixtures(version = "1.0.0") {
     path.join(dir, "package.json"),
     JSON.stringify({ name: "test", version, scripts: {} }, null, 2) + "\n"
   );
-  fs.writeFileSync(
-    path.join(dir, "gaia-install.sh"),
-    `#!/usr/bin/env bash\nreadonly VERSION="${version}"\n`
-  );
   fs.mkdirSync(path.join(dir, "_gaia", "_config"), { recursive: true });
   fs.writeFileSync(
     path.join(dir, "_gaia", "_config", "global.yaml"),
@@ -117,28 +113,23 @@ describe("E4-S7: CI-Driven Version Sync in Publish Workflow", () => {
 
   // ── AC3: Six-file verification with hard-fail ─────────────────────────
 
-  describe("AC3: Six-file post-sync verification", () => {
-    it("test_ac3_six_file_verification — publish.yml verifies all 6 files match after version sync", () => {
+  describe("AC3: Five-file post-sync verification", () => {
+    it("test_ac3_five_file_verification — publish.yml verifies all 5 files match after version sync", () => {
       const content = fs.readFileSync(PUBLISH_WORKFLOW, "utf-8");
 
-      // Must have a dedicated verification step (separate from existing "Verify version matches release tag")
-      // that checks all 6 files, not just package.json
-      expect(content).toMatch(/name:.*(?:Verify|Check).*(?:all|6|six).*(?:file|version|sync)/i);
+      // Must have a dedicated verification step that checks all version files
+      expect(content).toMatch(
+        /name:.*(?:Verify|Check).*(?:all|5|five|6|six).*(?:file|version|sync)/i
+      );
 
-      // Must reference the 6 target files
-      const fileRefs = [
-        /package\.json/,
-        /gaia-install\.sh/,
-        /global\.yaml/,
-        /CLAUDE\.md/,
-        /README\.md/,
-      ];
+      // Must reference the 5 target files (gaia-install.sh removed — reads version from package.json at runtime)
+      const fileRefs = [/package\.json/, /global\.yaml/, /CLAUDE\.md/, /README\.md/];
       let matchCount = 0;
       for (const pattern of fileRefs) {
         if (pattern.test(content)) matchCount++;
       }
-      // At least 5 of the 6 files referenced (README.md has 2 patterns but 1 file)
-      expect(matchCount).toBeGreaterThanOrEqual(5);
+      // At least 4 of the 5 files referenced (README.md has 2 patterns but 1 file)
+      expect(matchCount).toBeGreaterThanOrEqual(4);
 
       // Must hard-fail (exit 1) on divergence
       expect(content).toMatch(/exit\s+1/);
@@ -187,12 +178,9 @@ describe("E4-S7: CI-Driven Version Sync in Publish Workflow", () => {
       // Must succeed (exit 0)
       expect(result.exitCode).toBe(0);
 
-      // All 6 files must be updated to 1.2.3
+      // All 5 files must be updated to 1.2.3
       const pkg = JSON.parse(fs.readFileSync(path.join(dir, "package.json"), "utf8"));
       expect(pkg.version).toBe("1.2.3");
-
-      const installer = fs.readFileSync(path.join(dir, "gaia-install.sh"), "utf8");
-      expect(installer).toContain('readonly VERSION="1.2.3"');
 
       const global = fs.readFileSync(path.join(dir, "_gaia", "_config", "global.yaml"), "utf8");
       expect(global).toContain('framework_version: "1.2.3"');

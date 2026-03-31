@@ -69,7 +69,7 @@ jobs:
       - name: Verify all 6 version files synced
         run: |
           VERSION="${{ steps.extract-version.outputs.version }}"
-          echo "Verifying all 6 version files contain $VERSION..."
+          echo "Verifying all 5 version files contain $VERSION..."
 
           FAIL=0
 
@@ -80,31 +80,25 @@ jobs:
             FAIL=1
           fi
 
-          # 2. gaia-install.sh
-          if ! grep -q "readonly VERSION=\"$VERSION\"" gaia-install.sh; then
-            echo "::error::gaia-install.sh does not contain VERSION=\"$VERSION\""
-            FAIL=1
-          fi
-
-          # 3. _gaia/_config/global.yaml
+          # 2. _gaia/_config/global.yaml
           if ! grep -q "framework_version: \"$VERSION\"" _gaia/_config/global.yaml; then
             echo "::error::global.yaml does not contain framework_version: \"$VERSION\""
             FAIL=1
           fi
 
-          # 4. CLAUDE.md
+          # 3. CLAUDE.md
           if ! grep -q "# GAIA Framework v$VERSION" CLAUDE.md; then
             echo "::error::CLAUDE.md does not contain '# GAIA Framework v$VERSION'"
             FAIL=1
           fi
 
-          # 5. README.md (badge)
+          # 4. README.md (badge)
           if ! grep -q "framework-v$VERSION-blue" README.md; then
             echo "::error::README.md badge does not contain framework-v$VERSION-blue"
             FAIL=1
           fi
 
-          # 6. README.md (code block)
+          # 5. README.md (code block)
           if ! grep -q "framework_version: \"$VERSION\"" README.md; then
             echo "::error::README.md code block does not contain framework_version: \"$VERSION\""
             FAIL=1
@@ -115,7 +109,7 @@ jobs:
             exit 1
           fi
 
-          echo "All 6 version files verified: $VERSION"
+          echo "All 5 version files verified: $VERSION"
 
       - name: Commit version-synced files
         run: |
@@ -123,7 +117,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          git add package.json gaia-install.sh _gaia/_config/global.yaml CLAUDE.md README.md
+          git add package.json _gaia/_config/global.yaml CLAUDE.md README.md
           if git diff --cached --quiet; then
             echo "No version changes needed — files already at $VERSION"
           else

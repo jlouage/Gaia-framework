@@ -7,7 +7,7 @@
  * Usage:
  *   node scripts/version-bump.js <patch|minor|major|X.Y.Z> [--modules mod1,mod2] [--dry-run]
  *
- * Updates 6 global files atomically. Optionally updates module config.yaml
+ * Updates 5 global files atomically. Optionally updates module config.yaml
  * and manifest.yaml entries when --modules is provided.
  *
  * Zero runtime dependencies (ADR-005). File-based regex patterns (ADR-006).
@@ -42,7 +42,8 @@ function pat(file, label, readRe, replRe) {
 }
 
 /**
- * The 6 global version targets. Two entries share README.md (badge + code block).
+ * The 5 global version targets. Two entries share README.md (badge + code block).
+ * gaia-install.sh was removed — it now reads version from package.json at runtime.
  */
 function globalFilePatterns(root) {
   const j = (...segs) => path.join(root, ...segs);
@@ -52,12 +53,6 @@ function globalFilePatterns(root) {
       "package.json",
       /"version"\s*:\s*"(\d+\.\d+\.\d+)"/,
       /("version"\s*:\s*")(\d+\.\d+\.\d+)(")/
-    ),
-    pat(
-      j("gaia-install.sh"),
-      "gaia-install.sh",
-      /readonly\s+VERSION="(\d+\.\d+\.\d+)"/,
-      /(readonly\s+VERSION=")(\d+\.\d+\.\d+)(")/
     ),
     pat(
       j("_gaia", "_config", "global.yaml"),
