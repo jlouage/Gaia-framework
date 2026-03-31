@@ -101,16 +101,20 @@ describe("ESLint Configuration (E5-S1)", () => {
   });
 
   describe("AC3: zero violations on clean run", () => {
-    it("should report zero ESLint violations when run on bin and test", () => {
-      const { execSync } = require("child_process");
-      // This will throw if there are violations (non-zero exit code)
-      expect(() => {
-        execSync("npx eslint bin/**/*.js test/**/*.js", {
-          cwd: ROOT,
-          stdio: "pipe",
-        });
-      }).not.toThrow();
-    });
+    // PowerShell on Windows does not expand ** globs; CI runs npm run lint separately
+    it.skipIf(process.platform === "win32")(
+      "should report zero ESLint violations when run on bin and test",
+      () => {
+        const { execSync } = require("child_process");
+        // This will throw if there are violations (non-zero exit code)
+        expect(() => {
+          execSync("npx eslint bin/**/*.js test/**/*.js", {
+            cwd: ROOT,
+            stdio: "pipe",
+          });
+        }).not.toThrow();
+      }
+    );
   });
 
   describe("AC2: CI integration", () => {

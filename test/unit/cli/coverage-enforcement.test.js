@@ -142,9 +142,15 @@ describe("E3-S6: Code Coverage Enforcement", () => {
       mod = require(CLI_PATH);
     });
 
-    it("findBash returns 'bash' on non-Windows", () => {
-      // On macOS/Linux, findBash() returns "bash" immediately
-      expect(mod.findBash()).toBe("bash");
+    it("findBash returns a valid bash path", () => {
+      const result = mod.findBash();
+      if (process.platform === "win32") {
+        // On Windows, findBash() returns the full path to bash.exe
+        expect(result).toMatch(/bash/i);
+      } else {
+        // On macOS/Linux, findBash() returns "bash" immediately
+        expect(result).toBe("bash");
+      }
     });
 
     it("ensureGit does not throw when git is available", () => {

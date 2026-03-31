@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { existsSync } from "fs";
+import { existsSync, readdirSync } from "fs";
 import { join } from "path";
-import { execSync } from "child_process";
 import { PROJECT_ROOT } from "../../helpers/project-root.js";
+import { walkFiles } from "../helpers/fs-walk.js";
 const GAIA_DIR = join(PROJECT_ROOT, "_gaia");
 const FIXTURES_DIR = join(PROJECT_ROOT, "test", "fixtures", "instructions");
 
@@ -10,14 +10,10 @@ const FIXTURES_DIR = join(PROJECT_ROOT, "test", "fixtures", "instructions");
 const validatorPath = join(PROJECT_ROOT, "test", "validators", "instruction-validator.js");
 
 function findInstructionFiles() {
-  const result = execSync(
-    `find -L "${GAIA_DIR}" -name "instructions.xml" -not -path "*/node_modules/*" -not -path "*/_backups/*"`,
-    { encoding: "utf8" }
-  );
-  return result
-    .trim()
-    .split("\n")
-    .filter((f) => f.length > 0);
+  return walkFiles(GAIA_DIR, {
+    namePattern: "instructions.xml",
+    exclude: ["node_modules", "_backups"],
+  });
 }
 
 /**
@@ -33,15 +29,9 @@ function findCoreXmlFiles() {
   const files = [];
   for (const dir of coreDirs) {
     if (!existsSync(dir)) continue;
-    const result = execSync(
-      `find -L "${dir}" -maxdepth 1 -name "*.xml" -not -path "*/node_modules/*"`,
-      { encoding: "utf8" }
-    );
-    const found = result
-      .trim()
-      .split("\n")
-      .filter((f) => f.length > 0);
-    files.push(...found);
+    // Only look at direct children (equivalent to -maxdepth 1)
+    const entries = readdirSync(dir).filter((f) => f.endsWith(".xml"));
+    files.push(...entries.map((f) => join(dir, f).split("\\").join("/")));
   }
   return files;
 }

@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync, existsSync } from "fs";
 import { join } from "path";
-import { execSync } from "child_process";
+import { walkFiles } from "../helpers/fs-walk.js";
 import { PROJECT_ROOT } from "../../helpers/project-root.js";
 
 // ─── File Content Cache ──────────────────────────────────────
@@ -18,18 +18,12 @@ function readCached(filePath) {
 // ─── Helpers ─────────────────────────────────────────────────
 
 /**
- * Discover all slash command files via find.
+ * Discover all slash command files via recursive walk.
  * Auto-discovery — no hardcoded counts.
  */
 function findCommandFiles() {
   const commandDir = join(PROJECT_ROOT, ".claude", "commands");
-  return execSync(`find "${commandDir}" -name "gaia*.md" -not -path "*/node_modules/*"`, {
-    encoding: "utf8",
-  })
-    .trim()
-    .split("\n")
-    .filter((f) => f.length > 0)
-    .sort();
+  return walkFiles(commandDir, { namePattern: "gaia*.md", exclude: ["node_modules"] }).sort();
 }
 
 /**
@@ -111,12 +105,7 @@ function parseCsv(filePath) {
  */
 function buildAgentCommandMap() {
   const commandDir = join(PROJECT_ROOT, ".claude", "commands");
-  const agentCommandFiles = execSync(`find "${commandDir}" -name "gaia-agent-*.md"`, {
-    encoding: "utf8",
-  })
-    .trim()
-    .split("\n")
-    .filter((f) => f.length > 0);
+  const agentCommandFiles = walkFiles(commandDir, { namePattern: "gaia-agent-*.md" });
 
   const map = {};
   for (const cmdFile of agentCommandFiles) {

@@ -81,7 +81,8 @@ describe("Pre-Commit Hooks (E5-S4)", () => {
       expect(content).toContain("npx lint-staged");
     });
 
-    it("should have pre-commit hook be executable", () => {
+    // Windows does not have Unix-style execute permission bits
+    it.skipIf(process.platform === "win32")("should have pre-commit hook be executable", () => {
       const stats = statSync(PRE_COMMIT_PATH);
       const isExecutable = (stats.mode & 0o111) !== 0;
       expect(isExecutable).toBe(true);

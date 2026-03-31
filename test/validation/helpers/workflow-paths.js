@@ -1,5 +1,5 @@
-import { execSync } from "child_process";
 import { join } from "path";
+import { walkFiles } from "./fs-walk.js";
 
 /**
  * Discover all workflow.yaml files under _gaia/, excluding _backups/ and node_modules/.
@@ -10,14 +10,11 @@ import { join } from "path";
  */
 export function getWorkflowPaths(projectRoot) {
   const gaiaRoot = join(projectRoot, "_gaia");
-  const result = execSync(
-    `find -L "${gaiaRoot}" -name "workflow.yaml" -not -path "*/node_modules/*" -not -path "*/_backups/*"`,
-    { encoding: "utf8" }
-  );
-  return result
-    .trim()
-    .split("\n")
-    .filter((f) => f.length > 0);
+  return walkFiles(gaiaRoot, {
+    namePattern: "workflow.yaml",
+    exclude: ["node_modules", "_backups"],
+    followSymlinks: true,
+  });
 }
 
 /**

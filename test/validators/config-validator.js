@@ -1,7 +1,7 @@
 import { readFileSync, existsSync, statSync } from "fs";
 import { join, dirname, basename } from "path";
-import { execSync } from "child_process";
 import yaml from "js-yaml";
+import { walkFiles } from "../validation/helpers/fs-walk.js";
 import { PROJECT_ROOT } from "../helpers/project-root.js";
 
 // Regex matching {var} and {{var} patterns in config values
@@ -224,12 +224,20 @@ function buildArtifactVars(globalConfig, projectRoot) {
  * @returns {string[]} — array of matching file paths
  */
 function findModuleFiles(modDir, pattern, usePath = false) {
-  const flag = usePath ? "-path" : "-name";
-  const result = execSync(
-    `find -L "${modDir}" ${flag} "${pattern}" -not -path "*/_backups/*" -not -path "*/node_modules/*" 2>/dev/null || true`,
-    { encoding: "utf8" }
-  ).trim();
-  return result ? result.split("\n").filter(Boolean) : [];
+  if (usePath) {
+    // -path mode: pattern like "*/agents/*.md" — walk all files and filter
+    const allFiles = walkFiles(modDir, {
+      exclude: ["_backups", "node_modules"],
+    });
+    // Convert find -path glob to a regex: replace * with .*
+    const regex = new RegExp(pattern.replace(/\*/g, ".*"));
+    return allFiles.filter((f) => regex.test(f));
+  }
+  // -name mode: pattern is a filename glob like "workflow.yaml" or "*.md"
+  return walkFiles(modDir, {
+    namePattern: pattern,
+    exclude: ["_backups", "node_modules"],
+  });
 }
 
 /**
