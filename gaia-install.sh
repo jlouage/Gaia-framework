@@ -563,6 +563,14 @@ cmd_update() {
     exit 1
   fi
 
+  # Restore missing global.yaml from source before reading versions
+  if [[ ! -f "$TARGET/_gaia/_config/global.yaml" ]]; then
+    warn "global.yaml missing — restoring from source"
+    mkdir -p "$TARGET/_gaia/_config"
+    cp "$source/_gaia/_config/global.yaml" "$TARGET/_gaia/_config/global.yaml"
+    info "Review your settings in _gaia/_config/global.yaml after update"
+  fi
+
   local src_version
   src_version="$(extract_yaml_value "$source/_gaia/_config/global.yaml" "framework_version")"
   if [[ -z "$src_version" ]]; then
@@ -706,10 +714,14 @@ cmd_update() {
     step "Updating framework version: $cur_version → $src_version"
     if [[ "$OPT_DRY_RUN" != true ]]; then
       local global_file="$TARGET/_gaia/_config/global.yaml"
-      if [[ "$(uname)" == "Darwin" ]]; then
-        sed -i '' "s/^framework_version:.*/framework_version: \"$src_version\"/" "$global_file"
+      if [[ -f "$global_file" ]]; then
+        if [[ "$(uname)" == "Darwin" ]]; then
+          sed -i '' "s/^framework_version:.*/framework_version: \"$src_version\"/" "$global_file"
+        else
+          sed -i "s/^framework_version:.*/framework_version: \"$src_version\"/" "$global_file"
+        fi
       else
-        sed -i "s/^framework_version:.*/framework_version: \"$src_version\"/" "$global_file"
+        warn "global.yaml not found at $global_file — skipping version update"
       fi
       # Update version in CLAUDE.md heading
       local claude_file="$TARGET/CLAUDE.md"
