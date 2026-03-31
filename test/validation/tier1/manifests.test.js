@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync, existsSync } from "fs";
 import { join, relative, dirname } from "path";
-import { execSync } from "child_process";
 import { PROJECT_ROOT } from "../../helpers/project-root.js";
+import { walkFiles } from "../helpers/fs-walk.js";
 const CONFIG_PATH = join(PROJECT_ROOT, "_gaia", "_config");
 
 /**
@@ -53,35 +53,56 @@ function parseCSVLine(line) {
  * @param {string} findArgs - arguments appended to `find -L _gaia/`
  * @param {(abs: string) => string} [mapFn] - optional transform per result (default: relative path)
  */
-function findOnDisk(findArgs, mapFn) {
-  const result = execSync(
-    `find -L "${PROJECT_ROOT}/_gaia" ${findArgs} -not -path "*/node_modules/*" -not -path "*/_backups/*"`,
-    { encoding: "utf8" }
-  );
-  const mapper = mapFn || ((f) => relative(PROJECT_ROOT, f));
-  return result
-    .trim()
-    .split("\n")
-    .filter((f) => f.length > 0)
-    .map(mapper);
+const GAIA_DIR = join(PROJECT_ROOT, "_gaia");
+// walkFiles returns forward-slash paths; normalize root for consistent relative path computation
+const ROOT_PREFIX = PROJECT_ROOT.replace(/\\/g, "/") + "/";
+
+function toRelative(absPath) {
+  return absPath.startsWith(ROOT_PREFIX) ? absPath.slice(ROOT_PREFIX.length) : absPath;
 }
 
 function findWorkflowDirsOnDisk() {
-  return findOnDisk('-name "workflow.yaml" -not -path "*/.resolved/*"', (f) =>
-    relative(PROJECT_ROOT, dirname(f))
-  );
+  const files = walkFiles(GAIA_DIR, {
+    namePattern: "workflow.yaml",
+    exclude: ["node_modules", "_backups", ".resolved"],
+  });
+  return files.map((f) => {
+    const rel = toRelative(f);
+    // Remove trailing /workflow.yaml to get the directory
+    return rel.replace(/\/workflow\.yaml$/, "");
+  });
 }
 
 function findAgentFilesOnDisk() {
-  return findOnDisk('-path "*/agents/*.md" -not -path "*/_config/agents/*"');
+  const files = walkFiles(GAIA_DIR, {
+    namePattern: "*.md",
+    exclude: ["node_modules", "_backups"],
+  });
+  return files
+    .filter((f) => f.includes("/agents/") && !f.includes("/_config/agents/"))
+    .map(toRelative);
 }
 
 function findSkillFilesOnDisk() {
-  return findOnDisk('-path "*/skills/*.md" -not -name "_skill-index.yaml"');
+  const files = walkFiles(GAIA_DIR, {
+    namePattern: "*.md",
+    exclude: ["node_modules", "_backups"],
+  });
+  return files
+    .filter((f) => f.includes("/skills/") && !f.endsWith("_skill-index.yaml"))
+    .map(toRelative);
 }
 
 function findTaskFilesOnDisk() {
-  return findOnDisk('-path "*/tasks/*" \\( -name "*.md" -o -name "*.xml" \\)');
+  const mdFiles = walkFiles(GAIA_DIR, {
+    namePattern: "*.md",
+    exclude: ["node_modules", "_backups"],
+  }).filter((f) => f.includes("/tasks/"));
+  const xmlFiles = walkFiles(GAIA_DIR, {
+    namePattern: "*.xml",
+    exclude: ["node_modules", "_backups"],
+  }).filter((f) => f.includes("/tasks/"));
+  return [...mdFiles, ...xmlFiles].map(toRelative);
 }
 
 // ─── Load manifests ───────────────────────────────────────────────
@@ -206,7 +227,8 @@ describe("Manifest-Filesystem Sync Validation (E1-S5)", () => {
       it.each(diskWorkflows.map((w) => [w]))(
         "workflow at %s should have a manifest entry",
         (dirPath) => {
-          const yamlPath = join(dirPath, "workflow.yaml");
+          // Use forward-slash concatenation to match CSV paths (join() uses OS separators)
+          const yamlPath = `${dirPath}/workflow.yaml`;
           expect(
             workflowPaths.has(yamlPath),
             `Workflow directory '${dirPath}' exists on disk but has no entry in workflow-manifest.csv (expected path: ${yamlPath})`
@@ -313,7 +335,7 @@ describe("Manifest-Filesystem Sync Validation (E1-S5)", () => {
     it("should have zero missing workflow entries (disk → manifest)", () => {
       const workflowPaths = new Set(workflowManifest.map((w) => w.path));
       const missing = findWorkflowDirsOnDisk().filter(
-        (d) => !workflowPaths.has(join(d, "workflow.yaml"))
+        (d) => !workflowPaths.has(`${d}/workflow.yaml`)
       );
       expect(missing, `Missing workflow manifest entries for: ${missing.join(", ")}`).toHaveLength(
         0

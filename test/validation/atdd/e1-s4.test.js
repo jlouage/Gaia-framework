@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { existsSync } from "fs";
 import { join } from "path";
-import { execSync } from "child_process";
 import { PROJECT_ROOT } from "../../helpers/project-root.js";
+import { walkFiles } from "../../validation/helpers/fs-walk.js";
 const GAIA_DIR = join(PROJECT_ROOT, "_gaia");
 const VALIDATOR_PATH = join(PROJECT_ROOT, "test", "validators", "instruction-validator.js");
 const IMPL_TEST_PATH = join(PROJECT_ROOT, "test", "validation", "tier1", "instructions.test.js");
@@ -30,14 +30,10 @@ const VALID_VARIABLES = new Set([
 ]);
 
 function findInstructionFiles() {
-  const result = execSync(
-    `find -L "${GAIA_DIR}" -name "instructions.xml" -not -path "*/node_modules/*" -not -path "*/_backups/*"`,
-    { encoding: "utf8" }
-  );
-  return result
-    .trim()
-    .split("\n")
-    .filter((f) => f.length > 0);
+  return walkFiles(GAIA_DIR, {
+    namePattern: "instructions.xml",
+    exclude: ["node_modules", "_backups"],
+  });
 }
 
 describe("ATDD E1-S4: Instruction XML Validation", () => {

@@ -1,6 +1,6 @@
 import { readFileSync, existsSync } from "fs";
 import { join, resolve, relative } from "path";
-import { execSync } from "child_process";
+import { walkFiles } from "../validation/helpers/fs-walk.js";
 
 // ─── Shared Helpers ──────────────────────────────────────────
 
@@ -11,17 +11,6 @@ function readCached(filePath) {
     fileContentCache.set(filePath, readFileSync(filePath, "utf8"));
   }
   return fileContentCache.get(filePath);
-}
-
-/** Run `find` under a directory with a name pattern, excluding node_modules. */
-function findFiles(dir, namePattern, extraExcludes = []) {
-  const excludes = ["*/node_modules/*", ...extraExcludes].map((e) => `-not -path "${e}"`).join(" ");
-  return execSync(`find "${dir}" -name "${namePattern}" ${excludes}`, {
-    encoding: "utf8",
-  })
-    .trim()
-    .split("\n")
-    .filter((f) => f.length > 0);
 }
 
 /** Read the installed_path field from a workflow.yaml, resolving {project-root}. */
@@ -47,11 +36,11 @@ export function discoverTemplates(frameworkRoot) {
   // Primary: lifecycle templates
   const lifecycleDir = join(gaiaDir, "lifecycle", "templates");
   if (existsSync(lifecycleDir)) {
-    results.push(...findFiles(lifecycleDir, "*-template.md"));
+    results.push(...walkFiles(lifecycleDir, { namePattern: "*-template.md" }));
   }
 
   // Secondary: co-located templates (template.md files anywhere under _gaia/)
-  results.push(...findFiles(gaiaDir, "template.md", ["*/templates/*"]));
+  results.push(...walkFiles(gaiaDir, { namePattern: "template.md", exclude: ["templates"] }));
 
   return results.sort();
 }
@@ -73,7 +62,10 @@ export function scanReferences(frameworkRoot) {
   const refs = [];
 
   // Source A: workflow.yaml template: fields
-  const workflowFiles = findFiles(gaiaDir, "workflow.yaml", ["*/.resolved/*"]);
+  const workflowFiles = walkFiles(gaiaDir, {
+    namePattern: "workflow.yaml",
+    exclude: [".resolved"],
+  });
 
   for (const wf of workflowFiles) {
     const content = readCached(wf);
@@ -94,7 +86,7 @@ export function scanReferences(frameworkRoot) {
   }
 
   // Source B: <action>/<check> text in instructions.xml referencing template paths
-  const instructionFiles = findFiles(gaiaDir, "instructions.xml");
+  const instructionFiles = walkFiles(gaiaDir, { namePattern: "instructions.xml" });
 
   for (const instrFile of instructionFiles) {
     const content = readCached(instrFile);
@@ -134,7 +126,7 @@ export function scanReferences(frameworkRoot) {
         const resolved = join(frameworkRoot, "_gaia", "lifecycle", "templates", filename);
         if (existsSync(resolved)) {
           refs.push({
-            normalizedPath: resolved,
+            normalizedPath: resolved.split("\\").join("/"),
             source: "instructions.xml",
             rawMatch: actionMatch[0].substring(0, 120),
             workflow: relative(gaiaDir, instrFile),
@@ -169,7 +161,8 @@ function resolveTemplatePath(templatePath, sourceFile, frameworkRoot) {
     resolved = resolved.replace(/\{installed_path\}/g, installedPath);
   }
 
-  return resolve(resolved);
+  // Normalize to forward slashes for cross-platform consistency with walkFiles output
+  return resolve(resolved).split("\\").join("/");
 }
 
 // ─── T1.3: Orphan Detection ─────────────────────────────────

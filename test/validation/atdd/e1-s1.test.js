@@ -1,9 +1,9 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync, existsSync } from "fs";
 import { join } from "path";
-import { execSync } from "child_process";
 import yaml from "js-yaml";
 import { PROJECT_ROOT } from "../../helpers/project-root.js";
+import { walkFiles } from "../../validation/helpers/fs-walk.js";
 
 /**
  * ATDD — E1-S1: Workflow Definition Validation
@@ -49,14 +49,10 @@ const VALID_VARIABLE_REFS = [
 ];
 
 function findWorkflowFiles() {
-  const result = execSync(
-    `find -L "${GAIA_ROOT}" -name "workflow.yaml" -not -path "*/node_modules/*" -not -path "*/_backups/*"`,
-    { encoding: "utf8" }
-  );
-  return result
-    .trim()
-    .split("\n")
-    .filter((f) => f.length > 0);
+  return walkFiles(GAIA_ROOT, {
+    namePattern: "workflow.yaml",
+    exclude: ["node_modules", "_backups"],
+  });
 }
 
 function parseWorkflow(filePath) {
