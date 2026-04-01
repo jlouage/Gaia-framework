@@ -56,7 +56,7 @@
 </step>
 
 <step n="4" title="Create PRD for Gaps">
-  <action>Read the PRD template from {installed_path}/../../templates/prd-template.md — for infrastructure projects (project_type == infrastructure), use {installed_path}/../../templates/infra-prd-template.md instead</action>
+  <action>Select PRD template based on project_type: for application projects use {installed_path}/../../templates/prd-template.md, for infrastructure projects use {installed_path}/../../templates/infra-prd-template.md, for platform projects use {installed_path}/../../templates/platform-prd-template.md (ADR-022 §10.16.2)</action>
   <action>Read upstream artifacts to inform gap analysis:</action>
   <action>— nfr-assessment.md → NFR section gets real "Current Baseline" and "Target" columns</action>
   <action>— api-documentation.md (if exists) → extract API gaps (undocumented endpoints, missing validation)</action>
