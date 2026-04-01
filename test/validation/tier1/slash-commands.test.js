@@ -282,47 +282,48 @@ describe("Deprecated Command Handling", () => {
     expect(deprecatedFiles.length).toBeGreaterThan(0);
   });
 
-  describe.each(
-    deprecatedFiles.length > 0 ? deprecatedFiles : ["__placeholder__"]
-  )("%s", (filePath) => {
-    it("should have a description containing DEPRECATED", () => {
-      if (filePath === "__placeholder__") return; // skip placeholder
-      const fm = parseFrontmatter(filePath);
-      expect(fm?.description).toBeTruthy();
-      expect(
-        fm.description.toUpperCase().includes("DEPRECATED"),
-        `Deprecated command ${filePath} should have DEPRECATED in description`
-      ).toBe(true);
-    });
-
-    it("should be classified as deprecated", () => {
-      if (filePath === "__placeholder__") return;
-      expect(classifyCommand(filePath)).toBe("deprecated");
-    });
-
-    it("should validate redirect reference if present", () => {
-      if (filePath === "__placeholder__") return;
-      const ref = extractReference(filePath);
-      if (ref) {
-        const resolvedPath = join(PROJECT_ROOT, ref.path);
-        expect(
-          existsSync(resolvedPath),
-          `Deprecated command ${filePath} has redirect reference to ${resolvedPath} which does not exist`
-        ).toBe(true);
-      }
-      // If no reference, that's OK for deprecated commands — no assertion needed
-    });
-
-    it("should have a valid description explaining the deprecation when no reference exists", () => {
-      if (filePath === "__placeholder__") return;
-      const ref = extractReference(filePath);
-      if (!ref) {
+  describe.each(deprecatedFiles.length > 0 ? deprecatedFiles : ["__placeholder__"])(
+    "%s",
+    (filePath) => {
+      it("should have a description containing DEPRECATED", () => {
+        if (filePath === "__placeholder__") return; // skip placeholder
         const fm = parseFrontmatter(filePath);
+        expect(fm?.description).toBeTruthy();
         expect(
-          fm?.description?.length,
-          `Deprecated command ${filePath} without a reference must have a description explaining deprecation`
-        ).toBeGreaterThan(10);
-      }
-    });
-  });
+          fm.description.toUpperCase().includes("DEPRECATED"),
+          `Deprecated command ${filePath} should have DEPRECATED in description`
+        ).toBe(true);
+      });
+
+      it("should be classified as deprecated", () => {
+        if (filePath === "__placeholder__") return;
+        expect(classifyCommand(filePath)).toBe("deprecated");
+      });
+
+      it("should validate redirect reference if present", () => {
+        if (filePath === "__placeholder__") return;
+        const ref = extractReference(filePath);
+        if (ref) {
+          const resolvedPath = join(PROJECT_ROOT, ref.path);
+          expect(
+            existsSync(resolvedPath),
+            `Deprecated command ${filePath} has redirect reference to ${resolvedPath} which does not exist`
+          ).toBe(true);
+        }
+        // If no reference, that's OK for deprecated commands — no assertion needed
+      });
+
+      it("should have a valid description explaining the deprecation when no reference exists", () => {
+        if (filePath === "__placeholder__") return;
+        const ref = extractReference(filePath);
+        if (!ref) {
+          const fm = parseFrontmatter(filePath);
+          expect(
+            fm?.description?.length,
+            `Deprecated command ${filePath} without a reference must have a description explaining deprecation`
+          ).toBeGreaterThan(10);
+        }
+      });
+    }
+  );
 });
