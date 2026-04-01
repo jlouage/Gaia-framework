@@ -96,7 +96,27 @@
   <action>For each related skill, propose a concrete addition or modification: what section should change, what content to add, and why (link back to the retro finding)</action>
   <action if="yolo_mode">In YOLO mode: auto-approve all recommended skill improvements. Skip the user prompt below.</action>
   <ask>Here are the proposed skill improvements based on this sprint's findings. Approve, modify, or skip each. [approve all / select / skip]</ask>
-  <action>If approved: append to the relevant skill file with comment: "<!-- Added from retro-{sprint_id}: {reason} -->"</action>
+  <action>If approved: write the skill improvement to {project-root}/custom/skills/{skill-name}.md (NOT _gaia/dev/skills/).
+    Follow this sequence for each approved skill improvement:
+
+    1. Ensure directory exists: create {project-root}/custom/skills/ if it does not already exist (mkdir -p equivalent).
+
+    2. Base-skill copy guard: check if {project-root}/custom/skills/{skill-name}.md already exists.
+       - If the custom skill file does NOT exist: copy the base skill from _gaia/dev/skills/{skill-name}.md (resolved at {project-root}) to {project-root}/custom/skills/{skill-name}.md, preserving all &lt;!-- SECTION: xxx --&gt; markers intact. This ensures the engine's sectioned loading continues to work for the custom copy.
+       - If the base skill does NOT exist at _gaia/dev/skills/{skill-name}.md (e.g., removed in a framework update): log a warning ("Base skill {skill-name} not found at _gaia/dev/skills/ — creating custom skill from scratch") and write the improvement content directly to custom/skills/{skill-name}.md without a base copy.
+       - If the custom skill file already exists: preserve existing content and apply the improvement on top.
+
+    3. Apply the improvement: append to or modify the relevant section in custom/skills/{skill-name}.md with comment "<!-- Added from retro-{sprint_id}: {reason} -->".
+
+    4. Register in .customize.yaml: after writing the custom skill file, register it in {project-root}/_gaia/_config/agents/all-dev.customize.yaml so the engine loads from the custom path on subsequent runs.
+       - If all-dev.customize.yaml does not exist: create it with proper YAML structure:
+         ```yaml
+         skill_overrides:
+           {skill-name}:
+             source: "custom/skills/{skill-name}.md"
+         ```
+       - If all-dev.customize.yaml already exists: read current content, check if a skill_overrides entry for this skill already exists. If it does not exist, append the new entry under skill_overrides. Preserve all existing entries — only add the new one. If it already exists (duplicate), skip registration to prevent duplicate entries.
+  </action>
   <action>If no skill improvements identified, state: "No skill improvements identified this sprint."</action>
 </step>
 <step n="7" title="Cross-Retro Pattern Detection">

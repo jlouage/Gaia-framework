@@ -28,4 +28,4 @@ output:
   sidecar_updates:
     - "{memory_path}/*-sidecar/*.md"
   skill_updates:
-    - "{project-root}/_gaia/dev/skills/*.md"
+    - "{project-root}/custom/skills/*.md"
