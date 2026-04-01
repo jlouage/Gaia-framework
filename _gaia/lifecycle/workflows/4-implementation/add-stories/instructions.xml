@@ -88,6 +88,15 @@
     If new epic: include epic header with name, description, goal, success criteria before its stories.
     Prepend a Change Log entry if not already present.
   </template-output>
+  <action>Recount epic overview table story counts and update in-place:
+    1. Parse all `### Story (E\d+)-S\d+:` headers in the saved epics-and-stories.md file
+    2. Group and count story headers per epic key (E1, E2, etc.)
+    3. Locate the Epic Overview table in epics-and-stories.md (the markdown table with columns: epic ID, name, goal, count, priority)
+    4. For each epic row in the table, update the count column to match the actual count of story headers for that epic
+    5. If a new epic was created in Step 4 and does not yet have a row in the Epic Overview table, insert a new row with the correct initial story count
+    6. If an existing epic row in the overview table has zero matching story headers after recount, preserve the row as-is (do not delete it) — log a warning: "Epic {EN} has 0 story headers but overview row preserved"
+    7. Table format: `| E{N} | {name} | {goal} | {count} | {priority} |` — only the `{count}` column cell is updated; do not modify other columns
+    8. Save the updated epics-and-stories.md file</action>
 </step>
 
 <step n="8" title="Inline Validation">
