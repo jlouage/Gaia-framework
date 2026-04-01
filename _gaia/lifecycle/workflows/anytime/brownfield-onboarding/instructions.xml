@@ -106,7 +106,7 @@
   <check if="refresh-ground-truth workflow directory not found">Val ground truth bootstrap skipped — refresh-ground-truth workflow not available. Run /gaia-refresh-ground-truth manually after E8-S9 is implemented. Brownfield onboarding completes successfully.</check>
 
   <action>Invoke /gaia-refresh-ground-truth to scan the filesystem and populate framework inventory facts (workflows, agents, skills, commands) into ground-truth.md</action>
-  <invoke-workflow ref="refresh-ground-truth" mode="yolo" />
+  <invoke-workflow ref="val-refresh-ground-truth" mode="yolo" />
 
   <action>Load brownfield-extraction section of ground-truth-management skill JIT from {project-root}/_gaia/lifecycle/skills/ground-truth-management.md</action>
   <action>Read available brownfield artifacts and extract project-specific facts. For each artifact, check if the file exists before reading — skip missing artifacts without error:
