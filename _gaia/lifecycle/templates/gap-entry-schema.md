@@ -1,11 +1,12 @@
 # Gap Entry Schema
 
-> **Version:** 1.0.0
-> **Story:** E11-S1
-> **Traces to:** FR-111, US-38, ADR-021
+> **Version:** 1.1.0
+> **Story:** E11-S1, E12-S5
+> **Traces to:** FR-111, FR-123, US-38, ADR-021, ADR-022
 >
 > Standardized output schema for brownfield scan subagents (E11).
 > All scan agents MUST format gap entries using this schema.
+> Infra-specific categories added for infrastructure/platform project support (E12-S5).
 > Location: `_gaia/lifecycle/templates/gap-entry-schema.md`
 
 ## Schema Definition
@@ -31,7 +32,7 @@ confidence: "<enum>"
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `id` | string | yes | Unique identifier. Format: `GAP-{scan_type}-{seq}` where `scan_type` maps to the category and `seq` is a zero-padded 3-digit sequence (e.g., `GAP-dead-code-001`) |
-| `category` | enum | yes | Gap classification — must be one of the 7 allowed values (see Category Enum) |
+| `category` | enum | yes | Gap classification — must be one of the 12 allowed values (see Category Enum) |
 | `severity` | enum | yes | Impact level — must be one of the 5 allowed values (see Severity Enum) |
 | `title` | string | yes | Short summary of the gap (max 80 characters) |
 | `description` | string | yes | Detailed explanation of the gap, what it means, and why it matters |
@@ -54,7 +55,9 @@ confidence: "<enum>"
 
 ### Category Enum
 
-The 7 categories map 1:1 to the brownfield scan subagents:
+12 categories total — 7 application categories (E11-S1) plus 5 infrastructure categories (E12-S5):
+
+#### Application Categories (7)
 
 | Value | Scan Agent | Description |
 |-------|------------|-------------|
@@ -65,6 +68,16 @@ The 7 categories map 1:1 to the brownfield scan subagents:
 | `runtime-behavior` | E11-S6 | Behavior that only manifests at runtime (race conditions, memory leaks) |
 | `doc-code-drift` | E11-S7 | Documentation does not match actual code behavior |
 | `integration-seam` | E11-S8 | Fragile integration points, tight coupling, missing contracts |
+
+#### Infrastructure Categories (5) — ADR-022 §10.16.5
+
+| Value | Infra PRD Section | Description |
+|-------|-------------------|-------------|
+| `resource-drift` | Resource Specifications | Declared infrastructure state differs from actual deployed state (e.g., Terraform state mismatch, orphaned cloud resources) |
+| `config-sprawl` | Environment Strategy & DX | Configuration values duplicated across multiple files without a single source of truth (e.g., same port in Dockerfile, Helm values, and Terraform variables) |
+| `secret-exposure` | Security Posture | Secrets, credentials, or sensitive values present in source files, environment configs, or IaC definitions without proper secrets management |
+| `missing-policy` | Verification Strategy | Infrastructure lacks policy-as-code enforcement (e.g., no OPA/Rego, no Checkov rules, no tfsec scans for security/compliance) |
+| `environment-skew` | Environment Strategy & DX | Environment definitions (dev/staging/prod) have inconsistent resource specifications, missing parity, or undocumented differences |
 
 ### Confidence Enum
 
@@ -103,9 +116,9 @@ Pattern: `GAP-{scan_type}-{seq}`
 
 - `scan_type` is the category value (e.g., `dead-code`, `config-contradiction`)
 - `seq` is a zero-padded 3-digit sequence number starting at 001
-- Regex: `^GAP-(config-contradiction|dead-code|hard-coded-logic|security-endpoint|runtime-behavior|doc-code-drift|integration-seam)-\d{3}$`
+- Regex: `^GAP-(config-contradiction|dead-code|hard-coded-logic|security-endpoint|runtime-behavior|doc-code-drift|integration-seam|resource-drift|config-sprawl|secret-exposure|missing-policy|environment-skew)-\d{3}$`
 
-The `scan_type` component in the ID maps directly to the `category` value. See the Category Enum table for the full list of valid scan types and their corresponding agents.
+The `scan_type` component in the ID maps directly to the `category` value. See the Category Enum tables (Application + Infrastructure) for the full list of valid scan types.
 
 ## Validation Rules
 
@@ -114,13 +127,13 @@ All fields listed in the Field Reference are **required** — a gap entry with a
 ### Enum Validation
 
 - `severity` must be exactly one of: `critical`, `high`, `medium`, `low`, `info`
-- `category` must be exactly one of: `config-contradiction`, `dead-code`, `hard-coded-logic`, `security-endpoint`, `runtime-behavior`, `doc-code-drift`, `integration-seam`
+- `category` must be exactly one of: `config-contradiction`, `dead-code`, `hard-coded-logic`, `security-endpoint`, `runtime-behavior`, `doc-code-drift`, `integration-seam`, `resource-drift`, `config-sprawl`, `secret-exposure`, `missing-policy`, `environment-skew`
 - `confidence` must be exactly one of: `high`, `medium`, `low`
 - Any value not in the enum set must be rejected
 
 ### Format Validation
 
-- `id` must match the regex `^GAP-(config-contradiction|dead-code|hard-coded-logic|security-endpoint|runtime-behavior|doc-code-drift|integration-seam)-\d{3}$`
+- `id` must match the regex `^GAP-(config-contradiction|dead-code|hard-coded-logic|security-endpoint|runtime-behavior|doc-code-drift|integration-seam|resource-drift|config-sprawl|secret-exposure|missing-policy|environment-skew)-\d{3}$`
 - `evidence.file` must be a non-empty string containing a relative path (no leading `/`)
 - `evidence.line` must be a positive integer or a range string matching `^\d+-\d+$`
 - `title` should not exceed 80 characters
@@ -141,11 +154,13 @@ Guidelines:
 - Keep `recommendation` to 1-2 sentences
 - Avoid embedding full code snippets in descriptions — reference via `evidence` instead
 
-With 7 scan subagents producing up to ~70 gaps each, total token usage across all scan output files is approximately 50K tokens. After consolidation and deduplication (E11-S10), the single `consolidated-gaps.md` must stay within the 40K framework context budget.
+With 12 categories across application and infrastructure scans, total token usage varies by project type. After consolidation and deduplication (E11-S10), the single `consolidated-gaps.md` must stay within the 40K framework context budget.
 
 ## Examples
 
-### Example 1: Dead Code Gap
+### Application Category Examples
+
+#### Example 1: Dead Code Gap
 
 ```yaml
 id: "GAP-dead-code-001"
@@ -161,7 +176,7 @@ verified_by: "dead-code-analyzer"
 confidence: "high"
 ```
 
-### Example 2: Config Contradiction Gap
+#### Example 2: Config Contradiction Gap
 
 ```yaml
 id: "GAP-config-contradiction-001"
@@ -177,7 +192,7 @@ verified_by: "config-scanner"
 confidence: "high"
 ```
 
-### Example 3: Security Endpoint Gap
+#### Example 3: Security Endpoint Gap
 
 ```yaml
 id: "GAP-security-endpoint-001"
@@ -190,5 +205,87 @@ evidence:
   line: 12
 recommendation: "Add requireAuth and requireRole('admin') middleware to the route definition."
 verified_by: "security-auditor"
+confidence: "high"
+```
+
+### Infrastructure Category Examples
+
+#### Example 4: Resource Drift Gap
+
+```yaml
+id: "GAP-resource-drift-001"
+category: "resource-drift"
+severity: "high"
+title: "Terraform state shows orphaned S3 bucket"
+description: "S3 bucket 'app-logs-legacy' exists in AWS but is not declared in any Terraform configuration, creating unmanaged drift."
+evidence:
+  file: "infra/terraform/storage.tf"
+  line: "1-45"
+recommendation: "Import the bucket into Terraform state or delete it if no longer needed."
+verified_by: "infra-drift-scanner"
+confidence: "high"
+```
+
+#### Example 5: Config Sprawl Gap
+
+```yaml
+id: "GAP-config-sprawl-001"
+category: "config-sprawl"
+severity: "medium"
+title: "Database port duplicated across 4 config files"
+description: "Port 5432 is hardcoded in Dockerfile, docker-compose.yml, Helm values.yaml, and Terraform variables.tf without a shared source of truth."
+evidence:
+  file: "docker-compose.yml"
+  line: 14
+recommendation: "Extract database port to a single environment variable or shared config, reference it from all 4 files."
+verified_by: "config-sprawl-scanner"
+confidence: "high"
+```
+
+#### Example 6: Secret Exposure Gap
+
+```yaml
+id: "GAP-secret-exposure-001"
+category: "secret-exposure"
+severity: "critical"
+title: "AWS access key embedded in Terraform variables"
+description: "AWS_ACCESS_KEY_ID is set as a default value in variables.tf instead of using a secrets manager or environment variable."
+evidence:
+  file: "infra/terraform/variables.tf"
+  line: 23
+recommendation: "Remove the default value, use AWS SSM Parameter Store or HashiCorp Vault for secret injection."
+verified_by: "secret-scanner"
+confidence: "high"
+```
+
+#### Example 7: Missing Policy Gap
+
+```yaml
+id: "GAP-missing-policy-001"
+category: "missing-policy"
+severity: "medium"
+title: "No policy-as-code enforcement for Kubernetes manifests"
+description: "Kubernetes deployments lack OPA/Gatekeeper or Kyverno policies to enforce security constraints (no privileged containers, resource limits)."
+evidence:
+  file: "k8s/deployments/api-server.yaml"
+  line: "1-30"
+recommendation: "Add OPA Gatekeeper constraints or Kyverno policies to enforce pod security standards and resource limits."
+verified_by: "policy-scanner"
+confidence: "medium"
+```
+
+#### Example 8: Environment Skew Gap
+
+```yaml
+id: "GAP-environment-skew-001"
+category: "environment-skew"
+severity: "high"
+title: "Staging uses 2 replicas while production uses 5"
+description: "Kubernetes replica counts differ between staging (2) and production (5) with no documented justification, preventing accurate load testing."
+evidence:
+  file: "k8s/overlays/staging/deployment-patch.yaml"
+  line: 8
+recommendation: "Document the replica difference rationale or align staging to a proportional replica count for valid performance testing."
+verified_by: "env-skew-scanner"
 confidence: "high"
 ```
