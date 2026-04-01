@@ -22,6 +22,11 @@ validation-target: 'Updated epics-and-stories.md'
 - [ ] Source: CR-{cr_id} added (if change request linked)
 ## Change Log
 - [ ] Change log entry added with date, feature name, and CR ID
+## Inline Validation
+- [ ] Inline validation invoked for each new story
+- [ ] Fix loop executed if CRITICAL/WARNING findings found (max 3 attempts)
+- [ ] Validation results recorded per story (validated / validating / degraded)
+- [ ] Graceful degradation handled if Val unavailable (prerequisites missing or invocation failure)
 ## Existing Content
 - [ ] Existing stories not modified
 - [ ] Existing epic structure preserved

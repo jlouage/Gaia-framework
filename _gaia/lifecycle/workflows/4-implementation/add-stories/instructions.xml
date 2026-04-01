@@ -90,7 +90,70 @@
   </template-output>
 </step>
 
-<step n="8" title="Next Steps">
+<step n="8" title="Inline Validation">
+  <action>Check Val prerequisites: verify {project-root}/_gaia/lifecycle/agents/validator.md exists AND {project-root}/_memory/validator-sidecar/ directory exists. If either prerequisite is missing, log warning "Val prerequisites unavailable — skipping inline validation. Stories will be marked as validating." Set val_available = false.</action>
+
+  <action>For each newly created story from Step 5 (batch iteration — each story validated independently):
+    Set story_validation_status = "pending"
+    Set validation_attempt = 0
+
+    If val_available == false:
+      Set story_validation_status = "degraded"
+      Mark story status as 'validating' in the story entry
+      Log: "Story {story_key}: Val unavailable — marked as validating"
+      Continue to next story
+    End If
+
+    VALIDATION LOOP (maximum 3 attempts):
+      Increment validation_attempt
+
+      Invoke Val validation directly within workflow context (no subagent nesting — works at both standalone level 1 and subagent level 2 from add-feature, never exceeding 2-level nesting max):
+      <invoke-workflow
+        target="{project-root}/_gaia/lifecycle/workflows/4-implementation/val-validate-artifact/workflow.yaml"
+        input_artifact="{planning_artifacts}/epics-and-stories.md"
+        story_scope="{story_key}"
+        on_error="warn_and_continue" />
+
+      If Val invocation fails (timeout, context overflow, crash, or missing prerequisites):
+        Log warning: "Val validation failed for {story_key}: {reason}"
+        Set story_validation_status = "degraded"
+        Mark story status as 'validating'
+        Break loop — continue to next story
+      End If
+
+      Separate findings by severity:
+        - CRITICAL and WARNING findings → actionable_findings (trigger fix loop)
+        - INFO findings → info_findings (do not trigger fix loop, non-blocking — log only)
+
+      Log all INFO findings to output (INFO does not block progression and does not trigger re-validation)
+
+      If actionable_findings is empty:
+        Set story_validation_status = "validated"
+        Note story as "validated" in output validation summary
+        Break loop — continue to next story
+      End If
+
+      If validation_attempt less than 3:
+        Auto-fix each CRITICAL and WARNING finding in the story content
+        Re-invoke Val validation (loop continues)
+      Else (validation_attempt == 3, maximum reached):
+        Set story_validation_status = "failed"
+        Mark story status as 'validating' (not 'ready-for-dev')
+        Log remaining unresolved findings
+        Break loop — continue to next story
+      End If
+    END VALIDATION LOOP
+  End For Each
+
+  Report batch validation summary:
+    - Stories validated successfully: {count} ({list})
+    - Stories marked validating (failed after 3 attempts): {count} ({list})
+    - Stories marked validating (Val unavailable/degraded): {count} ({list})
+    - INFO findings logged: {count}
+  </action>
+</step>
+
+<step n="9" title="Next Steps">
   <action>Report summary: new epic(s) created (if any), stories added with IDs and epic assignments</action>
   <action>For each new story: "Run /gaia-create-story {story_key} to elaborate before development"</action>
   <action>If stories should enter current sprint: "Run /gaia-correct-course to inject into sprint"</action>
