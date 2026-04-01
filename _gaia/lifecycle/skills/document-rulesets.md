@@ -1,17 +1,35 @@
 ---
 name: document-rulesets
-version: '1.0'
+version: '1.1'
 applicable_agents: [validator]
-description: 'Document-specific validation rulesets for artifact type detection, structural quality checks per artifact type, and two-pass validation logic.'
-sections: [type-detection, prd-rules, arch-rules, ux-rules, test-plan-rules, epics-rules, two-pass-logic]
+description: 'Document-specific validation rulesets for artifact type detection (path and frontmatter), structural quality checks per artifact type (application, infrastructure, platform PRDs), and two-pass validation logic.'
+sections: [type-detection, prd-rules, infra-prd-rules, platform-prd-rules, arch-rules, ux-rules, test-plan-rules, epics-rules, two-pass-logic]
 ---
 
 <!-- SECTION: type-detection -->
 ## Artifact Type Detection
 
-### Path-to-Ruleset Mapping
+### Frontmatter-Based Detection (Higher Priority)
 
-Detect the artifact type from the file path basename. Match against these patterns:
+Check frontmatter first before falling back to filename detection. If the artifact has YAML frontmatter with a `template` field, use the frontmatter mapping table below. Frontmatter detection takes higher priority than filename detection because it is explicit and unambiguous.
+
+| Frontmatter `template` Value | Ruleset ID(s) | Description |
+|------------------------------|---------------|-------------|
+| `'prd'` | prd-rules | Application Product Requirements Document |
+| `'infra-prd'` | infra-prd-rules | Infrastructure PRD |
+| `'platform-prd'` | prd-rules + infra-prd-rules | Platform PRD (both rulesets applied) |
+
+### Frontmatter Detection Algorithm
+
+1. Parse the artifact's YAML frontmatter (content between opening `---` and closing `---`)
+2. Check for a `template` field in the frontmatter
+3. If `template` field exists, match against the frontmatter mapping table above
+4. If a match is found, return the corresponding ruleset ID(s). For `'platform-prd'`, return both `prd-rules` and `infra-prd-rules` — both rulesets are applied sequentially
+5. If `template` field is absent or does not match, fall through to path-based detection below
+
+### Path-to-Ruleset Mapping (Fallback)
+
+If no frontmatter match is found, detect the artifact type from the file path basename. Match against these patterns:
 
 | File Pattern | Ruleset ID | Description |
 |-------------|------------|-------------|
@@ -21,7 +39,7 @@ Detect the artifact type from the file path basename. Match against these patter
 | `test-plan.md` | test-plan-rules | Test Plan |
 | `epics-and-stories.md` | epics-rules | Epics and Stories |
 
-### Detection Algorithm
+### Path-Based Detection Algorithm
 
 1. Extract the basename from the artifact path (e.g., `docs/planning-artifacts/prd.md` -> `prd.md`)
 2. Match basename against the mapping table above (case-insensitive)
@@ -30,6 +48,7 @@ Detect the artifact type from the file path basename. Match against these patter
 
 ### Edge Cases and Fallback
 
+- **Frontmatter takes priority**: If both frontmatter and filename match, frontmatter wins
 - **Nested directories**: Only the basename matters — `any/nested/path/prd.md` still matches prd-rules
 - **Custom paths**: Files with non-standard names (e.g., `custom-doc.md`) fall back to unknown/unrecognized type
 - **Case sensitivity**: Match is case-insensitive (`PRD.md` and `prd.md` both match prd-rules)
@@ -64,6 +83,72 @@ Verify user personas referenced in requirements match personas defined in the pe
 ### Quality and Consistency
 
 Verify terminology is used consistently across sections. Cross-reference all sections for contradictions. Flag inconsistencies as WARNING.
+<!-- END SECTION -->
+
+<!-- SECTION: infra-prd-rules -->
+## Infra PRD Validation Rules
+
+Structural quality checks for Infrastructure Product Requirements Documents. This ruleset validates infra PRDs per ADR-022 section 10.16.7 (FR-126).
+
+### Section Presence Check
+
+Verify all 13 required infrastructure PRD sections exist and are non-empty. Flag missing sections as CRITICAL.
+
+Required sections:
+1. Overview & Scope
+2. Goals and Non-Goals
+3. Platform Capabilities
+4. Resource Specifications
+5. Operational SLOs
+6. Security Posture
+7. Environment Strategy & Developer Experience
+8. Dependencies & Provider Constraints
+9. Cost Model
+10. Verification Strategy
+11. Operational Runbooks
+12. Requirements Summary
+13. Open Questions
+
+### IR/OR/SR ID Uniqueness
+
+Verify requirement IDs use the infrastructure ID scheme (IR-###, OR-###, SR-###). Check ID uniqueness within each prefix family — no duplicate IR-001 entries, no duplicate OR-001 entries, no duplicate SR-001 entries. Flag duplicate IDs as WARNING.
+
+### Security Posture Non-Empty
+
+The Security Posture section is mandatory and must be non-empty for all infrastructure PRDs. An empty or placeholder-only Security Posture section is a CRITICAL finding. This section must contain substantive content covering IAM/RBAC, network segmentation, secrets management, or compliance mapping.
+
+### Cost Model Per-Environment Estimates
+
+The Cost Model section must include per-environment cost estimates. At minimum, dev, staging, and prod environments must have cost projections. Flag missing per-environment estimates as WARNING.
+
+### Verification Strategy Policy-as-Code Reference
+
+The Verification Strategy section must reference at least one policy-as-code tool. Recognized tools include: OPA, Rego, Checkov, tfsec, Sentinel, or equivalent. Flag missing policy-as-code references as WARNING.
+
+### Platform Capabilities Format Validation
+
+Each entry in the Platform Capabilities section must follow the format: "Enable {team/service} to {capability} with {SLO}". Entries that do not match this pattern should be flagged as WARNING with a suggestion to reformat.
+<!-- END SECTION -->
+
+<!-- SECTION: platform-prd-rules -->
+## Platform PRD Validation Rules
+
+Platform PRDs represent hybrid projects that combine application and infrastructure concerns. A platform PRD must pass both the `prd-rules` (application) and `infra-prd-rules` (infrastructure) validation rulesets.
+
+### Composite Validation
+
+When validating a platform PRD (detected via `template: 'platform-prd'` in frontmatter):
+1. Run all checks from `prd-rules` — application structural rules apply
+2. Run all checks from `infra-prd-rules` — infrastructure structural rules apply
+3. Merge findings from both rulesets into a single report
+
+### Dual ID Scheme Validation
+
+Platform PRDs use both application and infrastructure requirement ID schemes:
+- Application requirements: FR-### (functional) and NFR-### (non-functional)
+- Infrastructure requirements: IR-### (infrastructure), OR-### (operational), SR-### (security)
+
+Both ID namespaces must be validated for uniqueness within their respective prefix families. No collisions between FR-001 and IR-001 because the prefix disambiguates.
 <!-- END SECTION -->
 
 <!-- SECTION: arch-rules -->
