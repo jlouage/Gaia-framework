@@ -1290,3 +1290,84 @@ YAML
 
   rm -rf "$SRC_DIR"
 }
+
+# ─── E6-S15: cp fallback nesting bug regression tests ─────────────────────────
+
+@test "E6-S15: cp fallback produces flat _gaia/ structure, no _gaia/_gaia/ nesting (AC1, AC5a)" {
+  local SRC_DIR="$(mktemp -d)"
+  create_mock_source "$SRC_DIR"
+
+  # Override PATH to disable rsync, forcing copy_gaia_files() to use cp fallback
+  local SAFE_PATH="$(mktemp -d)"
+  # Copy only essential commands but NOT rsync
+  for cmd in cp mkdir tar bash cat touch rm grep sed chmod ls head tail wc date printf readlink dirname basename mktemp find tr sort uname cut awk tee; do
+    local cmd_path
+    cmd_path="$(command -v "$cmd" 2>/dev/null)" && ln -sf "$cmd_path" "$SAFE_PATH/$cmd"
+  done
+
+  # Run init with rsync removed from PATH
+  PATH="$SAFE_PATH" run bash "$SCRIPT" init --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  # CRITICAL: Flat structure must exist
+  [ -d "$TEST_DIR/_gaia/_config" ]
+  [ -d "$TEST_DIR/_gaia/core" ]
+
+  # CRITICAL: Nested structure must NOT exist
+  [ ! -d "$TEST_DIR/_gaia/_gaia" ]
+
+  rm -rf "$SRC_DIR" "$SAFE_PATH"
+}
+
+@test "E6-S15: cp fallback merges into partial existing _gaia/ without nesting (AC4, AC5a)" {
+  local SRC_DIR="$(mktemp -d)"
+  create_mock_source "$SRC_DIR"
+
+  # Pre-create partial target _gaia/ with some content
+  mkdir -p "$TEST_DIR/_gaia/_config"
+  echo "existing-config" > "$TEST_DIR/_gaia/_config/user-settings.yaml"
+
+  # Override PATH to disable rsync
+  local SAFE_PATH="$(mktemp -d)"
+  for cmd in cp mkdir tar bash cat touch rm grep sed chmod ls head tail wc date printf readlink dirname basename mktemp find tr sort uname cut awk tee; do
+    local cmd_path
+    cmd_path="$(command -v "$cmd" 2>/dev/null)" && ln -sf "$cmd_path" "$SAFE_PATH/$cmd"
+  done
+
+  PATH="$SAFE_PATH" run bash "$SCRIPT" init --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  # Flat structure — contents merged
+  [ -d "$TEST_DIR/_gaia/_config" ]
+  [ -d "$TEST_DIR/_gaia/core" ]
+
+  # No nesting
+  [ ! -d "$TEST_DIR/_gaia/_gaia" ]
+
+  rm -rf "$SRC_DIR" "$SAFE_PATH"
+}
+
+@test "E6-S15: isolated cp path (rsync+tar disabled) produces flat structure (AC5a)" {
+  local SRC_DIR="$(mktemp -d)"
+  create_mock_source "$SRC_DIR"
+
+  # Override PATH to disable BOTH rsync and tar, isolating the cp path
+  local SAFE_PATH="$(mktemp -d)"
+  for cmd in cp mkdir bash cat touch rm grep sed chmod ls head tail wc date printf readlink dirname basename mktemp find tr sort uname cut awk tee; do
+    local cmd_path
+    cmd_path="$(command -v "$cmd" 2>/dev/null)" && ln -sf "$cmd_path" "$SAFE_PATH/$cmd"
+  done
+  # tar is intentionally excluded from SAFE_PATH
+
+  PATH="$SAFE_PATH" run bash "$SCRIPT" init --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  # Flat structure
+  [ -d "$TEST_DIR/_gaia/_config" ]
+  [ -d "$TEST_DIR/_gaia/core" ]
+
+  # No nesting
+  [ ! -d "$TEST_DIR/_gaia/_gaia" ]
+
+  rm -rf "$SRC_DIR" "$SAFE_PATH"
+}

@@ -92,6 +92,16 @@ else
   fail_count=$((fail_count + 1))
 fi
 
+# ─── Test 9: No _gaia/_gaia/ nesting (E6-S15) ─────────────────────────────
+echo "Test 9: cp fallback does not produce _gaia/_gaia/ nesting (E6-S15)"
+if grep -q 'cp -rp.*_gaia/\.' "$SCRIPT"; then
+  echo "  PASS: cp command uses /. idiom to prevent nesting"
+  pass_count=$((pass_count + 1))
+else
+  echo "  FAIL: cp command does not use /. idiom — risk of _gaia/_gaia/ nesting on Windows"
+  fail_count=$((fail_count + 1))
+fi
+
 # ─── Summary ───────────────────────────────────────────────────────────────
 echo ""
 echo "=== Results: $pass_count passed, $fail_count failed ==="

@@ -233,7 +233,7 @@ copy_gaia_files() {
 
   # Fallback: cp -rp (preserves permissions like rsync -a)
   if [[ "$copy_done" == false ]] && command -v cp >/dev/null 2>&1; then
-    if cp -rp "$src/_gaia/" "$dst/_gaia/" 2>/dev/null; then
+    if cp -rp "$src/_gaia/." "$dst/_gaia/" 2>/dev/null; then
       clean_resolved_yaml "$dst/_gaia"
       detail "Copied framework files using cp -rp (rsync unavailable)"
       copy_done=true
