@@ -102,7 +102,7 @@ Verified facts about the GAIA Framework filesystem structure. Seeded by `/gaia-r
 - _gaia/lifecycle/workflows/anytime/generate-project-context/workflow.yaml
 - _gaia/lifecycle/workflows/anytime/memory-hygiene/workflow.yaml
 - _gaia/lifecycle/workflows/anytime/performance-review/workflow.yaml
-- _gaia/lifecycle/workflows/cross-phase/add-feature/workflow.yaml
+- _gaia/lifecycle/workflows/4-implementation/add-feature/workflow.yaml
 - _gaia/lifecycle/workflows/quick-flow/quick-dev/workflow.yaml
 - _gaia/lifecycle/workflows/quick-flow/quick-spec/workflow.yaml
 - _gaia/testing/workflows/accessibility-testing/workflow.yaml
