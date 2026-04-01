@@ -26,15 +26,15 @@ assert() {
 echo "=== E8-S12 Memory Management Skill Tests ==="
 echo ""
 
-# --- AC1: Skill file exists with 6 sections ---
-echo "AC1: Skill file exists at correct path with 6 sections"
+# --- AC1: Skill file exists with 7 sections ---
+echo "AC1: Skill file exists at correct path with 7 sections"
 if [ -f "$SKILL_FILE" ]; then
   assert "File exists at _gaia/lifecycle/skills/memory-management.md" "true"
 else
   assert "File exists at _gaia/lifecycle/skills/memory-management.md" "false"
 fi
 
-EXPECTED_SECTIONS=("session-load" "session-save" "decision-formatting" "context-summarization" "stale-detection" "deduplication")
+EXPECTED_SECTIONS=("session-load" "session-save" "decision-formatting" "context-summarization" "stale-detection" "deduplication" "budget-monitoring")
 for section in "${EXPECTED_SECTIONS[@]}"; do
   if [ -f "$SKILL_FILE" ] && grep -q "<!-- SECTION: $section -->" "$SKILL_FILE"; then
     assert "Section marker present: $section" "true"
@@ -67,15 +67,15 @@ for section in "${EXPECTED_SECTIONS[@]}"; do
   fi
 done
 
-# --- AC3: File is ≤300 lines ---
+# --- AC3: File is ≤500 lines ---
 echo ""
-echo "AC3: File is at or under 300 lines"
+echo "AC3: File is at or under 500 lines"
 if [ -f "$SKILL_FILE" ]; then
   LINES=$(wc -l < "$SKILL_FILE")
-  if [ "$LINES" -le 300 ]; then
-    assert "Line count ($LINES) ≤ 300" "true"
+  if [ "$LINES" -le 500 ]; then
+    assert "Line count ($LINES) ≤ 500" "true"
   else
-    assert "Line count ($LINES) ≤ 300" "false"
+    assert "Line count ($LINES) ≤ 500" "false"
   fi
 else
   assert "Line count check (file missing)" "false"
@@ -326,7 +326,7 @@ echo "EXPANDED: Every SECTION marker has a matching END SECTION marker"
 if [ -f "$SKILL_FILE" ]; then
   START_COUNT=$(grep -c "<!-- SECTION:" "$SKILL_FILE" || true)
   END_COUNT=$(grep -c "<!-- END SECTION -->" "$SKILL_FILE" || true)
-  if [ "$START_COUNT" -eq "$END_COUNT" ] && [ "$START_COUNT" -eq 6 ]; then
+  if [ "$START_COUNT" -eq "$END_COUNT" ] && [ "$START_COUNT" -eq 7 ]; then
     assert "Section start markers (${START_COUNT}) match end markers (${END_COUNT})" "true"
   else
     assert "Section start markers (${START_COUNT}) match end markers (${END_COUNT})" "false"
@@ -347,7 +347,7 @@ fi
 echo ""
 echo "EXPANDED: Manifest CSV row has correct field count and displayName"
 if [ -f "$MANIFEST" ]; then
-  MM_ROW=$(grep "memory-management" "$MANIFEST")
+  MM_ROW=$(grep "^\"memory-management\"," "$MANIFEST")
   # Count CSV fields accounting for quoted fields containing commas
   # A proper CSV field count: remove content inside quotes, then count commas + 1
   FIELD_COUNT=$(echo "$MM_ROW" | sed 's/"[^"]*"//g' | awk -F',' '{print NF}')
@@ -382,28 +382,28 @@ fi
 
 # --- Expanded coverage: AC6 budget warning thresholds ---
 echo ""
-echo "EXPANDED: session-save defines specific budget warning thresholds"
+echo "EXPANDED: budget-monitoring defines specific budget warning thresholds"
 if [ -f "$SKILL_FILE" ]; then
-  SS_SECTION=$(sed -n '/<!-- SECTION: session-save -->/,/<!-- END SECTION -->/p' "$SKILL_FILE" 2>/dev/null)
-  if echo "$SS_SECTION" | grep -qi "80%"; then
-    assert "session-save warns at 80% threshold" "true"
+  BM_SECTION=$(sed -n '/<!-- SECTION: budget-monitoring -->/,/<!-- END SECTION -->/p' "$SKILL_FILE" 2>/dev/null)
+  if echo "$BM_SECTION" | grep -qi "80%"; then
+    assert "budget-monitoring warns at 80% threshold" "true"
   else
-    assert "session-save warns at 80% threshold" "false"
+    assert "budget-monitoring warns at 80% threshold" "false"
   fi
-  if echo "$SS_SECTION" | grep -qi "90%"; then
-    assert "session-save warns at 90% threshold" "true"
+  if echo "$BM_SECTION" | grep -qi "90%"; then
+    assert "budget-monitoring warns at 90% threshold" "true"
   else
-    assert "session-save warns at 90% threshold" "false"
+    assert "budget-monitoring warns at 90% threshold" "false"
   fi
-  if echo "$SS_SECTION" | grep -qi "100%\|archival.*prompt\|trigger.*archival"; then
-    assert "session-save triggers archival at 100% threshold" "true"
+  if echo "$BM_SECTION" | grep -qi "100%\|archival.*prompt\|trigger.*archival"; then
+    assert "budget-monitoring triggers archival at 100% threshold" "true"
   else
-    assert "session-save triggers archival at 100% threshold" "false"
+    assert "budget-monitoring triggers archival at 100% threshold" "false"
   fi
 else
-  assert "session-save warns at 80% threshold" "false"
-  assert "session-save warns at 90% threshold" "false"
-  assert "session-save triggers archival at 100% threshold" "false"
+  assert "budget-monitoring warns at 80% threshold" "false"
+  assert "budget-monitoring warns at 90% threshold" "false"
+  assert "budget-monitoring triggers archival at 100% threshold" "false"
 fi
 
 # --- Expanded coverage: AC7 no partial writes ---
