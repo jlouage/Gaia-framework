@@ -109,10 +109,7 @@ describe("E12-S8: Infra Review Gate Adaptations", () => {
   // ── AC5: Sprint state machine documentation updated ──
   describe("AC5: Sprint state machine documentation updated", () => {
     it("CLAUDE.md exists", () => {
-      expect(
-        existsSync(CLAUDE_MD_PATH),
-        `CLAUDE.md not found at ${CLAUDE_MD_PATH}`
-      ).toBe(true);
+      expect(existsSync(CLAUDE_MD_PATH), `CLAUDE.md not found at ${CLAUDE_MD_PATH}`).toBe(true);
     });
 
     it("CLAUDE.md documents infra review gate substitutions", () => {
