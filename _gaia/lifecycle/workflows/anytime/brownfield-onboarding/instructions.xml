@@ -76,7 +76,22 @@
 </step>
 
 <step n="4" title="Create PRD for Gaps">
-  <action>Select PRD template based on project_type: for application projects use {installed_path}/../../templates/prd-template.md, for infrastructure projects use {installed_path}/../../templates/infra-prd-template.md, for platform projects use {installed_path}/../../templates/platform-prd-template.md (ADR-022 §10.16.2)</action>
+  <action>Select PRD template based on {project_type} (set by Step 1 discovery). Template selection is a simple lookup — no template inheritance or composition at runtime:
+
+  | project_type     | Template File              | Requirement ID Scheme                        |
+  |------------------|----------------------------|----------------------------------------------|
+  | application      | prd-template.md            | FR-###, NFR-###                              |
+  | infrastructure   | infra-prd-template.md      | IR-###, OR-###, SR-###                       |
+  | platform         | platform-prd-template.md   | FR-###, NFR-### and IR-###, OR-###, SR-###   |
+
+  Resolve template path: {installed_path}/../../templates/{selected_template}.
+  Verify the selected template file exists before proceeding. If the template file is missing, HALT with: "Template {selected_template} not found at {installed_path}/../../templates/. Ensure E12-S2 (infra) or E12-S3 (platform) templates are installed."
+  If {project_type} is not set or unrecognized, default to application (prd-template.md) for backward compatibility.</action>
+  <action>Read the selected PRD template from {installed_path}/../../templates/{selected_template}</action>
+  <action>Set requirement ID scheme based on {project_type}:
+  — If application: use FR-### for functional requirements and NFR-### for non-functional requirements (existing behavior, backward compatible)
+  — If infrastructure: use IR-### for infrastructure requirements, OR-### for operational requirements, and SR-### for security requirements exclusively. Do NOT use FR/NFR prefixes.
+  — If platform: use BOTH ID scheme families — FR-###/NFR-### for application-layer requirements and IR-###/OR-###/SR-### for infrastructure-layer requirements. All requirement IDs are globally unique within the project — the prefix disambiguates (e.g., FR-001 and IR-001 are distinct, no collision).</action>
   <action>Read upstream artifacts to inform gap analysis:</action>
   <action>— nfr-assessment.md → NFR section gets real "Current Baseline" and "Target" columns</action>
   <action>— api-documentation.md (if exists) → extract API gaps (undocumented endpoints, missing validation)</action>
