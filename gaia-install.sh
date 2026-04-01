@@ -493,16 +493,18 @@ cmd_init() {
     fi
   fi
 
-  # Step 8: Create custom skills directory
-  step "Creating custom skills directory..."
-  if [[ "$OPT_DRY_RUN" == true ]]; then
-    detail "[dry-run] Would create: custom/skills/"
-  else
-    mkdir -p "$TARGET/custom/skills"
-  fi
-  if [[ -f "$source/custom/skills/README.md" ]]; then
-    copy_if_missing "$source/custom/skills/README.md" "$TARGET/custom/skills/README.md"
-  fi
+  # Step 8: Create custom directories (ADR-020: user-owned write targets)
+  step "Creating custom directories..."
+  for cdir in skills templates; do
+    if [[ "$OPT_DRY_RUN" == true ]]; then
+      detail "[dry-run] Would create: custom/$cdir/"
+    else
+      mkdir -p "$TARGET/custom/$cdir"
+    fi
+    if [[ -f "$source/custom/$cdir/README.md" ]]; then
+      copy_if_missing "$source/custom/$cdir/README.md" "$TARGET/custom/$cdir/README.md"
+    fi
+  done
 
   # Step 9: Append GAIA entries to .gitignore
   step "Updating .gitignore..."
@@ -687,15 +689,17 @@ cmd_update() {
     fi
   done
 
-  # Ensure custom skills directory exists (user-owned, never overwritten)
-  if [[ "$OPT_DRY_RUN" == true ]]; then
-    [[ ! -d "$TARGET/custom/skills" ]] && detail "[dry-run] Would create: custom/skills/"
-  else
-    mkdir -p "$TARGET/custom/skills"
-  fi
-  if [[ -f "$source/custom/skills/README.md" ]]; then
-    copy_if_missing "$source/custom/skills/README.md" "$TARGET/custom/skills/README.md"
-  fi
+  # Ensure custom directories exist (user-owned, never overwritten — ADR-020)
+  for cdir in skills templates; do
+    if [[ "$OPT_DRY_RUN" == true ]]; then
+      [[ ! -d "$TARGET/custom/$cdir" ]] && detail "[dry-run] Would create: custom/$cdir/"
+    else
+      mkdir -p "$TARGET/custom/$cdir"
+    fi
+    if [[ -f "$source/custom/$cdir/README.md" ]]; then
+      copy_if_missing "$source/custom/$cdir/README.md" "$TARGET/custom/$cdir/README.md"
+    fi
+  done
 
   # Update slash commands (add new ones, update existing with backup)
   step "Updating slash commands..."
@@ -827,6 +831,10 @@ cmd_validate() {
   for dir in planning-artifacts implementation-artifacts test-artifacts creative-artifacts; do
     [[ -d "$TARGET/docs/$dir" ]]; check "Docs: $dir" $?
   done
+
+  # Custom directories (ADR-020: user-owned write targets)
+  [[ -d "$TARGET/custom/skills" ]]; check "custom/skills/ exists" $?
+  [[ -d "$TARGET/custom/templates" ]]; check "custom/templates/ exists" $?
 
   # Version
   local version
