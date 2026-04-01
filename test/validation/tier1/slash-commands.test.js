@@ -118,6 +118,30 @@ function buildAgentCommandMap() {
   return map;
 }
 
+// ─── Deprecated Command Detection ───────────────────────────
+
+/**
+ * Check if a command file is deprecated based on its frontmatter description.
+ * Returns true if the description contains "DEPRECATED" (case-insensitive).
+ */
+function isDeprecatedCommand(filePath) {
+  const fm = parseFrontmatter(filePath);
+  if (!fm?.description) return false;
+  return fm.description.toUpperCase().includes("DEPRECATED");
+}
+
+/**
+ * Classify a command file into a category.
+ * Deprecated commands are detected first (via frontmatter description).
+ * Non-deprecated commands are classified by their reference pattern type.
+ * Categories: deprecated, workflow, agent, orchestrator, task, utility, utility-dir, memory-dir, unknown
+ */
+function classifyCommand(filePath) {
+  if (isDeprecatedCommand(filePath)) return "deprecated";
+  const ref = extractReference(filePath);
+  return ref ? ref.type : "unknown";
+}
+
 // ─── Test Data ───────────────────────────────────────────────
 
 const commandFiles = findCommandFiles();
@@ -134,6 +158,13 @@ describe("Slash Command Forward References (AC1, AC2)", () => {
 
   describe.each(commandFiles)("%s", (filePath) => {
     it("should have a parseable reference target", () => {
+      // Deprecated commands without workflow references are exempt (AC1)
+      if (isDeprecatedCommand(filePath)) {
+        const ref = extractReference(filePath);
+        if (!ref) return; // deprecated + no ref = OK
+        // deprecated + has ref = still validate it resolves (handled by next test)
+        return;
+      }
       const ref = extractReference(filePath);
       expect(ref, `No workflow/agent/orchestrator reference found in ${filePath}`).not.toBeNull();
     });
@@ -238,6 +269,60 @@ describe("Slash Command Frontmatter Validation (AC5)", () => {
         validModels.includes(fm?.model),
         `Invalid model '${fm?.model}' in ${filePath} — must be opus or sonnet`
       ).toBe(true);
+    });
+  });
+});
+
+// ─── Deprecated Command Validation ─────────────────────────
+
+describe("Deprecated Command Handling", () => {
+  const deprecatedFiles = commandFiles.filter((f) => isDeprecatedCommand(f));
+
+  it("should detect at least one deprecated command", () => {
+    expect(deprecatedFiles.length).toBeGreaterThan(0);
+  });
+
+  describe.each(
+    deprecatedFiles.length > 0 ? deprecatedFiles : ["__placeholder__"]
+  )("%s", (filePath) => {
+    it("should have a description containing DEPRECATED", () => {
+      if (filePath === "__placeholder__") return; // skip placeholder
+      const fm = parseFrontmatter(filePath);
+      expect(fm?.description).toBeTruthy();
+      expect(
+        fm.description.toUpperCase().includes("DEPRECATED"),
+        `Deprecated command ${filePath} should have DEPRECATED in description`
+      ).toBe(true);
+    });
+
+    it("should be classified as deprecated", () => {
+      if (filePath === "__placeholder__") return;
+      expect(classifyCommand(filePath)).toBe("deprecated");
+    });
+
+    it("should validate redirect reference if present", () => {
+      if (filePath === "__placeholder__") return;
+      const ref = extractReference(filePath);
+      if (ref) {
+        const resolvedPath = join(PROJECT_ROOT, ref.path);
+        expect(
+          existsSync(resolvedPath),
+          `Deprecated command ${filePath} has redirect reference to ${resolvedPath} which does not exist`
+        ).toBe(true);
+      }
+      // If no reference, that's OK for deprecated commands — no assertion needed
+    });
+
+    it("should have a valid description explaining the deprecation when no reference exists", () => {
+      if (filePath === "__placeholder__") return;
+      const ref = extractReference(filePath);
+      if (!ref) {
+        const fm = parseFrontmatter(filePath);
+        expect(
+          fm?.description?.length,
+          `Deprecated command ${filePath} without a reference must have a description explaining deprecation`
+        ).toBeGreaterThan(10);
+      }
     });
   });
 });
