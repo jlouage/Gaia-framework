@@ -149,6 +149,21 @@ Run `/gaia-run-all-reviews` to execute all six reviews sequentially via subagent
 
 If any review fails, the story returns to `in-progress`. The Review Gate table in the story file tracks progress.
 
+### Infra Review Gate Substitutions
+
+For infrastructure stories (those whose `traces_to` field contains `IR-###`, `OR-###`, or `SR-###` requirement IDs), 4 of the 6 review gates use adapted criteria. Code Review and Security Review remain unchanged for all story types.
+
+| Standard Gate | Infra Equivalent | Change |
+|---|---|---|
+| Code Review | IaC Code Review | Unchanged — same workflow, IaC expertise expected |
+| QA Tests | Policy-as-Code Validation | Checkov/tfsec/OPA pass replaces unit/integration test pass |
+| Security Review | Security Review | Unchanged — critical for infrastructure |
+| Test Automation | Plan Validation + Drift Checks | terraform plan assertions replace automated test coverage |
+| Test Review | Policy Review | OPA/Rego coverage replaces test quality review |
+| Performance Review | Cost Review + Scaling Validation | Cost analysis and autoscaling validation replace load testing |
+
+**Detection mechanism:** The `review-gate-check` protocol reads the story's `traces_to` field and checks the requirement ID prefix. Each story is evaluated independently — platform projects with mixed stories get per-story gate selection based on their own requirement prefix.
+
 ## Memory Hygiene
 
 Agent memory sidecars accumulate decisions across sessions. Run `/gaia-memory-hygiene` periodically (recommended before each sprint) to detect stale, contradicted, or orphaned entries by cross-referencing sidecar decisions against current planning and architecture artifacts.
