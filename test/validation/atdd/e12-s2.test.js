@@ -3,10 +3,7 @@ import { readFileSync, existsSync } from "fs";
 import { resolve } from "path";
 import { PROJECT_ROOT } from "../../helpers/project-root.js";
 
-const TEMPLATE_PATH = resolve(
-  PROJECT_ROOT,
-  "_gaia/lifecycle/templates/infra-prd-template.md"
-);
+const TEMPLATE_PATH = resolve(PROJECT_ROOT, "_gaia/lifecycle/templates/infra-prd-template.md");
 
 // ─── Helper: parse YAML frontmatter ─────────────────────────
 
@@ -28,9 +25,7 @@ function parseFrontmatter(content) {
 
 function extractHeadings(content) {
   const lines = content.split("\n");
-  return lines
-    .filter((l) => /^#{1,3}\s/.test(l))
-    .map((l) => l.replace(/^#+\s+/, "").trim());
+  return lines.filter((l) => /^#{1,3}\s/.test(l)).map((l) => l.replace(/^#+\s+/, "").trim());
 }
 
 // ─── AC1: All 13 sections present ───────────────────────────
@@ -53,10 +48,7 @@ describe("AC1: Infrastructure PRD template contains all 13 sections", () => {
   ];
 
   it("should have the template file at the expected path", () => {
-    expect(
-      existsSync(TEMPLATE_PATH),
-      `Template file not found at ${TEMPLATE_PATH}`
-    ).toBe(true);
+    expect(existsSync(TEMPLATE_PATH), `Template file not found at ${TEMPLATE_PATH}`).toBe(true);
   });
 
   it("should contain all 13 required section headings", () => {
@@ -160,8 +152,7 @@ describe("AC4: Security Posture section with required subsections", () => {
     // Extract content between Security Posture and next ## heading
     const afterSec = content.slice(secIdx);
     const nextSection = afterSec.indexOf("\n## ", 1);
-    const sectionContent =
-      nextSection > 0 ? afterSec.slice(0, nextSection) : afterSec;
+    const sectionContent = nextSection > 0 ? afterSec.slice(0, nextSection) : afterSec;
     expect(
       sectionContent.trim().length,
       "Security Posture section must not be empty"
