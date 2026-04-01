@@ -50,17 +50,52 @@
   </template-output>
 </step>
 
-<step n="2.5" title="Deep Analysis Subagents">
-  <action>Spawn deep analysis scan subagents in parallel using the Agent tool with multiple calls in a single message. These run alongside the Step 2 documentation subagents to detect gaps that structural analysis misses. Each scan subagent receives {tech_stack} (from Step 1) and {project-path} as context variables.</action>
-  <action>Spawn subagent — Config Contradiction Scanner: "Read the config contradiction scan prompt template at {project-root}/_gaia/lifecycle/knowledge/brownfield/config-contradiction-scan.md. Follow the prompt instructions EXACTLY. Use tech stack: {tech_stack}. Scan the project at {project-path}. Reference the gap entry schema at {project-root}/_gaia/lifecycle/templates/gap-entry-schema.md for output formatting. Output to {planning_artifacts}/brownfield-scan-config-contradiction.md"</action>
-  <action>Spawn subagent — Dead Code &amp; Dead State Scanner: "Read the dead code scan prompt template at {project-root}/_gaia/lifecycle/knowledge/brownfield/dead-code-scan.md. Follow the prompt instructions EXACTLY. Use tech stack: {tech_stack}. Scan the project at {project-path}. Reference the gap entry schema at {project-root}/_gaia/lifecycle/templates/gap-entry-schema.md for output formatting. Output to {planning_artifacts}/brownfield-scan-dead-code.md"</action>
-  <action>Spawn subagent — Hard-Coded Logic Scanner: "Read the hard-coded logic scan prompt template at {project-root}/_gaia/lifecycle/templates/brownfield-scan-hardcoded-prompt.md. Follow the prompt instructions EXACTLY. Use tech stack: {tech_stack}. Scan the project at {project-path}. Reference the gap entry schema at {project-root}/_gaia/lifecycle/templates/gap-entry-schema.md for output formatting. Output to {planning_artifacts}/brownfield-scan-hardcoded.md"</action>
-  <action>Spawn subagent — Security Endpoint Audit Scanner: "Read the security endpoint audit scan prompt template at {project-root}/_gaia/lifecycle/templates/brownfield-scan-security-prompt.md. Follow the prompt instructions EXACTLY. Use tech stack: {tech_stack}. Scan the project at {project-path}. Reference the gap entry schema at {project-root}/_gaia/lifecycle/templates/gap-entry-schema.md for output formatting. Output to {planning_artifacts}/brownfield-scan-security.md"</action>
-  <action>Spawn subagent — Runtime Behavior Scanner: "Read the runtime behavior scan prompt template at {project-root}/_gaia/lifecycle/templates/brownfield-scan-runtime-behavior-prompt.md. Follow the prompt instructions EXACTLY. Use tech stack: {tech_stack}. Scan the project at {project-path}. Reference the gap entry schema at {project-root}/_gaia/lifecycle/templates/gap-entry-schema.md for output formatting. Output to {planning_artifacts}/brownfield-scan-runtime-behavior.md"</action>
-  <action>Spawn subagent — Documentation-Code Mismatch Scanner: "Read the doc-vs-code scan prompt template at {project-root}/_gaia/lifecycle/templates/brownfield-scan-doc-code-prompt.md. Follow the prompt instructions EXACTLY. Use tech stack: {tech_stack}. Scan the project at {project-path}. Reference the gap entry schema at {project-root}/_gaia/lifecycle/templates/gap-entry-schema.md for output formatting. Output to {planning_artifacts}/brownfield-scan-doc-code.md"</action>
-  <action>Spawn subagent — Integration Seam Analyzer: "Read the integration seam scan prompt template at {project-root}/_gaia/lifecycle/templates/brownfield-scan-integration-seam-prompt.md. Follow the prompt instructions EXACTLY. Use tech stack: {tech_stack}. Scan the project at {project-path}. Reference the gap entry schema at {project-root}/_gaia/lifecycle/templates/gap-entry-schema.md for output formatting. Output to {planning_artifacts}/brownfield-scan-integration-seam.md"</action>
-  <action>Wait for all deep analysis subagents to complete. Verify output files exist: brownfield-scan-config-contradiction.md, brownfield-scan-dead-code.md, brownfield-scan-hardcoded.md, brownfield-scan-security.md, brownfield-scan-runtime-behavior.md, brownfield-scan-doc-code.md, and brownfield-scan-integration-seam.md at {planning_artifacts}/.</action>
+<step n="2.5" title="Deep Analysis Subagents (Infra-Aware)">
+  <action>Spawn deep analysis scan subagents in parallel using the Agent tool with multiple calls in a single message. These run alongside the Step 2 documentation subagents to detect gaps that structural analysis misses. Each scan subagent receives {tech_stack} (from Step 1), {project-path}, and {project_type} as context variables. When {project_type} is `infrastructure` or `platform`, infra-specific detection patterns are applied alongside application patterns. When {project_type} is `application`, only application patterns are applied.</action>
+
+  <action>Spawn subagent — Config Contradiction Scanner (infra-aware): "Read the config contradiction scan prompt template at {project-root}/_gaia/lifecycle/knowledge/brownfield/config-contradiction-scan.md. Follow the prompt instructions EXACTLY. Use tech stack: {tech_stack}. Project type: {project_type}. Scan the project at {project-path}. Reference the gap entry schema at {project-root}/_gaia/lifecycle/templates/gap-entry-schema.md for output formatting. If project_type is infrastructure or platform: also apply infra-specific config contradiction patterns for terraform.tfvars, values.yaml, and kustomize overlays as specified in the prompt template. Output to {planning_artifacts}/brownfield-scan-config-contradiction.md"</action>
+
+  <action>Spawn subagent — Dead Code &amp; Dead State Scanner: "Read the dead code scan prompt template at {project-root}/_gaia/lifecycle/knowledge/brownfield/dead-code-scan.md. Follow the prompt instructions EXACTLY. Use tech stack: {tech_stack}. Project type: {project_type}. Scan the project at {project-path}. Reference the gap entry schema at {project-root}/_gaia/lifecycle/templates/gap-entry-schema.md for output formatting. Output to {planning_artifacts}/brownfield-scan-dead-code.md"</action>
+
+  <action>Spawn subagent — Hard-Coded Logic Detector (infra-aware): "Read the hard-coded logic scan prompt template at {project-root}/_gaia/lifecycle/templates/brownfield-scan-hardcoded-prompt.md. Follow the prompt instructions EXACTLY. Use tech stack: {tech_stack}. Project type: {project_type}. Scan the project at {project-path}. Reference the gap entry schema at {project-root}/_gaia/lifecycle/templates/gap-entry-schema.md for output formatting. If project_type is infrastructure or platform: also detect hard-coded IPs, magic ports, embedded secrets/AMI IDs, and hard-coded resource limits in IaC files as specified in the prompt template. Output to {planning_artifacts}/brownfield-scan-hardcoded.md"</action>
+
+  <action>Spawn subagent — Security Endpoint Audit (infra-aware): "Read the security scan prompt template at {project-root}/_gaia/lifecycle/templates/brownfield-scan-security-prompt.md. Follow the prompt instructions EXACTLY. Use tech stack: {tech_stack}. Project type: {project_type}. Scan the project at {project-path}. Reference the gap entry schema at {project-root}/_gaia/lifecycle/templates/gap-entry-schema.md for output formatting. If project_type is infrastructure or platform: also detect exposed ports in k8s manifests, permissive ingress rules, overly broad RBAC bindings, and missing NetworkPolicy as specified in the prompt template. Output to {planning_artifacts}/brownfield-scan-security.md"</action>
+
+  <action>Spawn subagent — Runtime Behavior Inventory (infra-aware): "Read the runtime behavior scan prompt template at {project-root}/_gaia/lifecycle/templates/brownfield-scan-runtime-behavior-prompt.md. Follow the prompt instructions EXACTLY. Use tech stack: {tech_stack}. Project type: {project_type}. Scan the project at {project-path}. Reference the gap entry schema at {project-root}/_gaia/lifecycle/templates/gap-entry-schema.md for output formatting. If project_type is infrastructure or platform: also catalog CronJobs, DaemonSets, init containers, sidecar patterns, and health probes as specified in the prompt template. Output to {planning_artifacts}/brownfield-scan-runtime-behavior.md"</action>
+
+  <action>Spawn subagent — Documentation-Code Mismatch Scanner: "Read the doc-vs-code scan prompt template at {project-root}/_gaia/lifecycle/templates/brownfield-scan-doc-code-prompt.md. Follow the prompt instructions EXACTLY. Use tech stack: {tech_stack}. Project type: {project_type}. Scan the project at {project-path}. Reference the gap entry schema at {project-root}/_gaia/lifecycle/templates/gap-entry-schema.md for output formatting. Output to {planning_artifacts}/brownfield-scan-doc-code.md"</action>
+
+  <action>Spawn subagent — Integration Seam Analyzer (infra-aware): "Read the integration seam scan prompt template at {project-root}/_gaia/lifecycle/templates/brownfield-scan-integration-seam-prompt.md. Follow the prompt instructions EXACTLY. Use tech stack: {tech_stack}. Project type: {project_type}. Scan the project at {project-path}. Reference the gap entry schema at {project-root}/_gaia/lifecycle/templates/gap-entry-schema.md for output formatting. If project_type is infrastructure or platform: also map service mesh topology, ingress/egress routes, and cross-namespace dependencies as specified in the prompt template. Output to {planning_artifacts}/brownfield-scan-integration-seam.md"</action>
+
+  <action>Wait for all deep analysis subagents to complete. Verify output files exist at {planning_artifacts}/: brownfield-scan-config-contradiction.md, brownfield-scan-dead-code.md, brownfield-scan-hardcoded.md, brownfield-scan-security.md, brownfield-scan-runtime-behavior.md, brownfield-scan-doc-code.md, and brownfield-scan-integration-seam.md.</action>
   <action>If any subagent failed to write its output file: log a warning and continue — individual scan failures should not block the overall brownfield workflow.</action>
+
+  <!-- Gap-to-Requirement Mapping Reference (E12-S6, ADR-022 §10.16.5)
+       When {project_type} is infrastructure or platform, infra gap categories
+       map to infra PRD sections as follows:
+
+       | Gap Category       | Infra PRD Section          |
+       |--------------------|----------------------------|
+       | resource-drift     | Resource Specifications    |
+       | config-sprawl      | Environment Strategy & DX  |
+       | secret-exposure    | Security Posture           |
+       | missing-policy     | Verification Strategy      |
+       | environment-skew   | Environment Strategy & DX  |
+
+       Application gap categories map to standard PRD sections:
+       | Gap Category          | PRD Section              |
+       |-----------------------|--------------------------|
+       | functional            | Resource Specifications  |
+       | behavioral            | Operational SLOs         |
+       | security              | Security Posture         |
+       | operational           | Operational Runbooks     |
+       | documentation         | Overview & Scope         |
+       | configuration         | Environment Strategy & DX|
+       | data-integrity        | Resource Specifications  |
+
+       This mapping is consumed by the gap consolidation step (E11-S10/S12)
+       and the PRD generation step (Step 4) to route gap findings to the
+       correct sections of the generated PRD. -->
 </step>
 
 <step n="2.75" title="Test Execution During Discovery">

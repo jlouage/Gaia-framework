@@ -1,176 +1,168 @@
 # Security Endpoint Audit Scanner — Subagent Prompt
 
-> Brownfield deep analysis scan subagent. Detects security gaps in API endpoints including missing authentication middleware, IDOR vulnerabilities, rate limiting gaps, sensitive data exposure, and missing input validation.
-> Reference: Architecture ADR-021, Section 10.15.2, Section 10.15.5
+> Brownfield deep analysis scan subagent. Detects security gaps in API endpoints and infrastructure security configurations.
+> Reference: Architecture ADR-021, Section 10.15.2, Section 10.15.5, ADR-022 §10.16.5
+> Infra-awareness: E12-S6 — applies infra-specific patterns when project_type is infrastructure or platform.
 
 ## Objective
 
-Scan the codebase at `{project-path}` to catalog all API endpoints and identify security gaps. For each API endpoint, determine its HTTP method, authentication requirements, authorization checks, and detect vulnerabilities that could lead to unauthorized access or data exposure.
+Scan the codebase at `{project-path}` to catalog all API endpoints and infrastructure security configurations, and identify security gaps.
+
+**Input variables:**
+- `{tech_stack}` — Detected technology stack from Step 1 discovery
+- `{project-path}` — Absolute path to the project source code directory
+- `{project_type}` — Project type: `application`, `infrastructure`, or `platform`
 
 **Output format:** Follow the gap entry schema at `{project-root}/_gaia/lifecycle/templates/gap-entry-schema.md` exactly.
 
-## Phase 1: Endpoint Discovery
+## Phase 1: Endpoint Discovery (Application Patterns)
 
-Catalog all API endpoints in the project. For each endpoint, record:
-
-- **Route path** (e.g., `/api/users/:id`, `/api/orders`)
-- **HTTP method** (GET, POST, PUT, PATCH, DELETE)
-- **Authentication requirements** — middleware, decorators, or annotations that enforce auth
-- **Authorization checks** — role-based access control, ownership validation, permission checks
-- **Handler function** — the controller/handler that processes the request
+Catalog all API endpoints. For each endpoint, record: route path, HTTP method, authentication, authorization, handler function.
 
 ### Stack-Aware Endpoint Discovery Patterns
 
-Apply the following framework-specific patterns based on the detected `{tech_stack}`:
+Apply framework-specific patterns based on {tech_stack}:
 
 #### Java/Spring
-
-| Pattern | Type | Description |
-|---------|------|-------------|
-| `@GetMapping`, `@PostMapping`, `@PutMapping`, `@DeleteMapping`, `@PatchMapping` | Route | Spring MVC endpoint annotations |
-| `@RequestMapping(method = RequestMethod.GET)` | Route | Explicit method mapping |
-| `RouterFunction<ServerResponse>` | Route | Spring WebFlux functional endpoints |
-| `@RestController` class-level `@RequestMapping` | Route prefix | Base path for all methods in controller |
+- `@GetMapping`, `@PostMapping`, `@PutMapping`, `@DeleteMapping`, `@PatchMapping`
+- `@RequestMapping(method = RequestMethod.GET)`
+- `RouterFunction<ServerResponse>` (Spring WebFlux)
+- `@RestController` class-level `@RequestMapping`
 
 #### Node/Express
-
-| Pattern | Type | Description |
-|---------|------|-------------|
-| `app.get()`, `app.post()`, `app.put()`, `app.delete()`, `app.patch()` | Route | Express route handlers |
-| `router.get()`, `router.post()`, `router.put()`, `router.delete()` | Route | Express Router route handlers |
-| `app.route().get().post()` | Route | Chained route handlers |
-| `app.all()` | Route | Catch-all route handler |
+- `app.get()`, `app.post()`, `app.put()`, `app.delete()`, `app.patch()`
+- `router.get()`, `router.post()`, `router.put()`, `router.delete()`
+- `app.route().get().post()`
+- `app.all()`
 
 #### Python/Django
-
-| Pattern | Type | Description |
-|---------|------|-------------|
-| `path()`, `re_path()` in `urls.py` | Route | Django URL configuration |
-| `@api_view(['GET', 'POST'])` | Route | DRF function-based view decorator |
-| `class XxxViewSet(viewsets.ModelViewSet)` | Route | DRF viewset with automatic CRUD routes |
-| `class XxxView(APIView)` | Route | DRF class-based view |
+- `path()`, `re_path()` in `urls.py`
+- `@api_view(['GET', 'POST'])`
+- `class XxxViewSet(viewsets.ModelViewSet)`
+- `class XxxView(APIView)`
 
 #### Go/Gin
-
-| Pattern | Type | Description |
-|---------|------|-------------|
-| `r.GET()`, `r.POST()`, `r.PUT()`, `r.DELETE()`, `r.PATCH()` | Route | Gin route handlers |
-| `group.GET()`, `group.POST()` | Route | Gin route group handlers |
-| `http.HandleFunc()`, `http.Handle()` | Route | Standard library HTTP handlers |
-| `mux.HandleFunc()`, `mux.Handle()` | Route | gorilla/mux route handlers |
+- `r.GET()`, `r.POST()`, `r.PUT()`, `r.DELETE()`, `r.PATCH()`
+- `group.GET()`, `group.POST()`
+- `http.HandleFunc()`, `http.Handle()`
+- `mux.HandleFunc()`, `mux.Handle()`
 
 ### Graceful Exit — No API Endpoints
 
-If no API endpoints are detected after scanning route files (e.g., the project is a CLI tool, library, or static site), output a summary note and zero gap entries:
+If no API endpoints are detected, output a summary note and zero gap entries for the application phase.
 
-```markdown
-## Summary
-No API endpoints detected — security endpoint audit not applicable.
-Total Findings: 0
-```
-
-## Phase 2: Security Gap Detection Rules
-
-For each cataloged endpoint, evaluate the following 5 detection categories:
+## Phase 2: Security Gap Detection — Application Rules
 
 ### 1. Missing Authentication Middleware (AC3a)
 
-Detect endpoints that have no authentication middleware in their middleware chain. An endpoint is flagged when:
-- It has no auth middleware/decorator/annotation applied directly
-- It does not inherit auth from a parent router or application-level middleware (see Phase 3 below)
-- It is publicly accessible without any identity verification
-
-**Severity:**
-- `critical` — mutating endpoints (POST, PUT, PATCH, DELETE) missing authentication middleware entirely
-- `high` — read endpoints (GET) missing authentication middleware that return non-public data
+Detect endpoints with no authentication middleware. Mutating endpoints (POST, PUT, PATCH, DELETE) missing auth are `critical`. Read endpoints (GET) missing auth that return non-public data are `high`.
 
 ### 2. IDOR Vulnerability Detection (AC3b)
 
-Detect endpoints where path or query parameters reference resources without ownership validation. An IDOR-vulnerable endpoint has:
-- Path parameters like `:id`, `{id}`, `<int:pk>` that reference a resource
-- No ownership validation in the handler (e.g., no check that `request.user.id == resource.owner_id`)
-- Direct database lookups using the parameter without filtering by the authenticated user
-
-**Severity:** `critical` — IDOR vulnerabilities allow unauthorized access to other users' data
+Detect endpoints where path parameters reference resources without ownership validation. IDOR vulnerabilities are `critical` severity.
 
 ### 3. Rate Limiting Gap Detection (AC3c)
 
-Detect endpoints without rate limiting at the application level. Note that reverse proxy rate limiting (nginx, API Gateway) is not visible to static analysis.
+Detect endpoints without rate limiting at the application level. Missing rate limiting is `high` severity.
 
-**Flag these:**
-- Endpoints with no rate limiter middleware in their middleware chain
-- Authentication endpoints (login, register, password reset) without rate limiting
-
-**Severity:** `high` — missing rate limiting is a defense-in-depth gap
-
-**Note:** Append to each finding: "Reverse proxy or API gateway rate limiting is not visible to static code analysis. Verify infrastructure-level rate limiting separately."
+**Note:** Reverse proxy or API gateway rate limiting is not visible to static code analysis. Verify infrastructure-level rate limiting separately.
 
 ### 4. Sensitive Data Exposure Detection (AC3d)
 
-Detect endpoints whose response objects contain fields that should be filtered before returning to clients.
-
-**Flag these response fields:**
+Detect endpoints whose response objects contain fields that should be filtered:
 - `password`, `password_hash`, `hashed_password`
 - `token`, `access_token`, `refresh_token`, `api_key`, `secret`
 - `ssn`, `social_security`, `national_id`
 - `credit_card`, `card_number`, `cvv`, `expiry`
 - Any field matching patterns: `*_secret`, `*_key`, `*_token`
 
-**Severity:** `high` — sensitive data exposure is a defense-in-depth gap
+Sensitive data exposure is `high` severity.
 
 ### 5. Missing Input Validation on Mutating Endpoints (AC3e)
 
-Detect mutating endpoints (POST, PUT, PATCH, DELETE) that accept a request body but have no input validation.
+Detect POST/PUT/PATCH/DELETE endpoints that accept a request body but have no input validation. Missing input validation is `high` severity.
 
-**Flag these:**
-- POST/PUT/PATCH endpoints without request body validation middleware/schema
-- No validation library usage (Joi, Zod, class-validator, Pydantic, marshmallow)
-- No schema validation at the framework level
+## Phase 3: False-Positive Mitigation — Inherited Auth
 
-**Severity:** `high` — missing input validation enables injection attacks and data corruption
-
-## Phase 3: False-Positive Mitigation — Inherited Auth (AC8)
-
-Before flagging an endpoint as "missing authentication middleware," trace the middleware chain upward to check for inherited auth:
-
-### Stack-Aware Inherited Auth Patterns
+Before flagging an endpoint as "missing authentication middleware," trace the middleware chain upward:
 
 #### Java/Spring Security
-
-| Pattern | Scope | Description |
-|---------|-------|-------------|
-| `HttpSecurity.authorizeRequests().anyRequest().authenticated()` | App-level | Spring Security global auth requirement |
-| `@PreAuthorize("hasRole('ADMIN')")` on controller class | Class-level | All methods in controller inherit auth |
-| `@Secured("ROLE_USER")` on controller class | Class-level | All methods inherit role check |
-| `SecurityFilterChain` bean configuration | App-level | Global security filter chain |
-| `.antMatchers("/api/**").authenticated()` | Path-level | Auth on path pattern |
+- `HttpSecurity.authorizeRequests().anyRequest().authenticated()` — app-level
+- `@PreAuthorize` on controller class — class-level
+- `SecurityFilterChain` bean — app-level
+- `.antMatchers("/api/**").authenticated()` — path-level
 
 #### Node/Express Middleware
-
-| Pattern | Scope | Description |
-|---------|-------|-------------|
-| `app.use(authMiddleware)` | App-level | Global Express middleware auth |
-| `router.use(passport.authenticate('jwt'))` | Router-level | All routes in router inherit auth |
-| `app.use('/api', authMiddleware, apiRouter)` | Path-level | Auth on all `/api` sub-routes |
+- `app.use(authMiddleware)` — app-level
+- `router.use(passport.authenticate('jwt'))` — router-level
+- `app.use('/api', authMiddleware, apiRouter)` — path-level
 
 #### Django Permissions
-
-| Pattern | Scope | Description |
-|---------|-------|-------------|
-| `REST_FRAMEWORK.DEFAULT_PERMISSION_CLASSES: [IsAuthenticated]` | App-level | DRF global permission |
-| `LoginRequiredMixin` in class-based views | Class-level | All methods inherit login check |
-| `@login_required` on view function | Function-level | Single view auth |
-| `@permission_required('app.permission')` | Function-level | Permission check |
+- `REST_FRAMEWORK.DEFAULT_PERMISSION_CLASSES: [IsAuthenticated]` — app-level
+- `LoginRequiredMixin` — class-level
+- `@login_required` — function-level
 
 #### Go/Gin Middleware
+- `r.Use(JWTAuth())` — app-level
+- `group := r.Group("/api"); group.Use(AuthMiddleware())` — group-level
 
-| Pattern | Scope | Description |
-|---------|-------|-------------|
-| `r.Use(JWTAuth())` on engine | App-level | Global Gin middleware auth |
-| `group := r.Group("/api"); group.Use(AuthMiddleware())` | Group-level | All routes in group inherit auth |
-| `gin.HandlerFunc` auth guard on group | Group-level | Auth guard middleware |
+## Phase 4: Infrastructure Security Patterns (E12-S6)
 
-**Rule:** If an endpoint inherits auth from any of these parent-level patterns, do NOT flag it as "missing authentication middleware." This avoids false positives on individually undecorated routes that are protected by their parent scope.
+**Apply ONLY when {project_type} is `infrastructure` or `platform`.**
+
+### 4a. Exposed Ports in Kubernetes Manifests
+
+Detect Kubernetes Services and Pods that expose ports unnecessarily or without documentation.
+
+**Flag these:**
+- `NodePort` services exposing ports to external traffic without documented justification
+- `hostPort` usage in Pod specs (exposes container port on the node's IP)
+- Services with `type: LoadBalancer` without IP whitelisting or security group restrictions
+- Pods with `hostNetwork: true` (shares the node's network namespace)
+- Containers listening on privileged ports (< 1024) without documented need
+
+**Severity:** `high` for NodePort/LoadBalancer exposure, `critical` for hostNetwork/hostPort
+
+### 4b. Permissive Ingress Rules
+
+Detect overly permissive network ingress rules in Kubernetes Ingress resources, cloud security groups, and firewall rules.
+
+**Flag these:**
+- Kubernetes Ingress resources without TLS configuration
+- Ingress rules with wildcard hosts: `host: "*"` or missing host field
+- AWS Security Groups with `0.0.0.0/0` ingress on non-standard ports
+- Terraform `aws_security_group_rule` with `cidr_blocks = ["0.0.0.0/0"]` on ports other than 80/443
+- GCP firewall rules with `source_ranges = ["0.0.0.0/0"]` without service account filtering
+- Azure NSG rules with `source_address_prefix = "*"` on sensitive ports
+
+**Severity:** `critical` for `0.0.0.0/0` on sensitive ports (SSH/22, DB/3306/5432, admin ports), `high` for permissive ingress on standard ports
+
+### 4c. Overly Broad RBAC Bindings
+
+Detect Kubernetes RBAC configurations that grant excessive permissions.
+
+**Flag these:**
+- `ClusterRoleBinding` bound to `cluster-admin` for non-system service accounts
+- `RoleBinding` or `ClusterRoleBinding` with `resources: ["*"]` and `verbs: ["*"]`
+- Service accounts with `automountServiceAccountToken: true` when not needed
+- `ClusterRole` with `apiGroups: ["*"]` granting access to all API groups
+- Roles that grant `create`, `delete`, or `patch` on `secrets` without namespace scoping
+- Default service account with non-default permissions
+
+**Severity:** `critical` for cluster-admin bindings and wildcard permissions, `high` for broad secret access
+
+### 4d. Missing NetworkPolicy
+
+Detect Kubernetes namespaces and workloads without NetworkPolicy enforcement.
+
+**Flag these:**
+- Namespaces with no NetworkPolicy resources defined (all traffic allowed by default)
+- Pods in namespaces where NetworkPolicy exists but does not select them (via label selectors)
+- NetworkPolicy with empty `ingress` or `egress` rules (allows all traffic of that type)
+- Workloads in production namespaces without both ingress AND egress NetworkPolicy
+- Multi-tenant clusters without namespace-level network isolation
+
+**Severity:** `high` for missing NetworkPolicy in production, `medium` for missing in non-production
 
 ## Output Format
 
@@ -193,46 +185,28 @@ gap:
   confidence: "{high|medium|low}"
 ```
 
-### Field Values
+### Confidence Classification
 
-- **id:** `GAP-SECURITY-{seq}` — sequential numbering starting at 001 (e.g., `GAP-SECURITY-001`, `GAP-SECURITY-002`)
-- **category:** Always `security-endpoint`
-- **severity:** Based on security impact:
-  - `critical` — missing authentication middleware on mutating endpoints (POST/PUT/PATCH/DELETE), IDOR vulnerabilities with direct security implications
-  - `high` — missing rate limiting, sensitive data exposure without response filtering, missing input validation on mutating endpoints (defense-in-depth gaps)
-- **verified_by:** Always `machine-detected`
-- **confidence:** Based on detection certainty:
-  - `high` — exact pattern match (e.g., no auth decorator/annotation on a `@PostMapping` handler, explicit password field in serializer)
-  - `medium` — heuristic match (e.g., handler accesses path parameter without obvious ownership check, IDOR detection requiring understanding of handler logic)
-  - `low` — ambiguous case (e.g., custom auth mechanism not recognized by pattern table, middleware chain too complex to trace statically)
+- **high** — exact pattern match (e.g., no auth decorator/annotation on a `@PostMapping` handler)
+- **medium** — heuristic match (e.g., handler accesses path parameter without obvious ownership check)
+- **low** — ambiguous case (e.g., custom auth mechanism not recognized by pattern table)
 
-## Budget Enforcement
+### Budget Enforcement
 
-- Each gap entry should average approximately 100 tokens in the structured YAML format
-- Maximum output: 70 gap entries per scan to stay within NFR-024 token budget constraints
-- If more than 70 gaps are detected:
-  1. Sort all findings by severity (critical > high)
-  2. Within same severity, sort by confidence (high > medium > low)
-  3. Keep the top 70 entries
-  4. Truncate remaining entries
-  5. Append a budget summary section:
+Each gap entry should average approximately 100 tokens in structured YAML format.
+Maximum output: 70 gap entries per scan.
+
+If more than 70 gaps are detected:
+1. Sort all findings by severity (critical > high)
+2. Within same severity, sort by confidence (high > medium > low)
+3. Keep the top 70 entries
+4. Append a budget summary section:
 
 ```markdown
 ## Budget Summary
-Total gaps detected: {N}. Showing top 70 by severity. Omitted: {N-70} entries ({high_count} high, {critical_count} critical).
+Total gaps detected: {N}. Showing top 70 by severity. Omitted: {N-70} entries.
 ```
 
 ## Output File
 
 Write all findings to: `{planning_artifacts}/brownfield-scan-security.md`
-
-Include a header:
-```markdown
-# Brownfield Scan: Security Endpoint Audit
-
-> Scanner: Security Endpoint Audit Scanner
-> Tech Stack: {tech_stack}
-> Scan Date: {date}
-> Total Findings: {count}
-> Endpoints Cataloged: {endpoint_count}
-```

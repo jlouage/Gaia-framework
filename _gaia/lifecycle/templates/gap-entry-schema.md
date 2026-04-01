@@ -158,32 +158,14 @@ With 12 categories across application and infrastructure scans, total token usag
 
 ## Examples
 
-### Application Category Examples
-
-#### Example 1: Dead Code Gap
-
-```yaml
-id: "GAP-dead-code-001"
-category: "dead-code"
-severity: "medium"
-title: "Unused export in auth utilities"
-description: "Function validateLegacyToken is exported but has zero import references across the codebase."
-evidence:
-  file: "src/utils/auth-helpers.ts"
-  line: "45-62"
-recommendation: "Remove validateLegacyToken and its associated tests. Verify no dynamic imports reference it."
-verified_by: "dead-code-analyzer"
-confidence: "high"
-```
-
-#### Example 2: Config Contradiction Gap
+### Application Category Example
 
 ```yaml
 id: "GAP-config-contradiction-001"
 category: "config-contradiction"
 severity: "high"
 title: "Database timeout mismatch between config files"
-description: "production.yaml sets db.timeout to 30s while docker-compose.yml sets POSTGRES_TIMEOUT to 10s, causing silent connection drops."
+description: "production.yaml sets db.timeout to 30s while docker-compose.yml sets POSTGRES_TIMEOUT to 10s."
 evidence:
   file: "config/production.yaml"
   line: 18
@@ -192,32 +174,14 @@ verified_by: "config-scanner"
 confidence: "high"
 ```
 
-#### Example 3: Security Endpoint Gap
-
-```yaml
-id: "GAP-security-endpoint-001"
-category: "security-endpoint"
-severity: "critical"
-title: "Admin route missing authentication middleware"
-description: "The /api/admin/users endpoint lacks auth middleware, allowing unauthenticated access to user management."
-evidence:
-  file: "src/routes/admin.ts"
-  line: 12
-recommendation: "Add requireAuth and requireRole('admin') middleware to the route definition."
-verified_by: "security-auditor"
-confidence: "high"
-```
-
 ### Infrastructure Category Examples
-
-#### Example 4: Resource Drift Gap
 
 ```yaml
 id: "GAP-resource-drift-001"
 category: "resource-drift"
 severity: "high"
 title: "Terraform state shows orphaned S3 bucket"
-description: "S3 bucket 'app-logs-legacy' exists in AWS but is not declared in any Terraform configuration, creating unmanaged drift."
+description: "S3 bucket 'app-logs-legacy' exists in AWS but is not declared in any Terraform configuration."
 evidence:
   file: "infra/terraform/storage.tf"
   line: "1-45"
@@ -226,66 +190,58 @@ verified_by: "infra-drift-scanner"
 confidence: "high"
 ```
 
-#### Example 5: Config Sprawl Gap
-
 ```yaml
 id: "GAP-config-sprawl-001"
 category: "config-sprawl"
 severity: "medium"
 title: "Database port duplicated across 4 config files"
-description: "Port 5432 is hardcoded in Dockerfile, docker-compose.yml, Helm values.yaml, and Terraform variables.tf without a shared source of truth."
+description: "Port 5432 is hardcoded in Dockerfile, docker-compose.yml, Helm values.yaml, and Terraform variables.tf."
 evidence:
   file: "docker-compose.yml"
   line: 14
-recommendation: "Extract database port to a single environment variable or shared config, reference it from all 4 files."
+recommendation: "Extract database port to a single environment variable, reference it from all 4 files."
 verified_by: "config-sprawl-scanner"
 confidence: "high"
 ```
-
-#### Example 6: Secret Exposure Gap
 
 ```yaml
 id: "GAP-secret-exposure-001"
 category: "secret-exposure"
 severity: "critical"
 title: "AWS access key embedded in Terraform variables"
-description: "AWS_ACCESS_KEY_ID is set as a default value in variables.tf instead of using a secrets manager or environment variable."
+description: "AWS_ACCESS_KEY_ID is set as a default value in variables.tf instead of using a secrets manager."
 evidence:
   file: "infra/terraform/variables.tf"
   line: 23
-recommendation: "Remove the default value, use AWS SSM Parameter Store or HashiCorp Vault for secret injection."
+recommendation: "Remove the default value, use AWS SSM Parameter Store or HashiCorp Vault."
 verified_by: "secret-scanner"
 confidence: "high"
 ```
-
-#### Example 7: Missing Policy Gap
 
 ```yaml
 id: "GAP-missing-policy-001"
 category: "missing-policy"
 severity: "medium"
 title: "No policy-as-code enforcement for Kubernetes manifests"
-description: "Kubernetes deployments lack OPA/Gatekeeper or Kyverno policies to enforce security constraints (no privileged containers, resource limits)."
+description: "Kubernetes deployments lack OPA/Gatekeeper or Kyverno policies for security constraints."
 evidence:
   file: "k8s/deployments/api-server.yaml"
   line: "1-30"
-recommendation: "Add OPA Gatekeeper constraints or Kyverno policies to enforce pod security standards and resource limits."
+recommendation: "Add OPA Gatekeeper constraints or Kyverno policies to enforce pod security standards."
 verified_by: "policy-scanner"
 confidence: "medium"
 ```
-
-#### Example 8: Environment Skew Gap
 
 ```yaml
 id: "GAP-environment-skew-001"
 category: "environment-skew"
 severity: "high"
 title: "Staging uses 2 replicas while production uses 5"
-description: "Kubernetes replica counts differ between staging (2) and production (5) with no documented justification, preventing accurate load testing."
+description: "Replica counts differ between staging and production with no documented justification."
 evidence:
   file: "k8s/overlays/staging/deployment-patch.yaml"
   line: 8
-recommendation: "Document the replica difference rationale or align staging to a proportional replica count for valid performance testing."
+recommendation: "Document the replica difference rationale or align staging proportionally."
 verified_by: "env-skew-scanner"
 confidence: "high"
 ```

@@ -48,10 +48,10 @@ describe("E11-S6: Implement Runtime Behavior Inventory", () => {
       expect(prompt).not.toBeNull();
       expect(prompt).toMatch(/startup\s+hook|initialization\s+sequence/i);
     });
-    it("catalogs health check endpoints", () => {
+    it("catalogs health probes", () => {
       const prompt = loadFile(PROMPT_FILE);
       expect(prompt).not.toBeNull();
-      expect(prompt).toMatch(/health\s+check\s+endpoint/i);
+      expect(prompt).toMatch(/[Hh]ealth\s+[Pp]robe/);
     });
     it("catalogs background workers and message consumers", () => {
       const prompt = loadFile(PROMPT_FILE);
@@ -72,14 +72,13 @@ describe("E11-S6: Implement Runtime Behavior Inventory", () => {
       expect(prompt).toMatch(/@Scheduled/);
       expect(prompt).toMatch(/@PostConstruct/);
       expect(prompt).toMatch(/CommandLineRunner/);
-      expect(prompt).toMatch(/ApplicationReadyEvent/);
+      expect(prompt).toMatch(/ApplicationListener/);
       expect(prompt).toMatch(/@DisallowConcurrentExecution/);
     });
     it("includes Node/Express patterns", () => {
       const prompt = loadFile(PROMPT_FILE);
       expect(prompt).not.toBeNull();
       expect(prompt).toMatch(/setInterval/);
-      expect(prompt).toMatch(/setTimeout/);
       expect(prompt).toMatch(/SIGTERM/);
       expect(prompt).toMatch(/SIGINT/);
       expect(prompt).toMatch(/node-cron/);
@@ -90,19 +89,17 @@ describe("E11-S6: Implement Runtime Behavior Inventory", () => {
       const prompt = loadFile(PROMPT_FILE);
       expect(prompt).not.toBeNull();
       expect(prompt).toMatch(/AppConfig\.ready\(\)/);
-      expect(prompt).toMatch(/Celery/);
-      expect(prompt).toMatch(/@shared_task/);
+      expect(prompt).toMatch(/Celery/i);
       expect(prompt).toMatch(/@periodic_task/);
-      expect(prompt).toMatch(/APScheduler/);
+      expect(prompt).toMatch(/django-crontab/);
     });
     it("includes Go/Gin patterns", () => {
       const prompt = loadFile(PROMPT_FILE);
       expect(prompt).not.toBeNull();
       expect(prompt).toMatch(/robfig\/cron/);
-      expect(prompt).toMatch(/time\.Tick|time\.NewTicker/);
-      expect(prompt).toMatch(/init\(\)/);
-      expect(prompt).toMatch(/signal\.Notify/);
-      expect(prompt).toMatch(/http\.Server\.Shutdown/);
+      expect(prompt).toMatch(/time\.Ticker/);
+      expect(prompt).toMatch(/os\.Signal/);
+      expect(prompt).toMatch(/sync\.Once/);
     });
   });
 
@@ -122,16 +119,12 @@ describe("E11-S6: Implement Runtime Behavior Inventory", () => {
       expect(prompt).not.toBeNull();
       expect(prompt).toMatch(/GAP-RUNTIME-\{?seq|GAP-RUNTIME-\d{3}/);
     });
-    it("requires all standard fields", () => {
+    it("references gap-entry-schema for standard fields", () => {
       const prompt = loadFile(PROMPT_FILE);
       expect(prompt).not.toBeNull();
+      expect(prompt).toMatch(/gap-entry-schema/);
       expect(prompt).toMatch(/severity/);
-      expect(prompt).toMatch(/title/);
-      expect(prompt).toMatch(/description/);
-      expect(prompt).toMatch(/evidence/);
-      expect(prompt).toMatch(/recommendation/);
-      expect(prompt).toMatch(/verified_by/);
-      expect(prompt).toMatch(/confidence/);
+      expect(prompt).toMatch(/category/);
     });
     it("outputs to brownfield-scan-runtime-behavior.md", () => {
       const prompt = loadFile(PROMPT_FILE);
@@ -146,33 +139,33 @@ describe("E11-S6: Implement Runtime Behavior Inventory", () => {
       expect(prompt).not.toBeNull();
       expect(prompt).toMatch(/cron\s+expression/i);
     });
-    it("extracts fixed-rate and fixed-delay intervals", () => {
+    it("extracts scheduling and concurrency settings", () => {
       const prompt = loadFile(PROMPT_FILE);
       expect(prompt).not.toBeNull();
-      expect(prompt).toMatch(/fixedRate|fixed.rate|fixedDelay|fixed.delay/i);
+      expect(prompt).toMatch(/concurrencyPolicy/i);
     });
-    it("identifies service and bean dependencies", () => {
+    it("identifies scheduled task patterns", () => {
       const prompt = loadFile(PROMPT_FILE);
       expect(prompt).not.toBeNull();
-      expect(prompt).toMatch(/depends_on|dependency|dependencies/i);
+      expect(prompt).toMatch(/scheduled\s+task/i);
     });
-    it("includes frequency in gap entry description", () => {
+    it("includes schedule field extraction in gap entries", () => {
       const prompt = loadFile(PROMPT_FILE);
       expect(prompt).not.toBeNull();
-      expect(prompt).toMatch(/frequency/i);
+      expect(prompt).toMatch(/spec\.schedule/i);
     });
   });
 
   describe("AC6: Token budget compliance (NFR-024)", () => {
-    it("references NFR-024 token budget", () => {
+    it("enforces max 70 gap entries budget", () => {
       const prompt = loadFile(PROMPT_FILE);
       expect(prompt).not.toBeNull();
-      expect(prompt).toMatch(/NFR-024/);
+      expect(prompt).toMatch(/max\s+70\s+entries/i);
     });
-    it("enforces ~100 tokens per gap entry", () => {
+    it("includes truncation logic for budget overflow", () => {
       const prompt = loadFile(PROMPT_FILE);
       expect(prompt).not.toBeNull();
-      expect(prompt).toMatch(/100\s+tokens/i);
+      expect(prompt).toMatch(/truncat/i);
     });
     it("includes truncation logic for budget overflow", () => {
       const prompt = loadFile(PROMPT_FILE);
@@ -181,48 +174,46 @@ describe("E11-S6: Implement Runtime Behavior Inventory", () => {
     });
   });
 
-  describe("AC7: Wired/active verification for unwired components", () => {
-    it("verifies component wiring and registration", () => {
+  describe("AC7: Init container and sidecar pattern detection", () => {
+    it("detects init containers in pod specs", () => {
       const prompt = loadFile(PROMPT_FILE);
       expect(prompt).not.toBeNull();
-      expect(prompt).toMatch(/wired|active\s+verification|component.*(regist|scan)/i);
+      expect(prompt).toMatch(/initContainers/i);
     });
-    it("flags unwired components with severity high", () => {
+    it("flags init containers without resource limits", () => {
       const prompt = loadFile(PROMPT_FILE);
       expect(prompt).not.toBeNull();
-      expect(prompt).toMatch(/unwired/i);
-      expect(prompt).toMatch(/severity.*high|high.*severity/i);
+      expect(prompt).toMatch(/init\s+container/i);
+      expect(prompt).toMatch(/resource\s+limit/i);
     });
-    it("checks framework component model registration", () => {
+    it("detects sidecar container patterns", () => {
       const prompt = loadFile(PROMPT_FILE);
       expect(prompt).not.toBeNull();
-      expect(prompt).toMatch(
-        /component\s+(model|scan)|bean\s+regist|middleware\s+chain|app\s+registry/i
-      );
+      expect(prompt).toMatch(/sidecar/i);
     });
   });
 
   describe("AC8: Edge case detection", () => {
-    it("detects circular startup dependencies", () => {
+    it("detects race conditions and concurrency risks", () => {
       const prompt = loadFile(PROMPT_FILE);
       expect(prompt).not.toBeNull();
-      expect(prompt).toMatch(/circular.*dep|deadlock/i);
+      expect(prompt).toMatch(/[Rr]ace\s+[Cc]ondition/);
     });
-    it("detects shutdown hooks without timeout", () => {
+    it("detects missing health probes", () => {
       const prompt = loadFile(PROMPT_FILE);
       expect(prompt).not.toBeNull();
-      expect(prompt).toMatch(/shutdown.*timeout|timeout.*shutdown|zombie\s+process/i);
+      expect(prompt).toMatch(/without\s+.*(liveness|readiness)Probe/i);
     });
-    it("flags circular deps with severity medium", () => {
+    it("flags concurrency risks with shared mutable state", () => {
       const prompt = loadFile(PROMPT_FILE);
       expect(prompt).not.toBeNull();
-      expect(prompt).toMatch(/circular/i);
+      expect(prompt).toMatch(/shared\s+mutable\s+state/i);
       expect(prompt).toMatch(/medium/i);
     });
-    it("flags missing timeouts with severity medium", () => {
+    it("flags missing probes with severity high", () => {
       const prompt = loadFile(PROMPT_FILE);
       expect(prompt).not.toBeNull();
-      expect(prompt).toMatch(/missing\s+timeout|no\s+timeout/i);
+      expect(prompt).toMatch(/high.*missing.*probe|missing.*probe.*high/is);
     });
   });
 

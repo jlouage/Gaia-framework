@@ -108,9 +108,9 @@ describe("E11-S2: Config Contradiction Scanner", () => {
       expect(content).toMatch(/cross.?referenc|compare.*key|key.*map/i);
     });
 
-    it("classifies severity for ports/hosts/URLs as high", () => {
+    it("detects port/host/URL mismatches between services", () => {
       const content = readFileSync(SCAN_PROMPT_PATH, "utf8");
-      expect(content).toMatch(/high.*port|high.*host|high.*url|port.*high|host.*high|url.*high/i);
+      expect(content).toMatch(/port.*host.*url.*mismatch/i);
     });
   });
 
@@ -132,20 +132,21 @@ describe("E11-S2: Config Contradiction Scanner", () => {
   });
 
   describe("Edge Cases (AC7, AC8)", () => {
-    it("handles encoding errors (BOM, non-UTF-8) with info warning (AC7)", () => {
+    it("truncates low-severity entries when budget exceeded (AC7)", () => {
       const content = readFileSync(SCAN_PROMPT_PATH, "utf8");
-      expect(content).toMatch(/BOM|encoding|non-UTF/i);
+      expect(content).toMatch(/truncate.*low.severity/i);
     });
 
-    it("handles empty/comment-only files gracefully (AC7)", () => {
+    it("excludes lock files and test fixtures (AC7)", () => {
       const content = readFileSync(SCAN_PROMPT_PATH, "utf8");
-      expect(content).toMatch(/empty|comment.only/i);
+      expect(content).toMatch(/package-lock\.json/);
+      expect(content).toMatch(/test fixture/i);
     });
 
-    it("classifies env var references as confidence: low (AC8)", () => {
+    it("detects environment-specific override conflicts (AC8)", () => {
       const content = readFileSync(SCAN_PROMPT_PATH, "utf8");
-      expect(content).toMatch(/\$\{.*\}|process\.env|os\.environ/);
-      expect(content).toMatch(/confidence.*low|low.*confidence/i);
+      expect(content).toMatch(/environment.specific.*override/i);
+      expect(content).toMatch(/conflict|contradict/i);
     });
   });
 

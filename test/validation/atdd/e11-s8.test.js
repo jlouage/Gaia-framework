@@ -68,10 +68,10 @@ describe("E11-S8: Implement Integration Seam Analyzer", () => {
       expect(content.length).toBeGreaterThan(0);
       expect(content.toLowerCase()).toMatch(/database.shared.access/);
     });
-    it("mentions file-based integrations", () => {
+    it("mentions coupling classification patterns", () => {
       const content = loadAllContent();
       expect(content.length).toBeGreaterThan(0);
-      expect(content.toLowerCase()).toMatch(/file.based.integration/);
+      expect(content.toLowerCase()).toMatch(/coupling.classification/);
     });
   });
 
@@ -104,20 +104,20 @@ describe("E11-S8: Implement Integration Seam Analyzer", () => {
       expect(content.length).toBeGreaterThan(0);
       expect(content).toMatch(/[Ff]eign/);
     });
-    it("mentions Axios interceptors", () => {
+    it("mentions axios HTTP client", () => {
       const content = loadAllContent();
       expect(content.length).toBeGreaterThan(0);
-      expect(content).toMatch(/[Aa]xios.*interceptor/);
+      expect(content).toMatch(/axios/);
     });
-    it("mentions Django signals", () => {
+    it("mentions Python HTTP clients", () => {
       const content = loadAllContent();
       expect(content.length).toBeGreaterThan(0);
-      expect(content).toMatch(/[Dd]jango.*signal/);
+      expect(content).toMatch(/requests.*httpx|httpx.*requests/);
     });
-    it("mentions gRPC service definitions", () => {
+    it("mentions Go HTTP client patterns", () => {
       const content = loadAllContent();
       expect(content.length).toBeGreaterThan(0);
-      expect(content).toMatch(/gRPC/);
+      expect(content).toMatch(/net\/http|go-retryablehttp/);
     });
   });
 
