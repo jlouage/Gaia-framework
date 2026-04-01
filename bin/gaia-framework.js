@@ -158,6 +158,8 @@ Commands:
   status     Show installation info
 
 Options:
+  --branch <name>   Clone from a specific branch
+  --staging         Shorthand for --branch staging
   --yes             Skip confirmation prompts
   --dry-run         Show what would be done without making changes
   --verbose         Show detailed progress
@@ -207,6 +209,32 @@ function main(deps) {
     fail(`Unknown command: ${command}\n   Run 'npx gaia-framework --help' for usage.`);
   }
 
+  // ─── Branch flag parsing (E14-S1) ─────────────────────────────────────────
+  // Extract --branch / --staging before building the passthrough array.
+  // These flags control which git branch is cloned — they are consumed by the
+  // JS CLI and forwarded as --branch <name> to gaia-install.sh.
+  let branchValue = null;
+  const remaining = args.slice(0);
+
+  const branchIdx = remaining.indexOf("--branch");
+  const hasStaging = remaining.includes("--staging");
+
+  if (branchIdx >= 0 && hasStaging) {
+    fail("Cannot use --branch and --staging together. Use --branch staging instead.");
+  }
+
+  if (branchIdx >= 0) {
+    const valueIdx = branchIdx + 1;
+    if (valueIdx >= remaining.length || remaining[valueIdx].startsWith("--")) {
+      fail("Missing value for --branch flag. Usage: --branch <name>");
+    }
+    branchValue = remaining[valueIdx];
+    remaining.splice(branchIdx, 2);
+  } else if (hasStaging) {
+    branchValue = "staging";
+    remaining.splice(remaining.indexOf("--staging"), 1);
+  }
+
   // Ensure git is available
   ensureGit();
 
@@ -237,8 +265,9 @@ function main(deps) {
 
   info("Cloning GAIA framework from GitHub...");
 
+  const branchCloneFlag = branchValue ? ` --branch ${branchValue}` : "";
   try {
-    _exec(`git clone --depth 1 ${REPO_URL} "${tempDir}"`, {
+    _exec(`git clone --depth 1${branchCloneFlag} ${REPO_URL} "${tempDir}"`, {
       stdio: ["ignore", "ignore", "pipe"],
     });
   } catch (err) {
@@ -256,9 +285,14 @@ function main(deps) {
 
   // Build the shell command: inject --source pointing to the temp clone
   // so the shell script doesn't need to clone again
-  const passthrough = args.slice(0);
+  const passthrough = remaining.slice(0);
   // Insert --source right after the command (convert to POSIX for bash on Windows)
   passthrough.splice(1, 0, "--source", toPosixPath(tempDir));
+
+  // Inject --branch flag for installer passthrough (E14-S1)
+  if (branchValue) {
+    passthrough.push("--branch", branchValue);
+  }
 
   // Locate bash (critical for Windows support)
   const bashPath = _findBash();
