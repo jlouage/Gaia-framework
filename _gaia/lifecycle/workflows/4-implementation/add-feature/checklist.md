@@ -32,7 +32,7 @@ validation-target: 'Feature/Enhancement/Patch Triage and Cascade'
 - [ ] Failed steps handled with retry/skip/abort options
 - [ ] Checkpoint saved for /gaia-resume recovery
 ## Story
-- [ ] Implementation stories created (or patch story recommended)
+- [ ] Implementation stories created (patch, enhancement, and feature all create stories via subagent)
 - [ ] Story keys captured
 ## Assessment Doc
 - [ ] Assessment document generated at {planning_artifacts}/add-feature-{feature_id}.md
