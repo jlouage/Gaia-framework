@@ -1,0 +1,38 @@
+# PR Label Enforcement — requires exactly one bump:* label for staging merges
+# E14-S6: Blocks PR merge to staging unless a bump:major, bump:minor, bump:patch, or bump:none label is present
+# See docs/planning-artifacts/architecture.md#ADR-025
+
+name: PR Label Check
+
+on:
+  pull_request:
+    types: [opened, labeled, unlabeled, synchronize]
+    branches: [staging]
+
+permissions:
+  contents: read
+
+jobs:
+  check-bump-label:
+    name: Bump Label Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate bump label
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const VALID_BUMP_LABELS = ['bump:major', 'bump:minor', 'bump:patch', 'bump:none'];
+            const prLabels = context.payload.pull_request.labels.map(l => l.name);
+            const bumpLabels = prLabels.filter(l => VALID_BUMP_LABELS.includes(l));
+
+            if (bumpLabels.length === 0) {
+              core.setFailed(`No bump label found. Add one of: ${VALID_BUMP_LABELS.join(', ')}`);
+              return;
+            }
+
+            if (bumpLabels.length > 1) {
+              core.setFailed(`Multiple bump labels found: ${bumpLabels.join(', ')}. Exactly one required.`);
+              return;
+            }
+
+            core.info(`Valid bump label: ${bumpLabels[0]}`);
