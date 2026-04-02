@@ -76,6 +76,7 @@ TARGET=""
 OPT_YES=false
 OPT_DRY_RUN=false
 OPT_VERBOSE=false
+OPT_BRANCH=""
 
 # ─── Utility Functions ──────────────────────────────────────────────────────
 
@@ -95,7 +96,11 @@ clone_from_github() {
   fi
   TEMP_CLONE_DIR="$(mktemp -d "${TMPDIR:-/tmp}/gaia-framework-XXXXXX")"
   info "Cloning GAIA from GitHub..." >&2
-  if git clone --depth 1 "$GITHUB_REPO" "$TEMP_CLONE_DIR" 2>/dev/null; then
+  local branch_args=()
+  if [[ -n "$OPT_BRANCH" ]]; then
+    branch_args=(--branch "$OPT_BRANCH")
+  fi
+  if git clone --depth 1 "${branch_args[@]}" "$GITHUB_REPO" "$TEMP_CLONE_DIR" 2>/dev/null; then
     success "Cloned to temporary directory" >&2
   else
     error "Failed to clone from $GITHUB_REPO"
@@ -938,6 +943,7 @@ ${BOLD}Commands:${RESET}
 
 ${BOLD}Options:${RESET}
   --source <path>   Local GAIA source (or clones from GitHub if omitted)
+  --branch <name>   Clone from a specific branch
   --yes             Skip confirmation prompts
   --dry-run         Show what would be done without making changes
   --verbose         Show detailed progress
@@ -1010,6 +1016,14 @@ parse_args() {
       --verbose)
         OPT_VERBOSE=true
         shift
+        ;;
+      --branch)
+        if [[ -z "${2:-}" ]]; then
+          error "--branch requires a branch name argument"
+          exit 1
+        fi
+        OPT_BRANCH="$2"
+        shift 2
         ;;
       --help|-h)
         usage
