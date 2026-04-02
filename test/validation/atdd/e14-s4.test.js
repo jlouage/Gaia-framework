@@ -16,7 +16,12 @@ import os from "node:os";
 import yaml from "js-yaml";
 
 const PROJECT_ROOT = path.resolve(import.meta.dirname, "../../..");
-const STAGING_WORKFLOW = path.join(PROJECT_ROOT, ".github", "workflows", "version-bump-staging.yml");
+const STAGING_WORKFLOW = path.join(
+  PROJECT_ROOT,
+  ".github",
+  "workflows",
+  "version-bump-staging.yml"
+);
 const VERSION_BUMP_SCRIPT = path.join(PROJECT_ROOT, "scripts", "version-bump.js");
 
 // ── Fixture helper ─────────────────────────────────────────────────────────
@@ -246,7 +251,9 @@ describe("E14-S4: GitHub Action — Auto-Version on Staging Merge", () => {
 
       // Must use a token other than default GITHUB_TOKEN for checkout
       // Either VERSION_BUMP_TOKEN or a GitHub App token
-      expect(content).toMatch(/secrets\.VERSION_BUMP_TOKEN|secrets\.\w+_APP_TOKEN|secrets\.\w+_TOKEN/);
+      expect(content).toMatch(
+        /secrets\.VERSION_BUMP_TOKEN|secrets\.\w+_APP_TOKEN|secrets\.\w+_TOKEN/
+      );
 
       // The checkout step must reference this token
       expect(content).toMatch(/actions\/checkout/);

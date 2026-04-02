@@ -87,7 +87,9 @@ describe("E14-S4: version-bump-staging.yml workflow", () => {
     it("handles bump:none for RC counter increment", () => {
       // Workflow must have logic path for bump:none
       expect(content).toMatch(/bump:none/);
-      expect(content).toMatch(/version:bump\s+(?:--\s+)?none|npm run version:bump\s+(?:--\s+)?none/);
+      expect(content).toMatch(
+        /version:bump\s+(?:--\s+)?none|npm run version:bump\s+(?:--\s+)?none/
+      );
     });
 
     it("handles bump:none on clean version as skip/warning", () => {
