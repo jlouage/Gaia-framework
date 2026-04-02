@@ -66,7 +66,12 @@ abstract: true
 - All 8 shared skills available via JIT loading
 - Load skill sections only when needed for current step
 - Drop skill from context when step completes
-- Skills can be overridden via customize.yaml (skill_overrides for full file, skill_section_overrides for individual sections)
+- Skills can be overridden via .customize.yaml (skill_overrides for full file, skill_section_overrides for individual sections)
+- .customize.yaml lookup order (file-level replacement — no merge between locations):
+  1. `custom/skills/{agent-id}.customize.yaml` — primary location (survives framework upgrades)
+  2. `custom/skills/all-dev.customize.yaml` — shared dev agent overrides (primary)
+  3. `_gaia/_config/agents/{agent-id}.customize.yaml` — legacy fallback
+  4. `_gaia/_config/agents/all-dev.customize.yaml` — legacy fallback for dev agents
 - Override resolution: agent-specific customize.yaml → all-dev.customize.yaml → default skill-registry path
 
 ## Checkpoint Writing
