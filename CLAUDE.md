@@ -168,6 +168,90 @@ For infrastructure stories (those whose `traces_to` field contains `IR-###`, `OR
 
 Agent memory sidecars accumulate decisions across sessions. Run `/gaia-memory-hygiene` periodically (recommended before each sprint) to detect stale, contradicted, or orphaned entries by cross-referencing sidecar decisions against current planning and architecture artifacts.
 
+## Branching Model
+
+This project uses a three-tier branch flow:
+
+```
+feature branches → staging → main
+```
+
+- **Feature branches** — all development happens on feature branches. Never commit directly to `staging` or `main`.
+- **`staging`** — integration branch for release candidates. Merging a PR to `staging` triggers an automated version bump and produces an RC prerelease version (e.g., `1.66.0-rc.1`). Each subsequent merge increments the RC counter (e.g., `1.66.0-rc.2`).
+- **`main`** — production branch. Merging a promotion PR from `staging` to `main` strips the `-rc.N` suffix and produces the release version (e.g., `1.66.0`).
+
+**Example version flow:**
+```
+main 1.65.1 → PR bump:patch → staging 1.65.2-rc.1 → PR bump:none → staging 1.65.2-rc.2 → promote → main 1.65.2
+```
+
+## Version Bumping
+
+**CRITICAL: Do NOT bump versions manually.** Version bumping is fully automated via GitHub Actions, triggered by PR merges.
+
+### How it works
+
+- When a PR is merged to `staging`, the `version-bump-staging.yml` workflow reads the PR's bump label and updates the version automatically.
+- Version state lives in **2 files only**: `package.json` and `_gaia/_config/global.yaml`.
+- `gaia-install.sh` reads version dynamically from `package.json` at runtime — it does not carry a hardcoded version.
+- `manifest.yaml`, `CLAUDE.md`, and `README.md` do not carry version numbers.
+
+### Bump labels
+
+Every PR merged to `staging` must have exactly one `bump:*` label:
+
+| Label | Effect | Example |
+|-------|--------|---------|
+| `bump:major` | Bump 1st number, reset 2nd+3rd, set RC=1 | `1.65.1` → `2.0.0-rc.1` |
+| `bump:minor` | Bump 2nd number, reset 3rd, set RC=1 | `1.65.1` → `1.66.0-rc.1` |
+| `bump:patch` | Bump 3rd number, set RC=1 | `1.65.1` → `1.65.2-rc.1` |
+| `bump:none` | Keep version numbers, increment RC only | `1.65.2-rc.1` → `1.65.2-rc.2` |
+
+### What NOT to do
+
+- Do NOT run `npm run version:bump` — this command no longer exists
+- Do NOT manually edit version numbers in `package.json` or `global.yaml`
+- Do NOT bump versions in feature branches — version changes happen automatically on merge to `staging`
+
+## Branch Protection
+
+Both `staging` and `main` branches are protected in GitHub settings:
+
+- **PR required** — no direct push allowed to either branch
+- **Status checks required** — lint, security audit, and tests must pass before merge
+- **Bump label enforcement** — PRs to `staging` are blocked without exactly one `bump:*` label (`bump:major`, `bump:minor`, `bump:patch`, or `bump:none`)
+
+Branch protection is configured in GitHub repository settings, not in code.
+
+## Git Discipline
+
+- Always commit AND push after completing changes. Do not leave unpushed commits.
+- Write clear, conventional commit messages focused on what changed and why.
+- Always use feature branches — NEVER commit directly to `staging` or `main`.
+- PR workflow: feature branch → `staging` (with bump label) → `main` (promotion PR).
+
+## npm Publishing
+
+Publishing is fully automated — no manual steps required beyond creating the promotion PR.
+
+### Automated pipeline
+
+1. **Feature development:** develop on a feature branch, create PR to `staging` with a `bump:*` label
+2. **Staging merge:** `version-bump-staging.yml` bumps the version and commits the RC version to `staging`
+3. **Promotion:** create a PR from `staging` to `main`
+4. **Release:** `promote-to-main.yml` strips the `-rc.N` suffix, commits the release version, creates a git tag `vX.Y.Z`, and creates a GitHub Release
+5. **Publish:** the GitHub Release triggers `publish.yml`, which runs tests, verifies the version matches the tag, and publishes to npm with provenance attestation
+
+### What NOT to do
+
+- Do NOT manually create git tags — tags are created automatically by `promote-to-main.yml`
+- Do NOT manually run `gh release create` — releases are created automatically
+- Do NOT manually run `npm publish` — publishing is triggered by the GitHub Release
+
+### Verification
+
+After a release, verify: `npm view gaia-framework version`
+
 ## Do Not
 
 - Pre-load files — load at runtime when needed
