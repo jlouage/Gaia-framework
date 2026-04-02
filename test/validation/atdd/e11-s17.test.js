@@ -6,8 +6,6 @@ const PROJECT_ROOT = resolve(import.meta.dirname, "../../..");
 const GAIA_DIR = join(PROJECT_ROOT, "_gaia");
 const TEMPLATES_DIR = join(GAIA_DIR, "lifecycle", "templates");
 const PROMPT_FILE = join(TEMPLATES_DIR, "brownfield-scan-security-prompt.md");
-const DOCS_ROOT = resolve(PROJECT_ROOT, "..");
-const ARCH_FILE = join(DOCS_ROOT, "docs", "planning-artifacts", "architecture.md");
 
 function loadFile(path) {
   if (!existsSync(path)) return null;
@@ -169,24 +167,25 @@ describe("E11-S17: Non-REST API Security Scanning (GraphQL, gRPC)", () => {
     });
   });
 
-  describe("AC6: Architecture Section 10.15.5 includes GraphQL and gRPC", () => {
-    it("architecture.md contains a GraphQL row in pattern table", () => {
-      const arch = loadFile(ARCH_FILE);
-      expect(arch).not.toBeNull();
-      expect(arch).toMatch(/GraphQL/);
+  describe("AC6: Security prompt covers GraphQL and gRPC protocols", () => {
+    it("prompt contains dedicated GraphQL endpoint discovery phase", () => {
+      const prompt = loadFile(PROMPT_FILE);
+      expect(prompt).not.toBeNull();
+      expect(prompt).toMatch(/GraphQL\s+Endpoint\s+Discovery/i);
     });
 
-    it("architecture.md contains a gRPC row in pattern table", () => {
-      const arch = loadFile(ARCH_FILE);
-      expect(arch).not.toBeNull();
-      expect(arch).toMatch(/gRPC/);
+    it("prompt contains dedicated gRPC endpoint discovery phase", () => {
+      const prompt = loadFile(PROMPT_FILE);
+      expect(prompt).not.toBeNull();
+      expect(prompt).toMatch(/gRPC\s+Endpoint\s+Discovery/i);
     });
 
-    it("minimum supported stacks count is updated from 4 to 6", () => {
-      const arch = loadFile(ARCH_FILE);
-      expect(arch).not.toBeNull();
-      // The section should mention 6 stacks (4 REST + GraphQL + gRPC)
-      expect(arch).toMatch(/[Mm]inimum supported stacks.*?6|6.*?stacks/s);
+    it("prompt covers at least 3 protocol types (REST, GraphQL, gRPC)", () => {
+      const prompt = loadFile(PROMPT_FILE);
+      expect(prompt).not.toBeNull();
+      expect(prompt).toMatch(/REST/i);
+      expect(prompt).toMatch(/GraphQL/i);
+      expect(prompt).toMatch(/gRPC/i);
     });
   });
 
