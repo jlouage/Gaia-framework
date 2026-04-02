@@ -5,10 +5,11 @@
  * version-bump.js — Automate version sync across GAIA framework files.
  *
  * Usage:
- *   node scripts/version-bump.js <patch|minor|major|X.Y.Z> [--modules mod1,mod2] [--dry-run]
+ *   node scripts/version-bump.js <patch|minor|major|none|X.Y.Z> [--prerelease rc] [--strip-prerelease] [--modules mod1,mod2] [--dry-run]
  *
- * Updates 5 global files atomically. Optionally updates module config.yaml
- * and manifest.yaml entries when --modules is provided.
+ * Updates 2 global files: package.json and _gaia/_config/global.yaml.
+ * Supports RC prerelease versions (ADR-025 Model B).
+ * Optionally updates module config.yaml and manifest.yaml entries when --modules is provided.
  *
  * Zero runtime dependencies (ADR-005). File-based regex patterns (ADR-006).
  */
@@ -19,14 +20,13 @@ const path = require("node:path");
 // ── Configuration ───────────────────────────────────────────────────────────
 
 const VALID_MODULES = ["core", "lifecycle", "dev", "creative", "testing"];
-const BUMP_TYPES = ["patch", "minor", "major"];
-const SEMVER_RE = /(\d+)\.(\d+)\.(\d+)/;
+const BUMP_TYPES = ["patch", "minor", "major", "none"];
 
 /**
  * Build a version-pattern descriptor for a single file.
  * @param {string} file   Absolute path
  * @param {string} label  Human-readable label
- * @param {RegExp} readRe Regex with one capture group for the version
+ * @param {RegExp} readRe Regex with one capture group for the full version string
  * @param {RegExp} replRe Regex with three capture groups: prefix, version, suffix
  */
 function pat(file, label, readRe, replRe) {
@@ -42,8 +42,9 @@ function pat(file, label, readRe, replRe) {
 }
 
 /**
- * The 5 global version targets. Two entries share README.md (badge + code block).
+ * The 2 global version targets: package.json and global.yaml (ADR-025).
  * gaia-install.sh was removed — it now reads version from package.json at runtime.
+ * CLAUDE.md, README.md were removed — version is no longer hardcoded in those files.
  */
 function globalFilePatterns(root) {
   const j = (...segs) => path.join(root, ...segs);
@@ -51,49 +52,111 @@ function globalFilePatterns(root) {
     pat(
       j("package.json"),
       "package.json",
-      /"version"\s*:\s*"(\d+\.\d+\.\d+)"/,
-      /("version"\s*:\s*")(\d+\.\d+\.\d+)(")/
+      /"version"\s*:\s*"(\d+\.\d+\.\d+(?:-rc\.\d+)?)"/,
+      /("version"\s*:\s*")(\d+\.\d+\.\d+(?:-rc\.\d+)?)(")/
     ),
     pat(
       j("_gaia", "_config", "global.yaml"),
       "_gaia/_config/global.yaml",
-      /framework_version:\s*"(\d+\.\d+\.\d+)"/,
-      /(framework_version:\s*")(\d+\.\d+\.\d+)(")/
-    ),
-    pat(
-      j("CLAUDE.md"),
-      "CLAUDE.md",
-      /# GAIA Framework v(\d+\.\d+\.\d+)/,
-      /(# GAIA Framework v)(\d+\.\d+\.\d+)()/
-    ),
-    pat(
-      j("README.md"),
-      "README.md (badge)",
-      /badge\/framework-v(\d+\.\d+\.\d+)-blue/,
-      /(badge\/framework-v)(\d+\.\d+\.\d+)(-blue)/
-    ),
-    pat(
-      j("README.md"),
-      "README.md (code block)",
-      /framework_version:\s*"(\d+\.\d+\.\d+)"/,
-      /(framework_version:\s*")(\d+\.\d+\.\d+)(")/
+      /framework_version:\s*"(\d+\.\d+\.\d+(?:-rc\.\d+)?)"/,
+      /(framework_version:\s*")(\d+\.\d+\.\d+(?:-rc\.\d+)?)(")/
     ),
   ];
 }
 
 // ── Semver helpers (inline, no deps — ADR-005) ─────────────────────────────
 
+/**
+ * Parse a version string into components. Supports both clean and RC formats.
+ * @param {string} ver  Version string like "1.58.2" or "1.59.0-rc.3"
+ * @returns {{ major: number, minor: number, patch: number, rc: number|null }} or null
+ */
 function parseSemver(ver) {
-  const m = ver.match(/^(\d+)\.(\d+)\.(\d+)$/);
-  return m ? { major: +m[1], minor: +m[2], patch: +m[3] } : null;
+  const m = ver.match(/^(\d+)\.(\d+)\.(\d+)(?:-rc\.(\d+))?$/);
+  if (!m) return null;
+  return {
+    major: +m[1],
+    minor: +m[2],
+    patch: +m[3],
+    rc: m[4] != null ? +m[4] : null,
+  };
 }
 
-function incrementSemver(ver, type) {
-  const s = parseSemver(ver);
-  if (!s) throw new Error(`Cannot parse version: ${ver}`);
-  if (type === "major") return `${s.major + 1}.0.0`;
-  if (type === "minor") return `${s.major}.${s.minor + 1}.0`;
-  return `${s.major}.${s.minor}.${s.patch + 1}`;
+/**
+ * Format a parsed version object back into a version string.
+ * @param {{ major: number, minor: number, patch: number, rc: number|null }} v
+ * @returns {string}
+ */
+function formatVersion(v) {
+  const base = `${v.major}.${v.minor}.${v.patch}`;
+  return v.rc != null ? `${base}-rc.${v.rc}` : base;
+}
+
+/**
+ * Compute the new version based on bump type, prerelease mode, and strip mode.
+ * Implements Model B bump logic (ADR-025).
+ *
+ * @param {string} currentVersion  Current version string
+ * @param {string} bumpType        "patch" | "minor" | "major" | "none"
+ * @param {string|null} prerelease "rc" or null
+ * @param {boolean} stripPrerelease Whether to strip the RC suffix
+ * @returns {string} New version string
+ */
+function computeNewVersion(currentVersion, bumpType, prerelease, stripPrerelease) {
+  const parsed = parseSemver(currentVersion);
+  if (!parsed) throw new Error(`Cannot parse version: ${currentVersion}`);
+
+  // --strip-prerelease: remove RC suffix, no number change
+  if (stripPrerelease) {
+    return formatVersion({ ...parsed, rc: null });
+  }
+
+  // bump:none — increment RC counter only
+  if (bumpType === "none") {
+    if (parsed.rc == null) {
+      console.error(
+        `Error: No RC suffix to increment. Version "${currentVersion}" has no -rc.N suffix. Use a bump type (patch/minor/major) with --prerelease rc instead.`
+      );
+      process.exit(1);
+    }
+    return formatVersion({ ...parsed, rc: parsed.rc + 1 });
+  }
+
+  // --prerelease rc with bump type
+  if (prerelease === "rc") {
+    if (parsed.rc != null) {
+      console.error(
+        `Error: Version "${currentVersion}" already has an RC suffix. Use "none" to increment the RC counter, or --strip-prerelease to remove it first.`
+      );
+      process.exit(1);
+    }
+
+    if (bumpType === "major") {
+      return formatVersion({ major: parsed.major + 1, minor: 0, patch: 0, rc: 1 });
+    }
+    if (bumpType === "minor") {
+      return formatVersion({ major: parsed.major, minor: parsed.minor + 1, patch: 0, rc: 1 });
+    }
+    // patch
+    return formatVersion({
+      major: parsed.major,
+      minor: parsed.minor,
+      patch: parsed.patch + 1,
+      rc: 1,
+    });
+  }
+
+  // Standard bump (no prerelease)
+  if (bumpType === "major")
+    return formatVersion({ major: parsed.major + 1, minor: 0, patch: 0, rc: null });
+  if (bumpType === "minor")
+    return formatVersion({ major: parsed.major, minor: parsed.minor + 1, patch: 0, rc: null });
+  return formatVersion({
+    major: parsed.major,
+    minor: parsed.minor,
+    patch: parsed.patch + 1,
+    rc: null,
+  });
 }
 
 // ── File I/O helpers ────────────────────────────────────────────────────────
@@ -239,10 +302,20 @@ function parseArgs(argv) {
   let explicitVersion = null;
   let modules = null;
   let dryRun = false;
+  let prerelease = null;
+  let stripPrerelease = false;
 
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === "--dry-run") {
       dryRun = true;
+    } else if (argv[i] === "--strip-prerelease") {
+      stripPrerelease = true;
+    } else if (argv[i] === "--prerelease") {
+      if (!argv[++i] || argv[i] !== "rc") {
+        console.error("Error: --prerelease requires 'rc' as value.");
+        process.exit(1);
+      }
+      prerelease = "rc";
     } else if (argv[i] === "--modules") {
       if (!argv[++i]) {
         console.error("Error: --modules requires a value.");
@@ -259,14 +332,19 @@ function parseArgs(argv) {
     }
   }
 
+  // --strip-prerelease is standalone — does not require a bump type
+  if (stripPrerelease) {
+    return { bumpType, explicitVersion, modules, dryRun, prerelease, stripPrerelease };
+  }
+
   if (!bumpType && !explicitVersion) {
     console.error(
-      "Usage: node scripts/version-bump.js <patch|minor|major|X.Y.Z> [--modules mod1,mod2] [--dry-run]"
+      "Usage: node scripts/version-bump.js <patch|minor|major|none|X.Y.Z> [--prerelease rc] [--strip-prerelease] [--modules mod1,mod2] [--dry-run]"
     );
     process.exit(1);
   }
 
-  return { bumpType, explicitVersion, modules, dryRun };
+  return { bumpType, explicitVersion, modules, dryRun, prerelease, stripPrerelease };
 }
 
 function resolveModules(modules) {
@@ -291,6 +369,8 @@ function main() {
     explicitVersion,
     modules: rawModules,
     dryRun,
+    prerelease,
+    stripPrerelease,
   } = parseArgs(process.argv.slice(2));
   const modules = resolveModules(rawModules);
   const root = resolveRoot();
@@ -308,7 +388,6 @@ function main() {
   const drift = detectDrift(patterns, fileContents);
   if (drift) {
     if (explicitVersion) {
-      // Explicit version mode: log drift as warning but proceed
       console.log(
         "Warning: " +
           drift.replace(
@@ -328,7 +407,13 @@ function main() {
     console.error(`Cannot parse version: ${currentVersion}`);
     process.exit(1);
   }
-  const newVersion = explicitVersion || incrementSemver(currentVersion, bumpType);
+
+  let newVersion;
+  if (explicitVersion) {
+    newVersion = explicitVersion;
+  } else {
+    newVersion = computeNewVersion(currentVersion, bumpType, prerelease, stripPrerelease);
+  }
 
   // Dry-run: print and exit
   if (dryRun) {

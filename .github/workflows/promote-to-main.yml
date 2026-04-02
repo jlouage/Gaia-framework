@@ -1,0 +1,121 @@
+# Promote to Main — triggers when a PR from staging merges to main
+# E14-S5: Strip RC suffix, tag release version, create GitHub Release
+# ADR-025: Model B Continuous Staging Versioning
+# ADR-009: npm publish triggered by GitHub Release creation
+# See docs/planning-artifacts/architecture.md Section 10.5
+
+name: Promote to Main
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: promote-to-main
+  cancel-in-progress: false
+
+jobs:
+  promote:
+    name: Strip RC, Tag, and Release
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true && github.event.pull_request.head.ref == 'staging'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run full test suite
+        run: npm test
+
+      - name: Read current version
+        id: read-version
+        run: |
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          echo "Current version: $CURRENT_VERSION"
+          echo "version=$CURRENT_VERSION" >> "$GITHUB_OUTPUT"
+
+          # Check if version has RC suffix
+          if [[ "$CURRENT_VERSION" =~ -rc\.[0-9]+ ]]; then
+            echo "has_rc=true" >> "$GITHUB_OUTPUT"
+            echo "Version has RC suffix — will strip"
+          else
+            echo "has_rc=false" >> "$GITHUB_OUTPUT"
+            echo "Version has no RC suffix — skipping strip"
+          fi
+
+      - name: Strip RC suffix
+        if: steps.read-version.outputs.has_rc == 'true'
+        run: |
+          echo "Stripping RC suffix from ${{ steps.read-version.outputs.version }}..."
+          node scripts/version-bump.js --strip-prerelease
+
+      - name: Determine release version
+        id: release-version
+        run: |
+          RELEASE_VERSION=$(node -p "require('./package.json').version")
+          echo "Release version: $RELEASE_VERSION"
+          echo "version=$RELEASE_VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Commit release version
+        run: |
+          VERSION="${{ steps.release-version.outputs.version }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add package.json _gaia/_config/global.yaml
+          if git diff --cached --quiet; then
+            echo "No version changes needed — files already at $VERSION"
+          else
+            git commit -m "chore: release v$VERSION"
+            git push origin main
+            echo "Release version committed and pushed"
+          fi
+
+      - name: Create and push tag
+        run: |
+          VERSION="${{ steps.release-version.outputs.version }}"
+          TAG="v$VERSION"
+          echo "Creating tag $TAG..."
+          git tag "$TAG"
+          git push origin "$TAG"
+          echo "Tag $TAG pushed"
+
+      - name: Create GitHub Release
+        run: |
+          VERSION="${{ steps.release-version.outputs.version }}"
+          TAG="v$VERSION"
+          echo "Creating GitHub Release for $TAG..."
+          gh release create "$TAG" --generate-notes --title "$TAG"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate checksums
+        run: |
+          npm pack
+          TGZ_FILE=$(ls gaia-framework-*.tgz)
+          shasum -a 256 "$TGZ_FILE" > checksums.txt
+          echo "Generated checksums:"
+          cat checksums.txt
+
+      - name: Attach checksums to release
+        continue-on-error: true
+        run: |
+          VERSION="${{ steps.release-version.outputs.version }}"
+          TAG="v$VERSION"
+          gh release upload "$TAG" checksums.txt --clobber || echo "::warning::Failed to attach checksums.txt to release"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

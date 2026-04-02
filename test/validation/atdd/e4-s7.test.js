@@ -178,19 +178,12 @@ describe("E4-S7: CI-Driven Version Sync in Publish Workflow", () => {
       // Must succeed (exit 0)
       expect(result.exitCode).toBe(0);
 
-      // All 5 files must be updated to 1.2.3
+      // Both global files must be updated to 1.2.3 (ADR-025: 2-file model)
       const pkg = JSON.parse(fs.readFileSync(path.join(dir, "package.json"), "utf8"));
       expect(pkg.version).toBe("1.2.3");
 
       const global = fs.readFileSync(path.join(dir, "_gaia", "_config", "global.yaml"), "utf8");
       expect(global).toContain('framework_version: "1.2.3"');
-
-      const claude = fs.readFileSync(path.join(dir, "CLAUDE.md"), "utf8");
-      expect(claude).toContain("# GAIA Framework v1.2.3");
-
-      const readme = fs.readFileSync(path.join(dir, "README.md"), "utf8");
-      expect(readme).toContain("framework-v1.2.3-blue");
-      expect(readme).toContain('framework_version: "1.2.3"');
     });
 
     it("test_ac5_explicit_version_rejects_invalid — rejects non-semver explicit version", () => {
