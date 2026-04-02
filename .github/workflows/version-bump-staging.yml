@@ -1,0 +1,139 @@
+# Version Bump on Staging Merge — auto-bumps version when PRs merge to staging
+# E14-S4: Auto-Version on Staging Merge (ADR-025 Model B)
+# FR-147: GitHub Action staging auto-version requirement
+#
+# Trigger: PR merged to staging
+# Logic: reads bump:* label, runs npm run version:bump with appropriate flags,
+#        commits the 2-file change (package.json + global.yaml), pushes with bot token.
+# Dependencies: E14-S3 (version:bump RC modes), E14-S6 (PR label enforcement)
+# See docs/planning-artifacts/architecture.md Section 10.4
+
+name: Version Bump (Staging)
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [staging]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: version-bump-staging
+  cancel-in-progress: false
+
+jobs:
+  bump-version:
+    name: Auto-Version Bump
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true
+    steps:
+      - name: Extract bump label
+        id: label
+        run: |
+          # Extract bump:* label from merged PR using github.event.pull_request.labels
+          LABELS='${{ toJSON(github.event.pull_request.labels.*.name) }}'
+          echo "PR labels: $LABELS"
+
+          BUMP_TYPE=""
+          for label in "bump:major" "bump:minor" "bump:patch" "bump:none"; do
+            if echo "$LABELS" | grep -q "\"${label}\""; then
+              BUMP_TYPE="${label#bump:}"
+              break
+            fi
+          done
+
+          if [ -z "$BUMP_TYPE" ]; then
+            echo "::warning::No bump:* label found on merged PR. Skipping version bump."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "Detected bump type: $BUMP_TYPE"
+          echo "type=$BUMP_TYPE" >> "$GITHUB_OUTPUT"
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout
+        if: steps.label.outputs.skip != 'true'
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.VERSION_BUMP_TOKEN }}
+          ref: staging
+
+      - name: Setup Node.js
+        if: steps.label.outputs.skip != 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        if: steps.label.outputs.skip != 'true'
+        run: npm ci
+
+      - name: Read current version
+        if: steps.label.outputs.skip != 'true'
+        id: current
+        run: |
+          CURRENT_VERSION=$(node -e "console.log(require('./package.json').version)")
+          echo "Current version: $CURRENT_VERSION"
+          echo "version=$CURRENT_VERSION" >> "$GITHUB_OUTPUT"
+
+          # Detect if current version has -rc. suffix
+          if echo "$CURRENT_VERSION" | grep -q "\-rc\."; then
+            echo "is_rc=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "is_rc=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Bump version
+        if: steps.label.outputs.skip != 'true'
+        id: bump
+        run: |
+          BUMP_TYPE="${{ steps.label.outputs.type }}"
+          IS_RC="${{ steps.current.outputs.is_rc }}"
+          CURRENT="${{ steps.current.outputs.version }}"
+
+          echo "Bump type: $BUMP_TYPE, Current: $CURRENT, Is RC: $IS_RC"
+
+          if [ "$BUMP_TYPE" = "none" ]; then
+            if [ "$IS_RC" = "false" ]; then
+              echo "::warning::bump:none on clean version ($CURRENT) — no version change needed. Skipping."
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            # RC version + bump:none → increment RC counter only
+            npm run version:bump -- none
+          else
+            if [ "$IS_RC" = "true" ]; then
+              # RC version + higher bump type → strip RC first, then re-bump with new RC
+              npm run version:bump -- --strip-prerelease
+              npm run version:bump -- "$BUMP_TYPE" --prerelease rc
+            else
+              # Clean version + bump type → create first RC
+              npm run version:bump -- "$BUMP_TYPE" --prerelease rc
+            fi
+          fi
+
+          NEW_VERSION=$(node -e "console.log(require('./package.json').version)")
+          echo "New version: $NEW_VERSION"
+          echo "version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+
+      - name: Commit and push version bump
+        if: steps.label.outputs.skip != 'true' && steps.bump.outputs.skip != 'true'
+        run: |
+          NEW_VERSION="${{ steps.bump.outputs.version }}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add package.json Gaia-framework/_gaia/_config/global.yaml
+
+          if git diff --cached --quiet; then
+            echo "No version changes to commit"
+            exit 0
+          fi
+
+          git commit -m "chore: bump version to $NEW_VERSION"
+          git push origin staging
