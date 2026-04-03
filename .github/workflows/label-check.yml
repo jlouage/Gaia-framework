@@ -22,7 +22,15 @@ jobs:
         with:
           script: |
             const VALID_BUMP_LABELS = ['bump:major', 'bump:minor', 'bump:patch', 'bump:none'];
-            const prLabels = context.payload.pull_request.labels.map(l => l.name);
+
+            // Fetch labels live from API — event payload may be stale when
+            // pr-title-label.yml and label-check.yml race on the same event
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number,
+            });
+            const prLabels = pr.labels.map(l => l.name);
             const bumpLabels = prLabels.filter(l => VALID_BUMP_LABELS.includes(l));
 
             if (bumpLabels.length === 0) {
