@@ -177,6 +177,51 @@ describe("E14-S11: deriveBumpLabel — PR title to bump label mapping", () => {
     const result = deriveBumpLabel("feat:", "");
     expect(result).toBeNull();
   });
+
+  // Gap 1: null body — code guards with typeof body === "string"
+  it("should return bump:minor for feat: when body is null", () => {
+    const result = deriveBumpLabel("feat: add feature", null);
+    expect(result).toEqual({
+      label: "bump:minor",
+      type: "feat",
+      breaking: false,
+    });
+  });
+
+  it("should return bump:minor for feat: when body is undefined", () => {
+    const result = deriveBumpLabel("feat: add feature", undefined);
+    expect(result).toEqual({
+      label: "bump:minor",
+      type: "feat",
+      breaking: false,
+    });
+  });
+
+  // Gap 2: BREAKING CHANGE in body with non-feat type (fix + body breaking)
+  it("should return bump:major for fix: with BREAKING CHANGE in body", () => {
+    const result = deriveBumpLabel(
+      "fix: repair parser",
+      "Details\n\nBREAKING CHANGE: changed return type",
+    );
+    expect(result).toEqual({
+      label: "bump:major",
+      type: "fix",
+      breaking: true,
+    });
+  });
+
+  // Gap 3: Exported constants
+  it("should export TITLE_REGEX as a RegExp", () => {
+    expect(deriveBumpLabel.TITLE_REGEX).toBeInstanceOf(RegExp);
+  });
+
+  it("should export TYPE_TO_LABEL as a frozen object with all 9 types", () => {
+    const map = deriveBumpLabel.TYPE_TO_LABEL;
+    expect(Object.isFrozen(map)).toBe(true);
+    expect(Object.keys(map).sort()).toEqual(
+      ["chore", "ci", "docs", "feat", "fix", "perf", "refactor", "style", "test"],
+    );
+  });
 });
 
 // --- Part 2: Workflow structure tests ---
@@ -224,6 +269,47 @@ describe("E14-S11: pr-title-label.yml — Workflow Structure", () => {
   describe("Workflow permissions", () => {
     it("should have pull-requests write permission", () => {
       expect(workflowYaml.permissions["pull-requests"]).toBe("write");
+    });
+  });
+
+  // Gap 4: Job structure validation
+  describe("Workflow job structure", () => {
+    it("should have an auto-label job", () => {
+      expect(workflowYaml.jobs["auto-label"]).toBeDefined();
+    });
+
+    it("should use actions/checkout@v4", () => {
+      const steps = workflowYaml.jobs["auto-label"].steps;
+      const checkout = steps.find((s) => s.uses && s.uses.startsWith("actions/checkout@"));
+      expect(checkout).toBeDefined();
+      expect(checkout.uses).toBe("actions/checkout@v4");
+    });
+
+    it("should use actions/setup-node@v4", () => {
+      const steps = workflowYaml.jobs["auto-label"].steps;
+      const nodeSetup = steps.find((s) => s.uses && s.uses.startsWith("actions/setup-node@"));
+      expect(nodeSetup).toBeDefined();
+      expect(nodeSetup.uses).toBe("actions/setup-node@v4");
+    });
+
+    it("should use actions/github-script@v7 for label logic", () => {
+      const steps = workflowYaml.jobs["auto-label"].steps;
+      const script = steps.find((s) => s.uses && s.uses.startsWith("actions/github-script@"));
+      expect(script).toBeDefined();
+      expect(script.uses).toBe("actions/github-script@v7");
+    });
+
+    // Gap 6: Script references correct helper modules
+    it("should require derive-bump-label.js in the script", () => {
+      const steps = workflowYaml.jobs["auto-label"].steps;
+      const script = steps.find((s) => s.uses && s.uses.startsWith("actions/github-script@"));
+      expect(script.with.script).toContain("derive-bump-label.js");
+    });
+
+    it("should require validate-bump-labels.js in the script", () => {
+      const steps = workflowYaml.jobs["auto-label"].steps;
+      const script = steps.find((s) => s.uses && s.uses.startsWith("actions/github-script@"));
+      expect(script.with.script).toContain("validate-bump-labels.js");
     });
   });
 });
