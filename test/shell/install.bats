@@ -67,11 +67,13 @@ YAML
   # Create slash commands dir
   mkdir -p "$src/.claude/commands"
   echo "placeholder" > "$src/.claude/commands/gaia-help.md"
-  # Create custom skills and templates
+  # Create custom skills, templates, and stakeholders
   mkdir -p "$src/custom/skills"
   echo "README" > "$src/custom/skills/README.md"
   mkdir -p "$src/custom/templates"
   echo "README" > "$src/custom/templates/README.md"
+  mkdir -p "$src/custom/stakeholders"
+  echo "README" > "$src/custom/stakeholders/README.md"
 }
 
 # Expected Tier 1+2 sidecar directories (subset check)
@@ -1370,4 +1372,376 @@ YAML
   [ ! -d "$TEST_DIR/_gaia/_gaia" ]
 
   rm -rf "$SRC_DIR" "$SAFE_PATH"
+}
+
+# ─── E3-S7: rsync fallback tests for copy_gaia_files() ──────────────────────
+
+# Helper: build a restricted PATH that excludes specific commands
+# Usage: _e3s7_build_path <exclude_cmd1> <exclude_cmd2> ...
+# Returns the temp dir path on stdout; caller must clean up.
+_e3s7_build_path() {
+  local exclude=("$@")
+  local safe_path
+  safe_path="$(mktemp -d)"
+  local all_cmds=(cp mkdir tar bash cat touch rm grep sed chmod ls head tail wc date printf readlink dirname basename mktemp find tr sort uname cut awk tee)
+  for cmd in "${all_cmds[@]}"; do
+    local skip=false
+    for ex in "${exclude[@]}"; do
+      [[ "$cmd" == "$ex" ]] && skip=true && break
+    done
+    if [[ "$skip" == false ]]; then
+      local cmd_path
+      cmd_path="$(command -v "$cmd" 2>/dev/null)" && ln -sf "$cmd_path" "$safe_path/$cmd"
+    fi
+  done
+  echo "$safe_path"
+}
+
+@test "E3-S7: cp fallback triggers when rsync is absent (AC1, AC2)" {
+  local SRC_DIR="$(mktemp -d)"
+  create_mock_source "$SRC_DIR"
+
+  # Build PATH without rsync
+  local SAFE_PATH
+  SAFE_PATH="$(_e3s7_build_path rsync)"
+
+  PATH="$SAFE_PATH" run bash "$SCRIPT" init --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  # Output should mention cp, not rsync
+  [[ "$output" == *"cp"* ]] || [[ "$output" == *"Copied"* ]]
+
+  # Framework files must exist
+  [ -d "$TEST_DIR/_gaia/_config" ]
+  [ -d "$TEST_DIR/_gaia/core" ]
+  [ -d "$TEST_DIR/_gaia/lifecycle" ]
+
+  rm -rf "$SRC_DIR" "$SAFE_PATH"
+}
+
+@test "E3-S7: rsync path works when rsync is available — no regression (AC5)" {
+  # Skip if rsync is not installed on this system
+  command -v rsync >/dev/null 2>&1 || skip "rsync not installed"
+
+  local SRC_DIR="$(mktemp -d)"
+  create_mock_source "$SRC_DIR"
+
+  run bash "$SCRIPT" init --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  # Framework files must exist
+  [ -d "$TEST_DIR/_gaia/_config" ]
+  [ -d "$TEST_DIR/_gaia/core" ]
+  [ -d "$TEST_DIR/_gaia/lifecycle" ]
+  [ -d "$TEST_DIR/_gaia/dev" ]
+  [ -d "$TEST_DIR/_gaia/creative" ]
+  [ -d "$TEST_DIR/_gaia/testing" ]
+
+  rm -rf "$SRC_DIR"
+}
+
+# ─── E10-S19: Customize.yaml Migration Tests ─────────────────────────────────
+
+# Helper: set up a minimal GAIA install for update tests (avoids repetitive boilerplate)
+setup_for_update() {
+  local src="$1" target="$2"
+  mkdir -p "$target/_gaia/_config"
+  cp "$src/_gaia/_config/manifest.yaml" "$target/_gaia/_config/manifest.yaml"
+  cp "$src/_gaia/_config/global.yaml" "$target/_gaia/_config/global.yaml"
+  for mod in core lifecycle dev creative testing; do
+    mkdir -p "$target/_gaia/$mod"
+  done
+}
+
+@test "E10-S19: fresh update with no customize.yaml files runs silently (Scenario 1)" {
+  local SRC_DIR="$(mktemp -d)"
+  create_mock_source "$SRC_DIR"
+  setup_for_update "$SRC_DIR" "$TEST_DIR"
+
+  # No customize.yaml files anywhere
+  run bash "$SCRIPT" update --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  # custom/skills/ should exist (created by update) but empty of customize.yaml
+  [ -d "$TEST_DIR/custom/skills" ]
+  local count
+  count="$(find "$TEST_DIR/custom/skills" -name '*.customize.yaml' | wc -l | tr -d ' ')"
+  [ "$count" -eq 0 ]
+
+  rm -rf "$SRC_DIR"
+}
+
+@test "E3-S7: cp fallback directory structure matches rsync output (AC3)" {
+  command -v rsync >/dev/null 2>&1 || skip "rsync not installed — cannot compare"
+
+  local SRC_DIR="$(mktemp -d)"
+  create_mock_source "$SRC_DIR"
+
+  # Run with rsync (normal path)
+  local RSYNC_DIR="$(mktemp -d)"
+  run bash "$SCRIPT" init --source "$SRC_DIR" --yes "$RSYNC_DIR"
+  [ "$status" -eq 0 ]
+
+  # Run without rsync (cp fallback)
+  local CP_DIR="$(mktemp -d)"
+  local SAFE_PATH
+  SAFE_PATH="$(_e3s7_build_path rsync)"
+  PATH="$SAFE_PATH" run bash "$SCRIPT" init --source "$SRC_DIR" --yes "$CP_DIR"
+  [ "$status" -eq 0 ]
+
+  # Compare directory trees (file listing only, ignore timestamps)
+  local rsync_tree cp_tree
+  rsync_tree="$(cd "$RSYNC_DIR" && find _gaia -type f | sort)"
+  cp_tree="$(cd "$CP_DIR" && find _gaia -type f | sort)"
+  [ "$rsync_tree" = "$cp_tree" ]
+
+  rm -rf "$SRC_DIR" "$RSYNC_DIR" "$CP_DIR" "$SAFE_PATH"
+}
+
+@test "E3-S7: cp fallback excludes .resolved/*.yaml files (AC3, AC4)" {
+  local SRC_DIR="$(mktemp -d)"
+  create_mock_source "$SRC_DIR"
+
+  # Add .resolved/*.yaml files that should be excluded
+  mkdir -p "$SRC_DIR/_gaia/lifecycle/workflows/dev-story/.resolved"
+  echo "resolved: true" > "$SRC_DIR/_gaia/lifecycle/workflows/dev-story/.resolved/dev-story.yaml"
+  mkdir -p "$SRC_DIR/_gaia/core/.resolved"
+  echo "resolved: true" > "$SRC_DIR/_gaia/core/.resolved/core-config.yaml"
+
+  # Run with cp fallback (no rsync)
+  local SAFE_PATH
+  SAFE_PATH="$(_e3s7_build_path rsync)"
+  PATH="$SAFE_PATH" run bash "$SCRIPT" init --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  # .resolved/*.yaml must NOT exist in target
+  [ ! -f "$TEST_DIR/_gaia/lifecycle/workflows/dev-story/.resolved/dev-story.yaml" ]
+  [ ! -f "$TEST_DIR/_gaia/core/.resolved/core-config.yaml" ]
+
+  # Non-.resolved files must still exist
+  [ -f "$TEST_DIR/_gaia/_config/manifest.yaml" ]
+
+  rm -rf "$SRC_DIR" "$SAFE_PATH"
+}
+
+@test "E3-S7: cp fallback preserves file permissions (AC3)" {
+  local SRC_DIR="$(mktemp -d)"
+  create_mock_source "$SRC_DIR"
+
+  # Set a specific permission on a source file
+  chmod 755 "$SRC_DIR/_gaia/_config/manifest.yaml"
+
+  local SAFE_PATH
+  SAFE_PATH="$(_e3s7_build_path rsync)"
+  PATH="$SAFE_PATH" run bash "$SCRIPT" init --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  # Check that the permission was preserved
+  local src_perms dst_perms
+  src_perms="$(stat -f '%Lp' "$SRC_DIR/_gaia/_config/manifest.yaml" 2>/dev/null || stat -c '%a' "$SRC_DIR/_gaia/_config/manifest.yaml" 2>/dev/null)"
+  dst_perms="$(stat -f '%Lp' "$TEST_DIR/_gaia/_config/manifest.yaml" 2>/dev/null || stat -c '%a' "$TEST_DIR/_gaia/_config/manifest.yaml" 2>/dev/null)"
+  [ "$src_perms" = "$dst_perms" ]
+
+  rm -rf "$SRC_DIR" "$SAFE_PATH"
+}
+
+@test "E3-S7: cp fallback produces all module directories (AC2, AC3)" {
+  local SRC_DIR="$(mktemp -d)"
+  create_mock_source "$SRC_DIR"
+
+  local SAFE_PATH
+  SAFE_PATH="$(_e3s7_build_path rsync)"
+  PATH="$SAFE_PATH" run bash "$SCRIPT" init --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  # Every module directory from source must be present
+  [ -d "$TEST_DIR/_gaia/core" ]
+  [ -d "$TEST_DIR/_gaia/lifecycle" ]
+  [ -d "$TEST_DIR/_gaia/dev" ]
+  [ -d "$TEST_DIR/_gaia/creative" ]
+  [ -d "$TEST_DIR/_gaia/testing" ]
+
+  # Config files must be copied
+  [ -f "$TEST_DIR/_gaia/_config/manifest.yaml" ]
+  [ -f "$TEST_DIR/_gaia/_config/global.yaml" ]
+
+  rm -rf "$SRC_DIR" "$SAFE_PATH"
+}
+
+# ─── E10-S19: Customize.yaml Migration Tests (continued) ────────────────────
+
+@test "E10-S19: customize.yaml files copied from agents/ to custom/skills/ (Scenario 2, AC1)" {
+  local SRC_DIR="$(mktemp -d)"
+  create_mock_source "$SRC_DIR"
+  setup_for_update "$SRC_DIR" "$TEST_DIR"
+
+  # Place a customize.yaml in _gaia/_config/agents/
+  mkdir -p "$TEST_DIR/_gaia/_config/agents"
+  cat > "$TEST_DIR/_gaia/_config/agents/typescript-dev.customize.yaml" <<'YAML'
+skill_overrides:
+  git-workflow:
+    source: "custom/skills/git-workflow.md"
+YAML
+
+  run bash "$SCRIPT" update --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  # File should now exist in custom/skills/
+  [ -f "$TEST_DIR/custom/skills/typescript-dev.customize.yaml" ]
+
+  rm -rf "$SRC_DIR"
+}
+
+@test "E10-S19: multiple customize.yaml files all migrated (Scenario 3, AC1)" {
+  local SRC_DIR="$(mktemp -d)"
+  create_mock_source "$SRC_DIR"
+  setup_for_update "$SRC_DIR" "$TEST_DIR"
+
+  # Place 3 customize.yaml files in _gaia/_config/agents/
+  mkdir -p "$TEST_DIR/_gaia/_config/agents"
+  for agent in typescript-dev angular-dev all-dev; do
+    echo "skill_overrides: {}" > "$TEST_DIR/_gaia/_config/agents/${agent}.customize.yaml"
+  done
+
+  run bash "$SCRIPT" update --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  # All 3 should be in custom/skills/
+  [ -f "$TEST_DIR/custom/skills/typescript-dev.customize.yaml" ]
+  [ -f "$TEST_DIR/custom/skills/angular-dev.customize.yaml" ]
+  [ -f "$TEST_DIR/custom/skills/all-dev.customize.yaml" ]
+
+  rm -rf "$SRC_DIR"
+}
+
+@test "E10-S19: existing files in custom/skills/ not overwritten (Scenario 4, AC5)" {
+  local SRC_DIR="$(mktemp -d)"
+  create_mock_source "$SRC_DIR"
+  setup_for_update "$SRC_DIR" "$TEST_DIR"
+
+  # Place customize.yaml in agents/
+  mkdir -p "$TEST_DIR/_gaia/_config/agents"
+  echo "old-version" > "$TEST_DIR/_gaia/_config/agents/typescript-dev.customize.yaml"
+
+  # Pre-create same file in custom/skills/ with different content
+  mkdir -p "$TEST_DIR/custom/skills"
+  echo "user-customized-version" > "$TEST_DIR/custom/skills/typescript-dev.customize.yaml"
+
+  run bash "$SCRIPT" update --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  # custom/skills/ version should be preserved (not overwritten)
+  [ "$(cat "$TEST_DIR/custom/skills/typescript-dev.customize.yaml")" = "user-customized-version" ]
+
+  rm -rf "$SRC_DIR"
+}
+
+@test "E10-S19: mixed migration — some exist in target, some don't (Scenario 5)" {
+  local SRC_DIR="$(mktemp -d)"
+  create_mock_source "$SRC_DIR"
+  setup_for_update "$SRC_DIR" "$TEST_DIR"
+
+  # 2 files in agents/
+  mkdir -p "$TEST_DIR/_gaia/_config/agents"
+  echo "source-a" > "$TEST_DIR/_gaia/_config/agents/typescript-dev.customize.yaml"
+  echo "source-b" > "$TEST_DIR/_gaia/_config/agents/angular-dev.customize.yaml"
+
+  # 1 already in custom/skills/
+  mkdir -p "$TEST_DIR/custom/skills"
+  echo "user-custom-a" > "$TEST_DIR/custom/skills/typescript-dev.customize.yaml"
+
+  run bash "$SCRIPT" update --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  # typescript-dev not overwritten
+  [ "$(cat "$TEST_DIR/custom/skills/typescript-dev.customize.yaml")" = "user-custom-a" ]
+  # angular-dev migrated
+  [ -f "$TEST_DIR/custom/skills/angular-dev.customize.yaml" ]
+  [ "$(cat "$TEST_DIR/custom/skills/angular-dev.customize.yaml")" = "source-b" ]
+
+  rm -rf "$SRC_DIR"
+}
+
+@test "E10-S19: originals remain in agents/ after migration (AC2)" {
+  local SRC_DIR="$(mktemp -d)"
+  create_mock_source "$SRC_DIR"
+  setup_for_update "$SRC_DIR" "$TEST_DIR"
+
+  mkdir -p "$TEST_DIR/_gaia/_config/agents"
+  echo "original-content" > "$TEST_DIR/_gaia/_config/agents/typescript-dev.customize.yaml"
+
+  run bash "$SCRIPT" update --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  # Original file should still exist in agents/ (copy-only, no delete)
+  # Note: the _gaia/ overwrite may replace framework-shipped files, but user files
+  # in _gaia/_config/agents/ are preserved because _config/agents/ is not in update_targets
+  [ -f "$TEST_DIR/_gaia/_config/agents/typescript-dev.customize.yaml" ]
+
+  rm -rf "$SRC_DIR"
+}
+
+@test "E10-S19: migration log output matches [migrate] format (AC3)" {
+  local SRC_DIR="$(mktemp -d)"
+  create_mock_source "$SRC_DIR"
+  setup_for_update "$SRC_DIR" "$TEST_DIR"
+
+  mkdir -p "$TEST_DIR/_gaia/_config/agents"
+  echo "skill_overrides: {}" > "$TEST_DIR/_gaia/_config/agents/typescript-dev.customize.yaml"
+
+  run bash "$SCRIPT" update --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  # Output should contain the [migrate] log line
+  echo "$output" | grep -q '\[migrate\]'
+  echo "$output" | grep -q 'typescript-dev.customize.yaml'
+
+  rm -rf "$SRC_DIR"
+}
+
+@test "E10-S19: post-install verification warns on broken skill references (Scenario 6, AC4)" {
+  local SRC_DIR="$(mktemp -d)"
+  create_mock_source "$SRC_DIR"
+  setup_for_update "$SRC_DIR" "$TEST_DIR"
+
+  # Create a customize.yaml in custom/skills/ with a broken reference
+  mkdir -p "$TEST_DIR/custom/skills"
+  cat > "$TEST_DIR/custom/skills/broken.customize.yaml" <<'YAML'
+skill_overrides:
+  git-workflow:
+    source: "custom/skills/nonexistent-skill.md"
+YAML
+
+  run bash "$SCRIPT" update --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  # Output should contain a warning about the broken reference
+  echo "$output" | grep -qE '\[warn\]|not found|Broken'
+
+  rm -rf "$SRC_DIR"
+}
+
+@test "E10-S19: post-install verification passes when all references valid (Scenario 7)" {
+  local SRC_DIR="$(mktemp -d)"
+  create_mock_source "$SRC_DIR"
+  setup_for_update "$SRC_DIR" "$TEST_DIR"
+
+  # Create a customize.yaml with a valid reference
+  mkdir -p "$TEST_DIR/custom/skills"
+  echo "valid-skill-content" > "$TEST_DIR/custom/skills/git-workflow.md"
+  cat > "$TEST_DIR/custom/skills/all-dev.customize.yaml" <<'YAML'
+skill_overrides:
+  git-workflow:
+    source: "custom/skills/git-workflow.md"
+YAML
+
+  run bash "$SCRIPT" update --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  # No broken-reference warnings should appear
+  local warn_count
+  warn_count="$(echo "$output" | grep -cE '\[warn\]|Broken skill' || true)"
+  [ "$warn_count" -eq 0 ]
+
+  rm -rf "$SRC_DIR"
 }

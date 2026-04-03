@@ -194,6 +194,16 @@ Certain critical files require review from `@gaia-framework/maintainers` before 
 
 The "Do not allow bypassing the above settings" option is enabled for non-admin users. If using GitHub Rulesets, admin bypass is also blocked.
 
+### Bot Exemption
+
+The `github-actions[bot]` actor is exempt from branch protection rules on `main`. This exemption exists because the publish workflow pushes a version-sync commit directly to `main` after a GitHub Release is created. Without the exemption, branch protection would block this automated commit and break the release pipeline.
+
+**Configuration approach:** The exemption is configured using GitHub Rulesets (Settings > Rules). The `github-actions[bot]` is added to the bypass actors list for the `main` branch ruleset. Rulesets are preferred over classic branch protection because they offer more granular control and do not have the admin-bypass loophole present in classic rules.
+
+**CI commit suppression:** Commits made using the default `GITHUB_TOKEN` do not trigger subsequent GitHub Actions workflow runs. This is GitHub's built-in behavior designed to prevent infinite workflow loops. As a result, the version-sync commit pushed by the publish workflow does not trigger additional CI runs.
+
+**Verification:** To confirm the bot exemption is correctly configured, check GitHub Settings > Rules and verify that `github-actions[bot]` appears in the bypass actors list for the `main` branch ruleset. You can also verify by observing a successful publish workflow run where the version-sync commit is pushed to `main` without being blocked.
+
 ## Pre-Commit Hooks
 
 > **Note:** Pre-commit hooks are **not yet active**. Hook activation is pending and will be delivered in a future PR (E5-S4). This section will be updated with activation instructions once hooks are enabled.

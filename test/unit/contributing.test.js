@@ -182,6 +182,42 @@ describe("CONTRIBUTING.md", () => {
     });
   });
 
+  // AC-E4S9: Bot exemption documentation in Branch Protection section
+  describe("E4-S9: Bot Exemption Documentation", () => {
+    it("should document github-actions[bot] as exempt actor", () => {
+      const content = getContent();
+      expect(content).toMatch(/github-actions\[bot\]/);
+    });
+
+    it("should have a Bot Exemption subsection under Branch Protection", () => {
+      const content = getContent();
+      expect(content).toMatch(/###\s+Bot Exemption/i);
+    });
+
+    it("should explain why the exemption exists (publish workflow / version-sync)", () => {
+      const content = getContent();
+      expect(content).toMatch(/publish\s+workflow|version[- ]sync/i);
+    });
+
+    it("should document which approach is used (Rulesets or classic)", () => {
+      const content = getContent();
+      expect(content).toMatch(/[Rr]uleset|[Cc]lassic\s+[Bb]ranch\s+[Pp]rotection/i);
+    });
+
+    it("should document that GITHUB_TOKEN commits do not trigger workflow runs", () => {
+      const content = getContent();
+      expect(content).toMatch(/GITHUB_TOKEN/);
+      expect(content).toMatch(
+        /do not trigger|does not trigger|won't trigger|will not trigger|no.*workflow.*run|suppress/i
+      );
+    });
+
+    it("should document how to verify the bot exemption configuration", () => {
+      const content = getContent();
+      expect(content).toMatch(/[Vv]erif(?:y|ication)|[Cc]onfirm|[Cc]heck.*bypass/i);
+    });
+  });
+
   // AC6: Pre-commit hooks placeholder
   describe("AC6: Pre-Commit Hooks Placeholder", () => {
     it("should have a Pre-Commit Hooks section", () => {
