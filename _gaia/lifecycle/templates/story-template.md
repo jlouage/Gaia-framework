@@ -116,4 +116,23 @@ As a {role}, I want to {action}, so that {benefit}.
 
 ## Definition of Done
 
-- [ ] Define all the Definition of Done
+### Acceptance
+
+- [ ] All acceptance criteria verified and checked off
+- [ ] All subtasks marked complete
+
+### Testing
+
+- [ ] All tests pass (unit, integration, e2e as applicable)
+- [ ] No linting or formatting errors
+
+### Code Quality & CI
+
+- [ ] Code compiles / builds without errors
+- [ ] Code follows project conventions
+- [ ] No hardcoded secrets or credentials
+- [ ] PR merged to staging with all CI checks passing
+
+### Documentation
+
+- [ ] Documentation updated (if applicable)

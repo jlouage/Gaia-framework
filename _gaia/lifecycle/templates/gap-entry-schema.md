@@ -1,7 +1,7 @@
 # Gap Entry Schema
 
-> **Version:** 1.1.0
-> **Story:** E11-S1, E12-S5
+> **Version:** 1.2.0
+> **Story:** E11-S1, E12-S5, E11-S18
 > **Traces to:** FR-111, FR-123, US-38, ADR-021, ADR-022
 >
 > Standardized output schema for brownfield scan subagents (E11).
@@ -22,6 +22,7 @@ description: "<string>"
 evidence:
   file: "<relative-path>"
   line: <number-or-range>
+  protocol: "<string>"           # Optional
 recommendation: "<string>"
 verified_by: "<agent-id>"
 confidence: "<enum>"
@@ -36,7 +37,7 @@ confidence: "<enum>"
 | `severity` | enum | yes | Impact level — must be one of the 5 allowed values (see Severity Enum) |
 | `title` | string | yes | Short summary of the gap (max 80 characters) |
 | `description` | string | yes | Detailed explanation of the gap, what it means, and why it matters |
-| `evidence` | object | yes | Source code evidence (see Evidence Object) |
+| `evidence` | object | yes | Source code evidence with required `file` and `line` sub-fields, plus optional `protocol` sub-field (see Evidence Object) |
 | `recommendation` | string | yes | Actionable fix or remediation guidance |
 | `verified_by` | string | yes | ID of the scan agent that produced this finding (e.g., `dead-code-analyzer`, `config-scanner`) |
 | `confidence` | enum | yes | Agent's confidence in the finding accuracy (see Confidence Enum) |
@@ -95,6 +96,7 @@ The `evidence` field is a composite object grouping source location data:
 evidence:
   file: "src/services/auth.ts"    # Relative path from project root (non-empty string)
   line: 42                        # Single line number
+  protocol: "rest"                # Optional. Protocol type
 ```
 
 Or with a line range:
@@ -105,10 +107,19 @@ evidence:
   line: "15-28"                   # Line range (start-end)
 ```
 
+Or without the optional protocol field (backward compatible):
+
+```yaml
+evidence:
+  file: "src/utils/helper.ts"
+  line: 10
+```
+
 | Sub-field | Type | Required | Constraints |
 |-----------|------|----------|-------------|
 | `file` | string | yes | Relative path from project root. Must be non-empty. |
 | `line` | number or string | yes | Single line number (integer) or range as `"start-end"` string |
+| `protocol` | string | no | Optional. One of `rest`, `graphql`, `grpc`, `websocket`, or any custom string. Omit if not applicable. When present, must be a non-empty string. |
 
 ## ID Format
 
@@ -138,10 +149,17 @@ All fields listed in the Field Reference are **required** — a gap entry with a
 - `evidence.line` must be a positive integer or a range string matching `^\d+-\d+$`
 - `title` should not exceed 80 characters
 - `verified_by` must be a non-empty string identifying the scan agent
+- `evidence.protocol` when present, must be a non-empty string
 
 ### Required vs Optional
 
-All 9 fields (`id`, `category`, `severity`, `title`, `description`, `evidence`, `recommendation`, `verified_by`, `confidence`) are **required**. There are no optional fields in the base schema.
+All 9 top-level fields (`id`, `category`, `severity`, `title`, `description`, `evidence`, `recommendation`, `verified_by`, `confidence`) are **required**. There are no optional top-level fields in the base schema.
+
+The `evidence` object contains one optional sub-field: `protocol`. This is the first optional sub-field in the schema. Existing gap entries that omit `protocol` remain fully valid.
+
+### Optional Field Validation
+
+The `protocol` sub-field of the `evidence` object is not enum-validated. It accepts any non-empty string when present. Recommended canonical values are `rest`, `graphql`, `grpc`, and `websocket`, but custom strings (e.g., `mqtt`, `soap`, `amqp`) are also accepted without schema changes. When `protocol` is omitted entirely, the gap entry remains valid (backward compatible). When present, an empty string is invalid.
 
 ## Budget Control
 
@@ -171,6 +189,23 @@ evidence:
   line: 18
 recommendation: "Align timeout values. Set both to 30s or extract to a shared environment variable."
 verified_by: "config-scanner"
+confidence: "high"
+```
+
+### Application Category Example with Protocol
+
+```yaml
+id: "GAP-security-endpoint-001"
+category: "security-endpoint"
+severity: "high"
+title: "Unprotected admin route exposes user management API"
+description: "The /api/admin/users endpoint has no authentication middleware applied."
+evidence:
+  file: "src/routes/admin.ts"
+  line: 15
+  protocol: "rest"
+recommendation: "Add authentication middleware to all /api/admin/* routes."
+verified_by: "security-scanner"
 confidence: "high"
 ```
 
