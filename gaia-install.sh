@@ -633,6 +633,35 @@ cmd_update() {
     "_config/manifest.yaml"
   )
 
+  # ─── Migrate .customize.yaml files before _gaia/ overwrite (E10-S19, FR-153) ──
+  # Copy user customize.yaml files from _gaia/_config/agents/ to custom/skills/
+  # before the framework overwrite replaces _gaia/ contents with defaults.
+  # Copy-only semantics: originals are left in place as fallback (AC2).
+  step "Migrating customize.yaml files to custom/skills/..."
+  if [[ "$OPT_DRY_RUN" != true ]]; then
+    mkdir -p "$TARGET/custom/skills"
+  fi
+  local migrated=0
+  for cust_file in "$TARGET/_gaia/_config/agents/"*.customize.yaml; do
+    [[ -f "$cust_file" ]] || continue
+    local cust_basename
+    cust_basename="$(basename "$cust_file")"
+    if [[ -f "$TARGET/custom/skills/$cust_basename" ]]; then
+      [[ "$OPT_VERBOSE" == true ]] && detail "Skipped (already exists): custom/skills/$cust_basename"
+      continue
+    fi
+    if [[ "$OPT_DRY_RUN" == true ]]; then
+      detail "[dry-run] Would migrate: _gaia/_config/agents/$cust_basename → custom/skills/$cust_basename"
+    else
+      cp "$cust_file" "$TARGET/custom/skills/$cust_basename"
+      info "[migrate] _gaia/_config/agents/$cust_basename → custom/skills/$cust_basename"
+      migrated=$((migrated + 1))
+    fi
+  done
+  if [[ "$migrated" -gt 0 ]]; then
+    detail "Migrated $migrated customize.yaml file(s) to custom/skills/"
+  fi
+
   step "Updating framework files..."
   local updated=0 skipped=0 changed=0
 
@@ -744,6 +773,29 @@ cmd_update() {
       fi
     fi
   fi
+
+  # ─── Post-install verification: check skill references in customize.yaml (E10-S19, AC4) ──
+  step "Verifying skill references in custom/skills/*.customize.yaml..."
+  for cust_file in "$TARGET/custom/skills/"*.customize.yaml; do
+    [[ -f "$cust_file" ]] || continue
+    local cust_name
+    cust_name="$(basename "$cust_file")"
+    # Extract source: values from customize.yaml (simple grep — no full YAML parser needed)
+    while IFS= read -r source_line; do
+      # Strip key prefix, leading whitespace, and surrounding quotes via parameter expansion
+      local ref_path="${source_line#*source:}"
+      ref_path="${ref_path#"${ref_path%%[![:space:]]*}"}"  # trim leading whitespace
+      ref_path="${ref_path#[\"\']}"                        # trim leading quote
+      ref_path="${ref_path%[\"\']}"                        # trim trailing quote
+      [[ -z "$ref_path" ]] && continue
+      # Resolve relative paths against TARGET
+      local full_path="$TARGET/$ref_path"
+      [[ "$ref_path" == /* ]] && full_path="$ref_path"
+      if [[ ! -f "$full_path" ]]; then
+        warn "[warn] Broken skill reference in $cust_name: $ref_path not found"
+      fi
+    done < <(grep 'source:' "$cust_file" || true)
+  done
 
   # Summary
   echo ""
