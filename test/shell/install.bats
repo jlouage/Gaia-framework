@@ -1373,3 +1373,210 @@ YAML
 
   rm -rf "$SRC_DIR" "$SAFE_PATH"
 }
+
+# ─── E10-S19: Customize.yaml Migration Tests ─────────────────────────────────
+
+# Helper: set up a minimal GAIA install for update tests (avoids repetitive boilerplate)
+setup_for_update() {
+  local src="$1" target="$2"
+  mkdir -p "$target/_gaia/_config"
+  cp "$src/_gaia/_config/manifest.yaml" "$target/_gaia/_config/manifest.yaml"
+  cp "$src/_gaia/_config/global.yaml" "$target/_gaia/_config/global.yaml"
+  for mod in core lifecycle dev creative testing; do
+    mkdir -p "$target/_gaia/$mod"
+  done
+}
+
+@test "E10-S19: fresh update with no customize.yaml files runs silently (Scenario 1)" {
+  local SRC_DIR="$(mktemp -d)"
+  create_mock_source "$SRC_DIR"
+  setup_for_update "$SRC_DIR" "$TEST_DIR"
+
+  # No customize.yaml files anywhere
+  run bash "$SCRIPT" update --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  # custom/skills/ should exist (created by update) but empty of customize.yaml
+  [ -d "$TEST_DIR/custom/skills" ]
+  local count
+  count="$(find "$TEST_DIR/custom/skills" -name '*.customize.yaml' | wc -l | tr -d ' ')"
+  [ "$count" -eq 0 ]
+
+  rm -rf "$SRC_DIR"
+}
+
+@test "E10-S19: customize.yaml files copied from agents/ to custom/skills/ (Scenario 2, AC1)" {
+  local SRC_DIR="$(mktemp -d)"
+  create_mock_source "$SRC_DIR"
+  setup_for_update "$SRC_DIR" "$TEST_DIR"
+
+  # Place a customize.yaml in _gaia/_config/agents/
+  mkdir -p "$TEST_DIR/_gaia/_config/agents"
+  cat > "$TEST_DIR/_gaia/_config/agents/typescript-dev.customize.yaml" <<'YAML'
+skill_overrides:
+  git-workflow:
+    source: "custom/skills/git-workflow.md"
+YAML
+
+  run bash "$SCRIPT" update --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  # File should now exist in custom/skills/
+  [ -f "$TEST_DIR/custom/skills/typescript-dev.customize.yaml" ]
+
+  rm -rf "$SRC_DIR"
+}
+
+@test "E10-S19: multiple customize.yaml files all migrated (Scenario 3, AC1)" {
+  local SRC_DIR="$(mktemp -d)"
+  create_mock_source "$SRC_DIR"
+  setup_for_update "$SRC_DIR" "$TEST_DIR"
+
+  # Place 3 customize.yaml files in _gaia/_config/agents/
+  mkdir -p "$TEST_DIR/_gaia/_config/agents"
+  for agent in typescript-dev angular-dev all-dev; do
+    echo "skill_overrides: {}" > "$TEST_DIR/_gaia/_config/agents/${agent}.customize.yaml"
+  done
+
+  run bash "$SCRIPT" update --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  # All 3 should be in custom/skills/
+  [ -f "$TEST_DIR/custom/skills/typescript-dev.customize.yaml" ]
+  [ -f "$TEST_DIR/custom/skills/angular-dev.customize.yaml" ]
+  [ -f "$TEST_DIR/custom/skills/all-dev.customize.yaml" ]
+
+  rm -rf "$SRC_DIR"
+}
+
+@test "E10-S19: existing files in custom/skills/ not overwritten (Scenario 4, AC5)" {
+  local SRC_DIR="$(mktemp -d)"
+  create_mock_source "$SRC_DIR"
+  setup_for_update "$SRC_DIR" "$TEST_DIR"
+
+  # Place customize.yaml in agents/
+  mkdir -p "$TEST_DIR/_gaia/_config/agents"
+  echo "old-version" > "$TEST_DIR/_gaia/_config/agents/typescript-dev.customize.yaml"
+
+  # Pre-create same file in custom/skills/ with different content
+  mkdir -p "$TEST_DIR/custom/skills"
+  echo "user-customized-version" > "$TEST_DIR/custom/skills/typescript-dev.customize.yaml"
+
+  run bash "$SCRIPT" update --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  # custom/skills/ version should be preserved (not overwritten)
+  [ "$(cat "$TEST_DIR/custom/skills/typescript-dev.customize.yaml")" = "user-customized-version" ]
+
+  rm -rf "$SRC_DIR"
+}
+
+@test "E10-S19: mixed migration — some exist in target, some don't (Scenario 5)" {
+  local SRC_DIR="$(mktemp -d)"
+  create_mock_source "$SRC_DIR"
+  setup_for_update "$SRC_DIR" "$TEST_DIR"
+
+  # 2 files in agents/
+  mkdir -p "$TEST_DIR/_gaia/_config/agents"
+  echo "source-a" > "$TEST_DIR/_gaia/_config/agents/typescript-dev.customize.yaml"
+  echo "source-b" > "$TEST_DIR/_gaia/_config/agents/angular-dev.customize.yaml"
+
+  # 1 already in custom/skills/
+  mkdir -p "$TEST_DIR/custom/skills"
+  echo "user-custom-a" > "$TEST_DIR/custom/skills/typescript-dev.customize.yaml"
+
+  run bash "$SCRIPT" update --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  # typescript-dev not overwritten
+  [ "$(cat "$TEST_DIR/custom/skills/typescript-dev.customize.yaml")" = "user-custom-a" ]
+  # angular-dev migrated
+  [ -f "$TEST_DIR/custom/skills/angular-dev.customize.yaml" ]
+  [ "$(cat "$TEST_DIR/custom/skills/angular-dev.customize.yaml")" = "source-b" ]
+
+  rm -rf "$SRC_DIR"
+}
+
+@test "E10-S19: originals remain in agents/ after migration (AC2)" {
+  local SRC_DIR="$(mktemp -d)"
+  create_mock_source "$SRC_DIR"
+  setup_for_update "$SRC_DIR" "$TEST_DIR"
+
+  mkdir -p "$TEST_DIR/_gaia/_config/agents"
+  echo "original-content" > "$TEST_DIR/_gaia/_config/agents/typescript-dev.customize.yaml"
+
+  run bash "$SCRIPT" update --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  # Original file should still exist in agents/ (copy-only, no delete)
+  # Note: the _gaia/ overwrite may replace framework-shipped files, but user files
+  # in _gaia/_config/agents/ are preserved because _config/agents/ is not in update_targets
+  [ -f "$TEST_DIR/_gaia/_config/agents/typescript-dev.customize.yaml" ]
+
+  rm -rf "$SRC_DIR"
+}
+
+@test "E10-S19: migration log output matches [migrate] format (AC3)" {
+  local SRC_DIR="$(mktemp -d)"
+  create_mock_source "$SRC_DIR"
+  setup_for_update "$SRC_DIR" "$TEST_DIR"
+
+  mkdir -p "$TEST_DIR/_gaia/_config/agents"
+  echo "skill_overrides: {}" > "$TEST_DIR/_gaia/_config/agents/typescript-dev.customize.yaml"
+
+  run bash "$SCRIPT" update --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  # Output should contain the [migrate] log line
+  echo "$output" | grep -q '\[migrate\]'
+  echo "$output" | grep -q 'typescript-dev.customize.yaml'
+
+  rm -rf "$SRC_DIR"
+}
+
+@test "E10-S19: post-install verification warns on broken skill references (Scenario 6, AC4)" {
+  local SRC_DIR="$(mktemp -d)"
+  create_mock_source "$SRC_DIR"
+  setup_for_update "$SRC_DIR" "$TEST_DIR"
+
+  # Create a customize.yaml in custom/skills/ with a broken reference
+  mkdir -p "$TEST_DIR/custom/skills"
+  cat > "$TEST_DIR/custom/skills/broken.customize.yaml" <<'YAML'
+skill_overrides:
+  git-workflow:
+    source: "custom/skills/nonexistent-skill.md"
+YAML
+
+  run bash "$SCRIPT" update --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  # Output should contain a warning about the broken reference
+  echo "$output" | grep -qE '\[warn\]|not found|Broken'
+
+  rm -rf "$SRC_DIR"
+}
+
+@test "E10-S19: post-install verification passes when all references valid (Scenario 7)" {
+  local SRC_DIR="$(mktemp -d)"
+  create_mock_source "$SRC_DIR"
+  setup_for_update "$SRC_DIR" "$TEST_DIR"
+
+  # Create a customize.yaml with a valid reference
+  mkdir -p "$TEST_DIR/custom/skills"
+  echo "valid-skill-content" > "$TEST_DIR/custom/skills/git-workflow.md"
+  cat > "$TEST_DIR/custom/skills/all-dev.customize.yaml" <<'YAML'
+skill_overrides:
+  git-workflow:
+    source: "custom/skills/git-workflow.md"
+YAML
+
+  run bash "$SCRIPT" update --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  # No broken-reference warnings should appear
+  local warn_count
+  warn_count="$(echo "$output" | grep -cE '\[warn\]|Broken skill' || true)"
+  [ "$warn_count" -eq 0 ]
+
+  rm -rf "$SRC_DIR"
+}
