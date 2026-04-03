@@ -67,11 +67,13 @@ YAML
   # Create slash commands dir
   mkdir -p "$src/.claude/commands"
   echo "placeholder" > "$src/.claude/commands/gaia-help.md"
-  # Create custom skills and templates
+  # Create custom skills, templates, and stakeholders
   mkdir -p "$src/custom/skills"
   echo "README" > "$src/custom/skills/README.md"
   mkdir -p "$src/custom/templates"
   echo "README" > "$src/custom/templates/README.md"
+  mkdir -p "$src/custom/stakeholders"
+  echo "README" > "$src/custom/stakeholders/README.md"
 }
 
 # Expected Tier 1+2 sidecar directories (subset check)
