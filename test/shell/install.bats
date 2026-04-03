@@ -67,11 +67,13 @@ YAML
   # Create slash commands dir
   mkdir -p "$src/.claude/commands"
   echo "placeholder" > "$src/.claude/commands/gaia-help.md"
-  # Create custom skills and templates
+  # Create custom skills, templates, and stakeholders
   mkdir -p "$src/custom/skills"
   echo "README" > "$src/custom/skills/README.md"
   mkdir -p "$src/custom/templates"
   echo "README" > "$src/custom/templates/README.md"
+  mkdir -p "$src/custom/stakeholders"
+  echo "README" > "$src/custom/stakeholders/README.md"
 }
 
 # Expected Tier 1+2 sidecar directories (subset check)
@@ -305,9 +307,10 @@ YAML
   for dir in "${all_sidecars[@]}"; do
     mkdir -p "$TEST_DIR/_memory/$dir"
   done
-  # Custom directories (ADR-020)
+  # Custom directories (ADR-020, ADR-026)
   mkdir -p "$TEST_DIR/custom/skills"
   mkdir -p "$TEST_DIR/custom/templates"
+  mkdir -p "$TEST_DIR/custom/stakeholders"
 
   run bash "$SCRIPT" validate "$TEST_DIR"
   [ "$status" -eq 0 ]
@@ -742,9 +745,10 @@ YAML
   for dir in "${all_sidecars[@]}"; do
     mkdir -p "$space_dir/_memory/$dir"
   done
-  # Custom directories (ADR-020)
+  # Custom directories (ADR-020, ADR-026)
   mkdir -p "$space_dir/custom/skills"
   mkdir -p "$space_dir/custom/templates"
+  mkdir -p "$space_dir/custom/stakeholders"
 
   # Validate should work with spaces in path
   run bash "$SCRIPT" validate "$space_dir"
@@ -806,9 +810,10 @@ YAML
   for dir in "${all_sidecars[@]}"; do
     mkdir -p "$TEST_DIR/_memory/$dir"
   done
-  # Custom directories (ADR-020)
+  # Custom directories (ADR-020, ADR-026)
   mkdir -p "$TEST_DIR/custom/skills"
   mkdir -p "$TEST_DIR/custom/templates"
+  mkdir -p "$TEST_DIR/custom/stakeholders"
 
   run bash "$SCRIPT" validate "$TEST_DIR"
   [ "$status" -eq 0 ]
@@ -1370,4 +1375,60 @@ YAML
   [ ! -d "$TEST_DIR/_gaia/_gaia" ]
 
   rm -rf "$SRC_DIR" "$SAFE_PATH"
+}
+
+# ─── E15-S6: Installer Support for custom/stakeholders/ ────────────��────────
+
+@test "STK-33: init creates custom/stakeholders/ directory" {
+  local SRC_DIR="$(mktemp -d)"
+  create_mock_source "$SRC_DIR"
+
+  run bash "$SCRIPT" init --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  [ -d "$TEST_DIR/custom/stakeholders" ]
+  [ -f "$TEST_DIR/custom/stakeholders/README.md" ]
+
+  rm -rf "$SRC_DIR"
+}
+
+@test "STK-34: update creates custom/stakeholders/ if missing" {
+  local SRC_DIR="$(mktemp -d)"
+  create_mock_source "$SRC_DIR"
+
+  # Create initial installation
+  bash "$SCRIPT" init --source "$SRC_DIR" --yes "$TEST_DIR"
+
+  # Remove custom/stakeholders/ to simulate pre-stakeholder installation
+  rm -rf "$TEST_DIR/custom/stakeholders"
+  [ ! -d "$TEST_DIR/custom/stakeholders" ]
+
+  run bash "$SCRIPT" update --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  # custom/stakeholders/ should be created by update
+  [ -d "$TEST_DIR/custom/stakeholders" ]
+
+  rm -rf "$SRC_DIR"
+}
+
+@test "STK-35: update preserves existing stakeholder files" {
+  local SRC_DIR="$(mktemp -d)"
+  create_mock_source "$SRC_DIR"
+
+  # Create initial installation
+  bash "$SCRIPT" init --source "$SRC_DIR" --yes "$TEST_DIR"
+
+  # Add a user-created stakeholder file
+  mkdir -p "$TEST_DIR/custom/stakeholders"
+  echo "persona-content-cfo" > "$TEST_DIR/custom/stakeholders/cfo.md"
+
+  run bash "$SCRIPT" update --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  # User file must be preserved
+  [ -f "$TEST_DIR/custom/stakeholders/cfo.md" ]
+  [ "$(cat "$TEST_DIR/custom/stakeholders/cfo.md")" = "persona-content-cfo" ]
+
+  rm -rf "$SRC_DIR"
 }

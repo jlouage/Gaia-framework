@@ -500,7 +500,7 @@ cmd_init() {
 
   # Step 8: Create custom directories (ADR-020: user-owned write targets)
   step "Creating custom directories..."
-  for cdir in skills templates; do
+  for cdir in skills templates stakeholders; do
     if [[ "$OPT_DRY_RUN" == true ]]; then
       detail "[dry-run] Would create: custom/$cdir/"
     else
@@ -695,7 +695,7 @@ cmd_update() {
   done
 
   # Ensure custom directories exist (user-owned, never overwritten — ADR-020)
-  for cdir in skills templates; do
+  for cdir in skills templates stakeholders; do
     if [[ "$OPT_DRY_RUN" == true ]]; then
       [[ ! -d "$TARGET/custom/$cdir" ]] && detail "[dry-run] Would create: custom/$cdir/"
     else
@@ -837,9 +837,10 @@ cmd_validate() {
     [[ -d "$TARGET/docs/$dir" ]]; check "Docs: $dir" $?
   done
 
-  # Custom directories (ADR-020: user-owned write targets)
+  # Custom directories (ADR-020: user-owned write targets, ADR-026: stakeholder agents)
   [[ -d "$TARGET/custom/skills" ]]; check "custom/skills/ exists" $?
   [[ -d "$TARGET/custom/templates" ]]; check "custom/templates/ exists" $?
+  [[ -d "$TARGET/custom/stakeholders" ]]; check "custom/stakeholders/ exists" $?
 
   # Version
   local version
