@@ -108,14 +108,14 @@
 
     3. Apply the improvement: append to or modify the relevant section in custom/skills/{skill-name}.md with comment "<!-- Added from retro-{sprint_id}: {reason} -->".
 
-    4. Register in .customize.yaml: after writing the custom skill file, register it in {project-root}/_gaia/_config/agents/all-dev.customize.yaml so the engine loads from the custom path on subsequent runs.
-       - If all-dev.customize.yaml does not exist: create it with proper YAML structure:
+    4. Register in .customize.yaml: after writing the custom skill file, register it in {project-root}/custom/skills/all-dev.customize.yaml so the engine loads from the custom path on subsequent runs (ADR-020 — customization registries live alongside custom skills in custom/skills/).
+       - If custom/skills/all-dev.customize.yaml does not exist: create it with proper YAML structure:
          ```yaml
          skill_overrides:
            {skill-name}:
              source: "custom/skills/{skill-name}.md"
          ```
-       - If all-dev.customize.yaml already exists: read current content, check if a skill_overrides entry for this skill already exists. If it does not exist, append the new entry under skill_overrides. Preserve all existing entries — only add the new one. If it already exists (duplicate), skip registration to prevent duplicate entries.
+       - If custom/skills/all-dev.customize.yaml already exists: read current content, check if a skill_overrides entry for this skill already exists. If it does not exist, append the new entry under skill_overrides. Preserve all existing entries — only add the new one. If it already exists (duplicate), skip registration to prevent duplicate entries.
   </action>
   <action>If no skill improvements identified, state: "No skill improvements identified this sprint."</action>
 </step>
