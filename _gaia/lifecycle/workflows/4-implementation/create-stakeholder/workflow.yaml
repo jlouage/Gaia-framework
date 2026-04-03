@@ -10,10 +10,10 @@ validation: "{installed_path}/checklist.md"
 quality_gates:
   pre_start: []
   post_complete:
-    - check: "stakeholder_file_line_count <= 100"
-      on_fail: "HALT: Stakeholder file exceeds 100-line limit (FR-164). Reduce content."
-    - check: "stakeholder_count_in_directory <= 50"
-      on_fail: "HALT: custom/stakeholders/ has more than 50 files (FR-164). Remove unused stakeholders first."
+    - check: "stakeholder_file_line_count_valid == true"
+      on_fail: "HALT: Stakeholder file exceeds 100-line limit (FR-164). Edit {project-root}/custom/stakeholders/{slug}.md to reduce content or re-run /gaia-create-stakeholder."
+    - check: "stakeholder_count_in_directory_valid == true"
+      on_fail: "HALT: custom/stakeholders/ has more than 50 files (FR-164). Remove unused stakeholders from {project-root}/custom/stakeholders/ first."
 on_error:
   missing_file: "ask_user"
   unresolved_variable: "halt"
