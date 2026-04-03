@@ -1374,6 +1374,72 @@ YAML
   rm -rf "$SRC_DIR" "$SAFE_PATH"
 }
 
+# ─── E3-S7: rsync fallback tests for copy_gaia_files() ──────────────────────
+
+# Helper: build a restricted PATH that excludes specific commands
+# Usage: _e3s7_build_path <exclude_cmd1> <exclude_cmd2> ...
+# Returns the temp dir path on stdout; caller must clean up.
+_e3s7_build_path() {
+  local exclude=("$@")
+  local safe_path
+  safe_path="$(mktemp -d)"
+  local all_cmds=(cp mkdir tar bash cat touch rm grep sed chmod ls head tail wc date printf readlink dirname basename mktemp find tr sort uname cut awk tee)
+  for cmd in "${all_cmds[@]}"; do
+    local skip=false
+    for ex in "${exclude[@]}"; do
+      [[ "$cmd" == "$ex" ]] && skip=true && break
+    done
+    if [[ "$skip" == false ]]; then
+      local cmd_path
+      cmd_path="$(command -v "$cmd" 2>/dev/null)" && ln -sf "$cmd_path" "$safe_path/$cmd"
+    fi
+  done
+  echo "$safe_path"
+}
+
+@test "E3-S7: cp fallback triggers when rsync is absent (AC1, AC2)" {
+  local SRC_DIR="$(mktemp -d)"
+  create_mock_source "$SRC_DIR"
+
+  # Build PATH without rsync
+  local SAFE_PATH
+  SAFE_PATH="$(_e3s7_build_path rsync)"
+
+  PATH="$SAFE_PATH" run bash "$SCRIPT" init --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  # Output should mention cp, not rsync
+  [[ "$output" == *"cp"* ]] || [[ "$output" == *"Copied"* ]]
+
+  # Framework files must exist
+  [ -d "$TEST_DIR/_gaia/_config" ]
+  [ -d "$TEST_DIR/_gaia/core" ]
+  [ -d "$TEST_DIR/_gaia/lifecycle" ]
+
+  rm -rf "$SRC_DIR" "$SAFE_PATH"
+}
+
+@test "E3-S7: rsync path works when rsync is available — no regression (AC5)" {
+  # Skip if rsync is not installed on this system
+  command -v rsync >/dev/null 2>&1 || skip "rsync not installed"
+
+  local SRC_DIR="$(mktemp -d)"
+  create_mock_source "$SRC_DIR"
+
+  run bash "$SCRIPT" init --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  # Framework files must exist
+  [ -d "$TEST_DIR/_gaia/_config" ]
+  [ -d "$TEST_DIR/_gaia/core" ]
+  [ -d "$TEST_DIR/_gaia/lifecycle" ]
+  [ -d "$TEST_DIR/_gaia/dev" ]
+  [ -d "$TEST_DIR/_gaia/creative" ]
+  [ -d "$TEST_DIR/_gaia/testing" ]
+
+  rm -rf "$SRC_DIR"
+}
+
 # ─── E10-S19: Customize.yaml Migration Tests ─────────────────────────────────
 
 # Helper: set up a minimal GAIA install for update tests (avoids repetitive boilerplate)
@@ -1404,6 +1470,105 @@ setup_for_update() {
 
   rm -rf "$SRC_DIR"
 }
+
+@test "E3-S7: cp fallback directory structure matches rsync output (AC3)" {
+  command -v rsync >/dev/null 2>&1 || skip "rsync not installed — cannot compare"
+
+  local SRC_DIR="$(mktemp -d)"
+  create_mock_source "$SRC_DIR"
+
+  # Run with rsync (normal path)
+  local RSYNC_DIR="$(mktemp -d)"
+  run bash "$SCRIPT" init --source "$SRC_DIR" --yes "$RSYNC_DIR"
+  [ "$status" -eq 0 ]
+
+  # Run without rsync (cp fallback)
+  local CP_DIR="$(mktemp -d)"
+  local SAFE_PATH
+  SAFE_PATH="$(_e3s7_build_path rsync)"
+  PATH="$SAFE_PATH" run bash "$SCRIPT" init --source "$SRC_DIR" --yes "$CP_DIR"
+  [ "$status" -eq 0 ]
+
+  # Compare directory trees (file listing only, ignore timestamps)
+  local rsync_tree cp_tree
+  rsync_tree="$(cd "$RSYNC_DIR" && find _gaia -type f | sort)"
+  cp_tree="$(cd "$CP_DIR" && find _gaia -type f | sort)"
+  [ "$rsync_tree" = "$cp_tree" ]
+
+  rm -rf "$SRC_DIR" "$RSYNC_DIR" "$CP_DIR" "$SAFE_PATH"
+}
+
+@test "E3-S7: cp fallback excludes .resolved/*.yaml files (AC3, AC4)" {
+  local SRC_DIR="$(mktemp -d)"
+  create_mock_source "$SRC_DIR"
+
+  # Add .resolved/*.yaml files that should be excluded
+  mkdir -p "$SRC_DIR/_gaia/lifecycle/workflows/dev-story/.resolved"
+  echo "resolved: true" > "$SRC_DIR/_gaia/lifecycle/workflows/dev-story/.resolved/dev-story.yaml"
+  mkdir -p "$SRC_DIR/_gaia/core/.resolved"
+  echo "resolved: true" > "$SRC_DIR/_gaia/core/.resolved/core-config.yaml"
+
+  # Run with cp fallback (no rsync)
+  local SAFE_PATH
+  SAFE_PATH="$(_e3s7_build_path rsync)"
+  PATH="$SAFE_PATH" run bash "$SCRIPT" init --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  # .resolved/*.yaml must NOT exist in target
+  [ ! -f "$TEST_DIR/_gaia/lifecycle/workflows/dev-story/.resolved/dev-story.yaml" ]
+  [ ! -f "$TEST_DIR/_gaia/core/.resolved/core-config.yaml" ]
+
+  # Non-.resolved files must still exist
+  [ -f "$TEST_DIR/_gaia/_config/manifest.yaml" ]
+
+  rm -rf "$SRC_DIR" "$SAFE_PATH"
+}
+
+@test "E3-S7: cp fallback preserves file permissions (AC3)" {
+  local SRC_DIR="$(mktemp -d)"
+  create_mock_source "$SRC_DIR"
+
+  # Set a specific permission on a source file
+  chmod 755 "$SRC_DIR/_gaia/_config/manifest.yaml"
+
+  local SAFE_PATH
+  SAFE_PATH="$(_e3s7_build_path rsync)"
+  PATH="$SAFE_PATH" run bash "$SCRIPT" init --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  # Check that the permission was preserved
+  local src_perms dst_perms
+  src_perms="$(stat -f '%Lp' "$SRC_DIR/_gaia/_config/manifest.yaml" 2>/dev/null || stat -c '%a' "$SRC_DIR/_gaia/_config/manifest.yaml" 2>/dev/null)"
+  dst_perms="$(stat -f '%Lp' "$TEST_DIR/_gaia/_config/manifest.yaml" 2>/dev/null || stat -c '%a' "$TEST_DIR/_gaia/_config/manifest.yaml" 2>/dev/null)"
+  [ "$src_perms" = "$dst_perms" ]
+
+  rm -rf "$SRC_DIR" "$SAFE_PATH"
+}
+
+@test "E3-S7: cp fallback produces all module directories (AC2, AC3)" {
+  local SRC_DIR="$(mktemp -d)"
+  create_mock_source "$SRC_DIR"
+
+  local SAFE_PATH
+  SAFE_PATH="$(_e3s7_build_path rsync)"
+  PATH="$SAFE_PATH" run bash "$SCRIPT" init --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  # Every module directory from source must be present
+  [ -d "$TEST_DIR/_gaia/core" ]
+  [ -d "$TEST_DIR/_gaia/lifecycle" ]
+  [ -d "$TEST_DIR/_gaia/dev" ]
+  [ -d "$TEST_DIR/_gaia/creative" ]
+  [ -d "$TEST_DIR/_gaia/testing" ]
+
+  # Config files must be copied
+  [ -f "$TEST_DIR/_gaia/_config/manifest.yaml" ]
+  [ -f "$TEST_DIR/_gaia/_config/global.yaml" ]
+
+  rm -rf "$SRC_DIR" "$SAFE_PATH"
+}
+
+# ─── E10-S19: Customize.yaml Migration Tests (continued) ────────────────────
 
 @test "E10-S19: customize.yaml files copied from agents/ to custom/skills/ (Scenario 2, AC1)" {
   local SRC_DIR="$(mktemp -d)"
