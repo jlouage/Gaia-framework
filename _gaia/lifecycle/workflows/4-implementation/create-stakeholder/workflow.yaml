@@ -1,0 +1,22 @@
+name: create-stakeholder
+description: 'Scaffold a new stakeholder file for Party Mode discussions'
+module: lifecycle
+agent: orchestrator
+config_resolved: "{installed_path}/.resolved/create-stakeholder.yaml"
+config_source: "{project-root}/_gaia/lifecycle/config.yaml"
+installed_path: "{project-root}/_gaia/lifecycle/workflows/4-implementation/create-stakeholder"
+instructions: "{installed_path}/instructions.xml"
+validation: "{installed_path}/checklist.md"
+quality_gates:
+  pre_start: []
+  post_complete:
+    - check: "stakeholder_file_line_count <= 100"
+      on_fail: "HALT: Stakeholder file exceeds 100-line limit (FR-164). Reduce content."
+    - check: "stakeholder_count_in_directory <= 50"
+      on_fail: "HALT: custom/stakeholders/ has more than 50 files (FR-164). Remove unused stakeholders first."
+on_error:
+  missing_file: "ask_user"
+  unresolved_variable: "halt"
+
+output:
+  primary: "{project-root}/custom/stakeholders/{slug}.md"
