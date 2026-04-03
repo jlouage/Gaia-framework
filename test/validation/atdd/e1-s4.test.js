@@ -27,6 +27,7 @@ const VALID_VARIABLES = new Set([
   "sprint_id",
   "cr_id",
   "mode",
+  "slug",
 ]);
 
 function findInstructionFiles() {

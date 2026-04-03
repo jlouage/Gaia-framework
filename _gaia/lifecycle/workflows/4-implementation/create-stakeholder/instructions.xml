@@ -1,0 +1,79 @@
+<workflow name="create-stakeholder">
+<critical>
+  <mandate>Stakeholder files are written to custom/stakeholders/ — never to _gaia/</mandate>
+  <mandate>The 50-file cap and 100-line limit are hard gates (FR-164)</mandate>
+  <mandate>Duplicate name detection is case-insensitive against the name frontmatter field (FR-157)</mandate>
+</critical>
+
+<step n="1" title="Ensure Directory Exists">
+  <action>Check if {project-root}/custom/stakeholders/ directory exists</action>
+  <action if="directory does not exist">Create {project-root}/custom/stakeholders/ directory (and {project-root}/custom/ if needed)</action>
+  <action>Confirm directory is ready for writing</action>
+</step>
+
+<step n="2" title="Collect Required Inputs">
+  <ask>Provide the following required fields for the new stakeholder:
+
+  **Name** (display name, e.g., "Maria Santos"):
+  **Role** (title/function, e.g., "Housekeeper Manager"):
+  **Expertise** (domain skills, e.g., "Room turnover logistics"):
+  **Personality** (traits, e.g., "Pragmatic, detail-oriented"):
+  </ask>
+  <check if="any required field is empty">HALT: All four fields (name, role, expertise, personality) are required. Please provide all values.</check>
+</step>
+
+<step n="3" title="Collect Optional Inputs">
+  <ask>Optionally provide these additional fields (press Enter to skip):
+
+  **Perspective** (viewpoint/biases, e.g., "Focuses on operational efficiency"):
+  **Tags** (comma-separated, e.g., "operations, hospitality"):
+  </ask>
+</step>
+
+<step n="4" title="Validate Against Cap and Duplicates">
+  <action>Count existing .md files in {project-root}/custom/stakeholders/ directory</action>
+  <check if="count >= 50">HALT: The 50-file cap has been reached in custom/stakeholders/ (FR-164). There are already {count} stakeholder files. Remove unused stakeholders before creating new ones.</check>
+  <action>Scan all existing stakeholder files in custom/stakeholders/*.md — read the name field from each file's YAML frontmatter</action>
+  <action>Compare each existing name against the new stakeholder name using case-insensitive comparison</action>
+  <check if="duplicate name found (case-insensitive match)">HALT: A stakeholder with the name "{existing_name}" already exists at custom/stakeholders/{existing_file}. Name collision detected (case-insensitive). Choose a different name.</check>
+</step>
+
+<step n="5" title="Generate Filename Slug">
+  <action>Convert the stakeholder name to a kebab-case slug:
+    1. Convert to lowercase
+    2. Replace spaces with hyphens
+    3. Strip all characters that are not alphanumeric or hyphens
+    4. Collapse multiple consecutive hyphens into a single hyphen
+    5. Trim leading/trailing hyphens
+    6. Append .md extension
+  </action>
+  <action>Example: "Maria Santos" → "maria-santos.md", "Jean-Pierre O'Brien III" → "jean-pierre-obrien-iii.md"</action>
+  <action>Set output path: {project-root}/custom/stakeholders/{slug}.md</action>
+  <check if="file already exists at output path">HALT: File custom/stakeholders/{slug}.md already exists. This may indicate a slug collision from a different display name. Choose a different name or remove the existing file.</check>
+</step>
+
+<step n="6" title="Generate and Write Stakeholder File">
+  <action>Generate the stakeholder file with YAML frontmatter and Markdown body:
+
+  ```
+  ---
+  name: "{name}"
+  role: "{role}"
+  expertise: "{expertise}"
+  personality: "{personality}"
+  perspective: "{perspective}"    # Only include if provided
+  tags: [{tags_as_yaml_array}]    # Only include if provided
+  ---
+
+  ## Background
+
+  {A 2-3 sentence description synthesized from the provided fields, describing this stakeholder's viewpoint and discussion style.}
+  ```
+  </action>
+  <action>Verify the generated file does not exceed 100 lines. If it does, trim the Background section to fit within the limit.</action>
+  <action>Write the file to {project-root}/custom/stakeholders/{slug}.md</action>
+  <template-output file="{project-root}/custom/stakeholders/{slug}.md">
+    Stakeholder file with YAML frontmatter (name, role, expertise, personality, and optionally perspective and tags) plus a Markdown Background section.
+  </template-output>
+</step>
+</workflow>

@@ -46,6 +46,7 @@ const VALID_VARIABLE_REFS = [
   "{checkpoint_path}",
   "{data_path}",
   "{agent}",
+  "{slug}",
 ];
 
 function findWorkflowFiles() {

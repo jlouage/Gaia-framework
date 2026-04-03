@@ -450,6 +450,15 @@ sequence:
       standalone: true
       note: "Run periodically to detect stale or contradicted decisions in agent memory sidecars"
 
+  create-stakeholder:
+    module: lifecycle
+    command: /gaia-create-stakeholder
+    next:
+      standalone: true
+      suggestions:
+        - command: /gaia-party
+          context: "To start a Party Mode discussion with the new stakeholder"
+
   performance-review:
     module: lifecycle
     command: /gaia-performance-review

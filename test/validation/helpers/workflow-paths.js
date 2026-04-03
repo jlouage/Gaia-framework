@@ -43,6 +43,7 @@ export const VALID_VARIABLE_REFS = [
   "{version}",
   "{agent}",
   "{feature_id}",
+  "{slug}",
 ];
 
 /**

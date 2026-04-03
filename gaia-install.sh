@@ -889,7 +889,7 @@ cmd_validate() {
     [[ -d "$TARGET/docs/$dir" ]]; check "Docs: $dir" $?
   done
 
-  # Custom directories (ADR-020: user-owned write targets)
+  # Custom directories (ADR-020: user-owned write targets, ADR-026: stakeholder agents)
   [[ -d "$TARGET/custom/skills" ]]; check "custom/skills/ exists" $?
   [[ -d "$TARGET/custom/templates" ]]; check "custom/templates/ exists" $?
   [[ -d "$TARGET/custom/stakeholders" ]]; check "custom/stakeholders/ exists" $?

@@ -1745,3 +1745,59 @@ YAML
 
   rm -rf "$SRC_DIR"
 }
+
+# ─── E15-S6: Installer Support for custom/stakeholders/ ─────────────────────
+
+@test "STK-33: init creates custom/stakeholders/ directory" {
+  local SRC_DIR="$(mktemp -d)"
+  create_mock_source "$SRC_DIR"
+
+  run bash "$SCRIPT" init --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  [ -d "$TEST_DIR/custom/stakeholders" ]
+  [ -f "$TEST_DIR/custom/stakeholders/README.md" ]
+
+  rm -rf "$SRC_DIR"
+}
+
+@test "STK-34: update creates custom/stakeholders/ if missing" {
+  local SRC_DIR="$(mktemp -d)"
+  create_mock_source "$SRC_DIR"
+
+  # Create initial installation
+  bash "$SCRIPT" init --source "$SRC_DIR" --yes "$TEST_DIR"
+
+  # Remove custom/stakeholders/ to simulate pre-stakeholder installation
+  rm -rf "$TEST_DIR/custom/stakeholders"
+  [ ! -d "$TEST_DIR/custom/stakeholders" ]
+
+  run bash "$SCRIPT" update --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  # custom/stakeholders/ should be created by update
+  [ -d "$TEST_DIR/custom/stakeholders" ]
+
+  rm -rf "$SRC_DIR"
+}
+
+@test "STK-35: update preserves existing stakeholder files" {
+  local SRC_DIR="$(mktemp -d)"
+  create_mock_source "$SRC_DIR"
+
+  # Create initial installation
+  bash "$SCRIPT" init --source "$SRC_DIR" --yes "$TEST_DIR"
+
+  # Add a user-created stakeholder file
+  mkdir -p "$TEST_DIR/custom/stakeholders"
+  echo "persona-content-cfo" > "$TEST_DIR/custom/stakeholders/cfo.md"
+
+  run bash "$SCRIPT" update --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  # User file must be preserved
+  [ -f "$TEST_DIR/custom/stakeholders/cfo.md" ]
+  [ "$(cat "$TEST_DIR/custom/stakeholders/cfo.md")" = "persona-content-cfo" ]
+
+  rm -rf "$SRC_DIR"
+}
