@@ -31,6 +31,7 @@ export const VALID_VARIABLES = new Set([
   "target_file",
   "memory_path",
   "feature_id",
+  "slug",
 ]);
 
 // Parser configured per ADR-010: preserve attributes, handle CDATA

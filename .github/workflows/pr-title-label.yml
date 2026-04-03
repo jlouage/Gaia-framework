@@ -1,0 +1,108 @@
+# Auto-apply bump:* label from PR title conventional commit prefix
+# E14-S11: Parses PR title, derives version bump label, applies via GitHub API
+# See docs/planning-artifacts/architecture.md#ADR-025
+
+name: PR Title Label
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize]
+    branches: [staging]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  auto-label:
+    name: Auto-Apply Bump Label
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (for helper)
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Derive and apply bump label
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const deriveBumpLabel = require('./bin/helpers/derive-bump-label.js');
+            const { VALID_BUMP_LABELS } = require('./bin/helpers/validate-bump-labels.js');
+
+            const title = context.payload.pull_request.title;
+            const body = context.payload.pull_request.body || '';
+            const prNumber = context.payload.pull_request.number;
+
+            // Step 1: Derive label from title
+            const derived = deriveBumpLabel(title, body);
+            if (!derived) {
+              core.info(`PR title "${title}" does not match conventional commit format. No label applied.`);
+              return;
+            }
+
+            core.info(`Derived: ${derived.label} from type "${derived.type}" (breaking: ${derived.breaking})`);
+            const prLabels = context.payload.pull_request.labels.map(l => l.name);
+            const existingBump = prLabels.filter(l => VALID_BUMP_LABELS.includes(l));
+
+            if (existingBump.length > 0) {
+              // Check who applied the label — preserve manual overrides
+              const events = await github.rest.issues.listEvents({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+              });
+
+              const labelEvents = events.data
+                .filter(e => e.event === 'labeled' && VALID_BUMP_LABELS.includes(e.label?.name))
+                .reverse(); // most recent first
+
+              const lastLabelEvent = labelEvents[0];
+              if (lastLabelEvent && lastLabelEvent.actor.login !== 'github-actions[bot]') {
+                // Manual label — preserve it
+                core.info(`Manual label detected: ${existingBump[0]} (applied by ${lastLabelEvent.actor.login}). Skipping auto-label.`);
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: prNumber,
+                  body: `Skipping auto-label — manual \`${existingBump[0]}\` detected (applied by @${lastLabelEvent.actor.login}).`,
+                });
+                return;
+              }
+
+              // Auto-applied label exists — remove it before applying new one (handles title edits)
+              for (const label of existingBump) {
+                try {
+                  await github.rest.issues.removeLabel({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: prNumber,
+                    name: label,
+                  });
+                  core.info(`Removed previous auto-applied label: ${label}`);
+                } catch (e) {
+                  core.warning(`Failed to remove label ${label}: ${e.message}`);
+                }
+              }
+            }
+
+            // Step 3: Apply derived label
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              labels: [derived.label],
+            });
+
+            core.info(`Applied label: ${derived.label}`);
+
+            // Step 4: Post comment
+            const breakingNote = derived.breaking ? ' (breaking change)' : '';
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              body: `Auto-applied \`${derived.label}\` based on PR title prefix \`${derived.type}\`${breakingNote}.`,
+            });

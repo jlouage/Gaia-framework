@@ -1,54 +1,65 @@
-# Custom Stakeholders Directory
+# Custom Stakeholders
 
-This directory is the user-owned location for custom stakeholder persona files. It lives outside `_gaia/` so it **survives framework updates** -- `gaia-install.sh update` only touches `_gaia/` contents.
+Stakeholder files are lightweight discussion-only personas for Party Mode. They participate in group discussions but have **no workflow execution, no code implementation, and no agent capabilities**.
 
-## Usage
+## Directory Convention
 
-Place stakeholder persona `.md` files here. These files define stakeholder agents that participate in Party Mode (`/gaia-party`) group discussions.
+Place stakeholder `.md` files in this directory: `custom/stakeholders/`.
 
-### Creating a stakeholder persona
+This follows the `custom/` overlay pattern (ADR-020, ADR-026) that survives framework updates. The installer creates this directory during `init` and never modifies its contents during `update`.
 
-1. Create a markdown file following the stakeholder schema:
-   ```
-   custom/stakeholders/cfo.md
-   ```
-2. Define the stakeholder's persona, expertise, communication style, and priorities
-3. The Party Mode workflow discovers stakeholder files from this directory automatically
+## File Schema (FR-156)
 
-## File Format
-
-Stakeholder persona files must follow the schema defined by ADR-026:
-
-- YAML frontmatter with `name`, `role`, `expertise`, `personality`
-- Markdown body with persona details, communication style, and decision-making criteria
+Each stakeholder file uses YAML frontmatter for structured metadata and a free-form Markdown body for personality and context.
 
 ### Required Fields
 
-| Field | Description |
-|-------|-------------|
-| `name` | Display name for the stakeholder |
-| `role` | Organizational role (e.g., CFO, VP Engineering) |
-| `expertise` | Domain expertise areas |
-| `personality` | Communication style and personality traits |
+| Field | Type | Description |
+|-------|------|-------------|
+| `name` | string | Display name shown in Party Mode |
+| `role` | string | Title or function (e.g., "CTO", "Housekeeper Manager") |
+| `expertise` | string | Domain knowledge areas |
+| `personality` | string | Communication style and behavioral traits |
 
 ### Optional Fields
 
-| Field | Description |
-|-------|-------------|
-| `perspective` | Decision-making perspective |
-| `tags` | Comma-separated tags for filtering |
+| Field | Type | Description |
+|-------|------|-------------|
+| `perspective` | string | Worldview or lens for evaluating ideas |
+| `tags` | list of strings | Group labels for tag-based invitations (FR-161) |
 
-## Constraints (FR-164)
+### Markdown Body
 
-- Maximum **100 lines** per stakeholder file
-- Maximum **50 stakeholder files** in this directory
+The body below the frontmatter is free-form. No required structure. Use it for background context, biases, domain knowledge, or discussion style notes.
 
-## Version Control
+## Constraints (FR-164, NFR-029)
 
-This directory should be committed to your project's version control. Custom stakeholders are team-specific configuration, not framework internals.
+- **Max 100 lines** per stakeholder file (frontmatter + body)
+- **Max 50 files** in `custom/stakeholders/`
+- **5K token budget** for frontmatter-only discovery scan during Party Mode
 
-## Reference
+## Restrictions
 
-- Stakeholder schema: ADR-026 in architecture.md
-- Custom skills directory: `custom/skills/`
-- Custom templates directory: `custom/templates/`
+Stakeholders are strictly scoped to Party Mode discussions. They have:
+
+- **No agent-manifest entry** -- not listed in `agent-manifest.csv`
+- **No memory sidecar** -- no persistent memory across sessions
+- **No activation protocol** -- no slash command or greeting
+- **No workflow integration** -- cannot execute workflows or implement code
+
+## Naming Convention
+
+Files use kebab-case slugs derived from the stakeholder name: `{name-slug}.md`
+
+Examples: `maria-santos.md`, `chief-technology-officer.md`
+
+## Example
+
+See `maria-santos.md` in this directory for a complete example with all required and optional fields populated.
+
+## References
+
+- Architecture 10.18.1: Stakeholder File Schema
+- PRD 4.18.1: Stakeholder File Schema & Directory Convention
+- ADR-020: Custom directory convention
+- ADR-026: Stakeholder agents architecture

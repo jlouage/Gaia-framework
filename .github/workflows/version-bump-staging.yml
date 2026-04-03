@@ -3,7 +3,7 @@
 # FR-147: GitHub Action staging auto-version requirement
 #
 # Trigger: PR merged to staging
-# Logic: reads bump:* label, runs npm run version:bump with appropriate flags,
+# Logic: reads bump:* label, runs node scripts/version-bump.js with appropriate flags,
 #        commits the 2-file change (package.json + global.yaml), pushes with bot token.
 # Dependencies: E14-S3 (version:bump RC modes), E14-S6 (PR label enforcement)
 # See docs/planning-artifacts/architecture.md Section 10.4
@@ -103,15 +103,15 @@ jobs:
               exit 0
             fi
             # RC version + bump:none → increment RC counter only
-            npm run version:bump -- none
+            node scripts/version-bump.js none
           else
             if [ "$IS_RC" = "true" ]; then
               # RC version + higher bump type → strip RC first, then re-bump with new RC
-              npm run version:bump -- --strip-prerelease
-              npm run version:bump -- "$BUMP_TYPE" --prerelease rc
+              node scripts/version-bump.js --strip-prerelease
+              node scripts/version-bump.js "$BUMP_TYPE" --prerelease rc
             else
               # Clean version + bump type → create first RC
-              npm run version:bump -- "$BUMP_TYPE" --prerelease rc
+              node scripts/version-bump.js "$BUMP_TYPE" --prerelease rc
             fi
           fi
 
@@ -128,7 +128,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add package.json Gaia-framework/_gaia/_config/global.yaml
+          git add package.json _gaia/_config/global.yaml
 
           if git diff --cached --quiet; then
             echo "No version changes to commit"

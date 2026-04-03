@@ -88,7 +88,7 @@ describe("E14-S4: version-bump-staging.yml workflow", () => {
       // Workflow must have logic path for bump:none
       expect(content).toMatch(/bump:none/);
       expect(content).toMatch(
-        /version:bump\s+(?:--\s+)?none|npm run version:bump\s+(?:--\s+)?none/
+        /version-bump\.js\s+none|version:bump\s+(?:--\s+)?none|npm run version:bump\s+(?:--\s+)?none/
       );
     });
 
