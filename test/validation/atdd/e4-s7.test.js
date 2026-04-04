@@ -113,23 +113,20 @@ describe("E4-S7: CI-Driven Version Sync in Publish Workflow", () => {
 
   // ── AC3: Six-file verification with hard-fail ─────────────────────────
 
-  describe("AC3: Five-file post-sync verification", () => {
-    it("test_ac3_five_file_verification — publish.yml verifies all 5 files match after version sync", () => {
+  describe("AC3: Two-file post-sync verification (ADR-025)", () => {
+    it("test_ac3_two_file_verification — publish.yml verifies version files match after version sync", () => {
       const content = fs.readFileSync(PUBLISH_WORKFLOW, "utf-8");
 
-      // Must have a dedicated verification step that checks all version files
-      expect(content).toMatch(
-        /name:.*(?:Verify|Check).*(?:all|5|five|6|six).*(?:file|version|sync)/i
-      );
+      // Must have a dedicated verification step that checks version files
+      expect(content).toMatch(/name:.*(?:Verify|Check).*(?:version).*(?:file|sync)/i);
 
-      // Must reference the 5 target files (gaia-install.sh removed — reads version from package.json at runtime)
-      const fileRefs = [/package\.json/, /global\.yaml/, /CLAUDE\.md/, /README\.md/];
+      // Must reference the 2 version files (ADR-025: package.json and global.yaml only)
+      const fileRefs = [/package\.json/, /global\.yaml/];
       let matchCount = 0;
       for (const pattern of fileRefs) {
         if (pattern.test(content)) matchCount++;
       }
-      // At least 4 of the 5 files referenced (README.md has 2 patterns but 1 file)
-      expect(matchCount).toBeGreaterThanOrEqual(4);
+      expect(matchCount).toBe(2);
 
       // Must hard-fail (exit 1) on divergence
       expect(content).toMatch(/exit\s+1/);
