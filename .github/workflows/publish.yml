@@ -66,10 +66,10 @@ jobs:
           echo "Syncing all version files to $TAG_VERSION..."
           node scripts/version-bump.js $TAG_VERSION
 
-      - name: Verify all 6 version files synced
+      - name: Verify version files synced
         run: |
           VERSION="${{ steps.extract-version.outputs.version }}"
-          echo "Verifying all 5 version files contain $VERSION..."
+          echo "Verifying version files contain $VERSION..."
 
           FAIL=0
 
@@ -86,30 +86,12 @@ jobs:
             FAIL=1
           fi
 
-          # 3. CLAUDE.md
-          if ! grep -q "# GAIA Framework v$VERSION" CLAUDE.md; then
-            echo "::error::CLAUDE.md does not contain '# GAIA Framework v$VERSION'"
-            FAIL=1
-          fi
-
-          # 4. README.md (badge)
-          if ! grep -q "framework-v$VERSION-blue" README.md; then
-            echo "::error::README.md badge does not contain framework-v$VERSION-blue"
-            FAIL=1
-          fi
-
-          # 5. README.md (code block)
-          if ! grep -q "framework_version: \"$VERSION\"" README.md; then
-            echo "::error::README.md code block does not contain framework_version: \"$VERSION\""
-            FAIL=1
-          fi
-
           if [ "$FAIL" -ne 0 ]; then
             echo "::error::Version sync verification failed — one or more files do not match $VERSION"
             exit 1
           fi
 
-          echo "All 5 version files verified: $VERSION"
+          echo "All version files verified: $VERSION"
 
       - name: Commit version-synced files
         run: |
@@ -117,7 +99,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          git add package.json _gaia/_config/global.yaml CLAUDE.md README.md
+          git add package.json _gaia/_config/global.yaml
           if git diff --cached --quiet; then
             echo "No version changes needed — files already at $VERSION"
           else
