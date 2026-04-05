@@ -94,36 +94,99 @@
 <!-- ═══════════════════════════════════════════════════════════ -->
 
 <step n="3" title="Problem Framing">
-  <!-- context-informed: uses gathered context, not user interrogation -->
-  <action>Using the Context Brief, articulate the problem clearly and precisely. Distinguish the user's reported symptom from the underlying issue revealed by artifact context.</action>
-  <action>Separate symptoms from root causes — cross-reference the reported symptom against architecture design, story implementation notes, and test results.</action>
-  <action>Define what "solved" looks like — success criteria grounded in existing acceptance criteria from related stories and PRD requirements.</action>
+  <!-- context-informed: uses gathered context from Step 2, falls back to user interrogation if unavailable -->
+  <action>Check if a Context Brief is available from the Step 2 checkpoint. Set context_brief_available = true if the checkpoint contains a non-empty Context Brief; false otherwise (Step 0 was skipped, or Context Brief is empty).</action>
+
+  <action if="context_brief_available">**Context-informed path (AC1, AC2):** Using the Context Brief, articulate the problem clearly and precisely. Distinguish the user's reported symptom from the underlying issue revealed by artifact context:
+  - Read **Architecture Context** section for component design and API contracts
+  - Read **Related Stories** section for implementation state and acceptance criteria
+  - Read **Relevant Requirements** section for PRD-level expectations
+  Do NOT ask the user for project context that is already present in the Context Brief.</action>
+
+  <action if="context_brief_available">Separate symptoms from root causes — cross-reference the reported symptom against architecture design (from Context Brief), story implementation notes, and test results. Only ask the user for clarification on information NOT present in the Context Brief (AC3).</action>
+
+  <action if="context_brief_available">Define what "solved" looks like — success criteria grounded in existing acceptance criteria from related stories and PRD requirements found in the Context Brief.</action>
+
+  <action if="not context_brief_available">**Fallback path (AC6):** Context Brief is not available — fall back to interrogation-based problem framing with no errors or degraded experience.</action>
+  <ask if="not context_brief_available">Describe your project architecture and the components involved in this problem.</ask>
+  <ask if="not context_brief_available">What related stories or features have been implemented in this area?</ask>
+  <action if="not context_brief_available">Articulate the problem clearly and precisely based on user-provided information.</action>
+  <action if="not context_brief_available">Separate symptoms from root causes based on the user's description.</action>
+  <action if="not context_brief_available">Define what "solved" looks like — success criteria based on the user's stated goals.</action>
 </step>
 
 <step n="4" title="Root Cause Analysis">
   <action>Load methods from {data_path}/solving-methods.csv</action>
-  <action>Apply appropriate methodology: 5 Whys, Fishbone Diagram, or TRIZ. Ground each "why" in evidence from the Context Brief — architecture decisions, implementation details, test gaps.</action>
-  <action>Trace causal chains to their source. Use decision logs to understand WHY things were built this way.</action>
-  <action>Validate root cause — does fixing it fix the symptoms? Cross-check against the architecture and related story acceptance criteria.</action>
-  <action>Identify the **test gap**: what test should have caught this problem but didn't? Was it missing coverage, a flawed test, or an untested integration seam? Record the test gap for resolution routing.</action>
+
+  <action if="context_brief_available">**Context-informed path (AC1, AC2):** Apply appropriate methodology: 5 Whys, Fishbone Diagram, or TRIZ. Ground each "why" in evidence from the Context Brief:
+  - Use **Decision Log Entries** to understand WHY components were built this way
+  - Use **Architecture Context** to identify design constraints that may have caused the issue
+  - Use **Test Coverage** section to identify existing gaps
+  Do NOT ask the user for information already present in the Context Brief.</action>
+
+  <action if="context_brief_available">Trace causal chains to their source. Use decision logs from the Context Brief to understand design rationale. Only ask the user for clarification when the Context Brief lacks specific causal information (AC3).</action>
+
+  <action if="context_brief_available">Validate root cause — does fixing it fix the symptoms? Cross-check against the architecture constraints and related story acceptance criteria from the Context Brief.</action>
+
+  <action if="not context_brief_available">**Fallback path (AC6):** Context Brief is not available — fall back to interrogation-based root cause analysis.</action>
+  <action if="not context_brief_available">Apply appropriate methodology: 5 Whys, Fishbone Diagram, or TRIZ.</action>
+  <ask if="not context_brief_available">What decisions led to the current architecture in the affected area? Why was it built this way?</ask>
+  <ask if="not context_brief_available">What test coverage exists for the affected components?</ask>
+  <action if="not context_brief_available">Trace causal chains to their source based on user-provided information.</action>
+  <action if="not context_brief_available">Validate root cause — does fixing it fix the symptoms?</action>
+
+  <action>Identify **test gaps** (AC4, AC5): analyze what tests should have caught this problem but did not. For each gap found, create a test gap entry. Populate the `test_gaps` output as an array of objects, each containing:
+  - `file_path` (string): the file or module path where the test gap exists
+  - `gap_description` (string): what test is missing or inadequate
+  - `suggested_test_type` (enum: unit | integration | e2e): the type of test that should be added
+  - `severity` (enum: critical | high | medium | low): how important the missing coverage is
+  If no test gaps are identified (well-tested area), set `test_gaps` to an empty array — never omit the field.</action>
+
+  <action>Persist `test_gaps` array to the workflow checkpoint at {checkpoint_path}/ so downstream steps (Resolution Routing, Step 9 artifact) can reference it without re-analysis.</action>
 </step>
 
 <step n="5" title="Constraint Identification">
-  <!-- context-informed: checks ADRs and decision logs for real constraints -->
-  <action>What are the REAL constraints vs assumed constraints? Check ADRs from the architecture doc — are constraints documented and still valid?</action>
-  <action>Challenge each constraint using decision log evidence: who decided this? when? has the context changed since?</action>
+  <!-- context-informed: checks ADRs and decision logs for real constraints, falls back to interrogation -->
+  <action if="context_brief_available">**Context-informed path (AC1, AC2):** Identify REAL constraints vs assumed constraints by reading the **Architecture Context** section of the Context Brief:
+  - Check ADRs directly — are constraints documented and still valid?
+  - Read **Decision Log Entries** for historical constraint rationale
+  Do NOT ask the user about constraints that are documented in the Context Brief.</action>
+
+  <action if="context_brief_available">Challenge each constraint using decision log evidence from the Context Brief: who decided this? when? has the context changed since? Only ask the user about constraints NOT documented in available artifacts (AC3).</action>
+
+  <action if="not context_brief_available">**Fallback path (AC6):** Context Brief is not available — fall back to interrogation-based constraint identification.</action>
+  <ask if="not context_brief_available">What are the known constraints in this area? (technical, business, timeline)</ask>
+  <ask if="not context_brief_available">Who established these constraints and when? Are they still valid?</ask>
+  <action if="not context_brief_available">Determine what are the REAL constraints vs assumed constraints based on user input.</action>
+
   <action>Identify contradictions — what two things seem mutually exclusive? Use TRIZ contradiction matrix if applicable.</action>
 </step>
 
 <step n="6" title="Solution Generation">
   <action>Use TRIZ inventive principles or Theory of Constraints approach</action>
   <action>Apply First Principles thinking — reason up from fundamentals</action>
-  <action>Generate at least 5 candidate solutions. For each, note which architecture components and stories would be affected.</action>
-  <action>Cross-check each solution against existing architecture constraints (ADRs) and PRD requirements. Flag solutions that would violate existing decisions.</action>
+
+  <action if="context_brief_available">**Context-informed path (AC1, AC2):** Generate at least 5 candidate solutions. For each, use the Context Brief to:
+  - Note which **architecture components** (from Architecture Context section) would be affected
+  - Identify which **stories** (from Related Stories section) would need changes
+  - Cross-check against **ADR constraints** from the Architecture Context — flag solutions that would violate existing decisions
+  - Cross-check against **PRD requirements** from the Relevant Requirements section
+  Do NOT ask the user for architecture or requirement context that exists in the Context Brief.</action>
+
+  <action if="not context_brief_available">**Fallback path (AC6):** Generate at least 5 candidate solutions. For each, note which architecture components and stories would be affected.</action>
+  <ask if="not context_brief_available">What architecture patterns and components are involved in this area?</ask>
+  <action if="not context_brief_available">Cross-check each solution against known constraints and requirements as described by the user. Flag solutions that may violate existing decisions.</action>
 </step>
 
 <step n="7" title="Solution Evaluation">
-  <action>Assess feasibility, impact, and effort for each solution. Use codebase context (Tier 2) to ground effort estimates in actual code complexity.</action>
+  <action if="context_brief_available">**Context-informed path (AC1, AC2):** Assess feasibility, impact, and effort for each solution:
+  - Use **Codebase Context** (Tier 2 data) from the Context Brief to ground effort estimates in actual code complexity
+  - Map solutions against **architecture constraints** and **PRD requirements** from the Context Brief
+  Do NOT ask the user for codebase details or effort estimates when that information is available in the Context Brief. Only ask for clarification on information NOT present (AC3).</action>
+
+  <action if="not context_brief_available">**Fallback path (AC6):** Assess feasibility, impact, and effort for each solution.</action>
+  <ask if="not context_brief_available">How complex is the codebase in the affected area? What is the estimated effort for each solution?</ask>
+
   <action>Map solutions to a 2x2: impact vs effort</action>
   <action>Select the solution that best resolves the root cause without violating architecture constraints.</action>
   <action>Document rejected solutions with clear reasons — these will be passed to the dev agent to prevent re-exploration.</action>
@@ -178,7 +241,7 @@
     keywords: [{expanded_keywords}]
     affected_components: [{components}]
     root_cause: "{root_cause_summary}"
-    test_gap: "{test_gap_description}"
+    test_gaps: [{test_gaps_array}]
     resolution_path: "{quick-fix|bug|critical|enhancement|systemic}"
     ---
 
@@ -197,7 +260,12 @@
     **Methodology:** {5 Whys / Fishbone / TRIZ}
     **Root Cause:** {identified root cause with evidence}
     **Causal Chain:** {documented chain from symptom to root cause}
-    **Test Gap:** {what test was missing and why}
+
+    ### Test Gaps
+    | # | File Path | Gap Description | Suggested Test Type | Severity |
+    |---|-----------|-----------------|---------------------|----------|
+    {for each entry in test_gaps array: file_path, gap_description, suggested_test_type, severity}
+    (Empty table if no test gaps identified)
 
     ## Constraints
     {real vs assumed constraints, with ADR references}
@@ -235,10 +303,10 @@
     - priority_flag: "next-sprint" if urgency is critical or high
     - origin: "problem-solving"
     - origin_ref: "{creative_artifacts}/problem-solving-{date}.md"
-    - Include in Dev Notes: root cause, affected components, selected solution, rejected solutions, test gap
-    - Include in acceptance criteria: criteria that verify the root cause is resolved + test gap is closed
+    - Include in Dev Notes: root cause, affected components, selected solution, rejected solutions, test_gaps array
+    - Include in acceptance criteria: criteria that verify the root cause is resolved + each test gap in test_gaps is closed
 
-    Spawn subagent: "Load {project-root}/_gaia/core/engine/workflow.xml, then process {project-root}/_gaia/lifecycle/workflows/4-implementation/create-story/workflow.yaml as workflow-config. Run in YOLO mode. Context: {classification} fix from problem-solving. Problem: {problem_statement}. Root cause: {root_cause}. Solution: {selected_solution}. Affected components: {affected_components}. Test gap: {test_gap}. Origin: problem-solving. Origin ref: {creative_artifacts}/problem-solving-{date}.md. Rejected solutions: {rejected_solutions}. Priority: {priority}. Priority flag: {priority_flag}. Epic: {epic_key}."
+    Spawn subagent: "Load {project-root}/_gaia/core/engine/workflow.xml, then process {project-root}/_gaia/lifecycle/workflows/4-implementation/create-story/workflow.yaml as workflow-config. Run in YOLO mode. Context: {classification} fix from problem-solving. Problem: {problem_statement}. Root cause: {root_cause}. Solution: {selected_solution}. Affected components: {affected_components}. Test gaps: {test_gaps}. Origin: problem-solving. Origin ref: {creative_artifacts}/problem-solving-{date}.md. Rejected solutions: {rejected_solutions}. Priority: {priority}. Priority flag: {priority_flag}. Epic: {epic_key}."
   </action>
 
   <action if="classification is enhancement">
@@ -280,7 +348,7 @@
   | Root Cause | {root_cause} |
   | Classification | {classification} |
   | Resolution | {story_key or add-feature ID or escalation target} |
-  | Test Gap | {test_gap} |
+  | Test Gaps | {test_gaps.length} identified ({test_gaps summary}) |
   | Artifact | {creative_artifacts}/problem-solving-{date}.md |
 
   **Next steps:**

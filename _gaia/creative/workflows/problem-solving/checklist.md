@@ -24,28 +24,39 @@
 
 ## Phase 2: Context-Informed Analysis
 
+### Context-Informed vs Fallback Behavior
+- [ ] context_brief_available flag correctly determined from Step 2 checkpoint
+- [ ] When Context Brief available: steps read context from checkpoint (not user interrogation)
+- [ ] When Context Brief available: user only asked for information NOT in the Context Brief
+- [ ] When Context Brief unavailable (Step 0 skipped or empty): steps fall back to interrogation-based behavior
+- [ ] Fallback mode operates with no errors and no degraded experience
+
 ### Problem Framing
 - [ ] Problem clearly articulated (not a symptom)
-- [ ] Symptoms separated from root causes using artifact evidence
-- [ ] Success criteria defined (grounded in existing acceptance criteria)
+- [ ] Symptoms separated from root causes using artifact evidence (or user input in fallback mode)
+- [ ] Success criteria defined (grounded in existing acceptance criteria, or user goals in fallback mode)
 
 ### Root Cause Analysis
 - [ ] Methodology applied (5 Whys, Fishbone, TRIZ)
-- [ ] Root cause identified with artifact evidence
+- [ ] Root cause identified with artifact evidence (or user-provided evidence in fallback mode)
 - [ ] Causal chain documented
 - [ ] Root cause validated — fixing it fixes the symptoms
 - [ ] Test gap identified (what test should have caught this)
+- [ ] `test_gaps` array populated (AC4): each entry has file_path, gap_description, suggested_test_type, severity
+- [ ] `test_gaps` uses correct schema: file_path (string), gap_description (string), suggested_test_type (unit/integration/e2e), severity (critical/high/medium/low)
+- [ ] `test_gaps` is empty array (not absent) when no gaps found
+- [ ] `test_gaps` persisted to workflow checkpoint for downstream steps
 
 ### Constraints
-- [ ] Real constraints verified against ADRs and decision logs
+- [ ] Real constraints verified against ADRs and decision logs (or user input in fallback mode)
 - [ ] Assumed constraints challenged with evidence
 - [ ] Contradictions identified
 
 ### Solutions
 - [ ] At least 5 candidate solutions generated
 - [ ] Solutions address root cause, not symptoms
-- [ ] Solutions cross-checked against architecture constraints
-- [ ] Feasibility/impact/effort assessed (grounded in codebase context)
+- [ ] Solutions cross-checked against architecture constraints (from Context Brief or user input)
+- [ ] Feasibility/impact/effort assessed (grounded in codebase context or user estimates in fallback mode)
 - [ ] Rejected solutions documented with clear reasoning
 
 ## Phase 3: Resolution Routing
@@ -61,5 +72,5 @@
   - [ ] Enhancement: /gaia-add-feature invoked with problem-solving artifact
   - [ ] Systemic: Problem Brief generated and escalation target identified
 - [ ] Story includes origin: problem-solving and origin_ref fields (if story created)
-- [ ] Test gap carried into story Dev Notes (if story created)
+- [ ] `test_gaps` array carried into story Dev Notes (if story created)
 - [ ] Completion summary presented with next steps
