@@ -39,6 +39,10 @@ sizing_map:
   L: 8
   XL: 13
 
+# Problem-solving workflow — context gathering configuration
+problem_solving:
+  context_budget: 30000  # Max tokens for auto-gathered context (Step 0)
+
 # Framework paths
 installed_path: "{project-root}/_gaia"
 config_path: "{project-root}/_gaia/_config"
