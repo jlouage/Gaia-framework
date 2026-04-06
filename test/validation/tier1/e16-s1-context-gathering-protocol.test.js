@@ -4,13 +4,7 @@ import { join } from "path";
 import yaml from "js-yaml";
 import { PROJECT_ROOT } from "../../helpers/project-root.js";
 
-const WORKFLOW_DIR = join(
-  PROJECT_ROOT,
-  "_gaia",
-  "creative",
-  "workflows",
-  "problem-solving"
-);
+const WORKFLOW_DIR = join(PROJECT_ROOT, "_gaia", "creative", "workflows", "problem-solving");
 const GLOBAL_YAML_PATH = join(PROJECT_ROOT, "_gaia", "_config", "global.yaml");
 
 /**
@@ -34,9 +28,7 @@ describe("E16-S1: Context Gathering Protocol", () => {
   const workflowYamlPath = join(WORKFLOW_DIR, "workflow.yaml");
   const checklistPath = join(WORKFLOW_DIR, "checklist.md");
 
-  const instructions = existsSync(instructionsPath)
-    ? readFileSync(instructionsPath, "utf8")
-    : null;
+  const instructions = existsSync(instructionsPath) ? readFileSync(instructionsPath, "utf8") : null;
 
   const workflowConfig = existsSync(workflowYamlPath)
     ? yaml.load(readFileSync(workflowYamlPath, "utf8"))
@@ -46,9 +38,7 @@ describe("E16-S1: Context Gathering Protocol", () => {
     ? yaml.load(readFileSync(GLOBAL_YAML_PATH, "utf8"))
     : null;
 
-  const checklist = existsSync(checklistPath)
-    ? readFileSync(checklistPath, "utf8")
-    : null;
+  const checklist = existsSync(checklistPath) ? readFileSync(checklistPath, "utf8") : null;
 
   // ────────────────────────────────────────────────────
   // File existence
@@ -74,24 +64,12 @@ describe("E16-S1: Context Gathering Protocol", () => {
     it("should contain a Problem Intake step (step 1) before Problem Framing (step 3)", () => {
       // The original Step 1 (Problem Framing) is now Step 3
       // New Step 1 = Problem Intake, Step 2 = Context Gathering
-      const intakeMatch = instructions.match(
-        /<step\s+n="1"\s+title="Problem Intake"/
-      );
-      const contextMatch = instructions.match(
-        /<step\s+n="2"\s+title="Context Gathering"/
-      );
-      const framingMatch = instructions.match(
-        /<step\s+n="3"\s+title="Problem Framing"/
-      );
+      const intakeMatch = instructions.match(/<step\s+n="1"\s+title="Problem Intake"/);
+      const contextMatch = instructions.match(/<step\s+n="2"\s+title="Context Gathering"/);
+      const framingMatch = instructions.match(/<step\s+n="3"\s+title="Problem Framing"/);
       expect(intakeMatch, "Step 1 (Problem Intake) not found").not.toBeNull();
-      expect(
-        contextMatch,
-        "Step 2 (Context Gathering) not found"
-      ).not.toBeNull();
-      expect(
-        framingMatch,
-        "Step 3 (Problem Framing) not found"
-      ).not.toBeNull();
+      expect(contextMatch, "Step 2 (Context Gathering) not found").not.toBeNull();
+      expect(framingMatch, "Step 3 (Problem Framing) not found").not.toBeNull();
     });
 
     it("should retain all original steps (now renumbered 3-11)", () => {
@@ -106,10 +84,7 @@ describe("E16-S1: Context Gathering Protocol", () => {
         "Solution Evaluation",
       ];
       for (const title of expectedSteps) {
-        expect(
-          instructions,
-          `Missing step: ${title}`
-        ).toContain(`title="${title}"`);
+        expect(instructions, `Missing step: ${title}`).toContain(`title="${title}"`);
       }
     });
   });
@@ -188,10 +163,7 @@ describe("E16-S1: Context Gathering Protocol", () => {
   describe("AC4: Token budget configuration", () => {
     it("global.yaml should have problem_solving.context_budget = 30000", () => {
       expect(globalConfig).toHaveProperty("problem_solving");
-      expect(globalConfig.problem_solving).toHaveProperty(
-        "context_budget",
-        30000
-      );
+      expect(globalConfig.problem_solving).toHaveProperty("context_budget", 30000);
     });
 
     it("workflow.yaml should declare context_budget = 30000", () => {
@@ -239,10 +211,7 @@ describe("E16-S1: Context Gathering Protocol", () => {
         "Test Coverage",
       ];
       for (const section of requiredSections) {
-        expect(
-          instructions,
-          `Context Brief missing section: ${section}`
-        ).toContain(section);
+        expect(instructions, `Context Brief missing section: ${section}`).toContain(section);
       }
     });
 
@@ -258,15 +227,11 @@ describe("E16-S1: Context Gathering Protocol", () => {
   describe("AC6: User validation and checkpoint", () => {
     it("should ask user to validate the Context Brief", () => {
       // There should be an <ask> tag after the Context Brief synthesis
-      expect(instructions).toMatch(
-        /<ask>.*missing from this context.*<\/ask>/s
-      );
+      expect(instructions).toMatch(/<ask>.*missing from this context.*<\/ask>/s);
     });
 
     it("should incorporate additional user context", () => {
-      expect(instructions).toContain(
-        "Incorporate any additional context the user provides"
-      );
+      expect(instructions).toContain("Incorporate any additional context the user provides");
     });
   });
 
@@ -278,9 +243,7 @@ describe("E16-S1: Context Gathering Protocol", () => {
     it("instructions should not contain a HALT on zero keyword matches", () => {
       // Context Gathering step should not HALT when no matches found.
       // Check that there is no <check> that halts on empty results in step 2.
-      const step2 = instructions.match(
-        /<step n="2"[\s\S]*?<\/step>/
-      );
+      const step2 = instructions.match(/<step n="2"[\s\S]*?<\/step>/);
       if (step2) {
         // Should not contain a HALT for empty scan results
         expect(step2[0]).not.toMatch(/HALT.*no.*match/i);
@@ -310,10 +273,7 @@ describe("E16-S1: Context Gathering Protocol", () => {
     it("all input patterns should use SELECTIVE_LOAD strategy", () => {
       const patterns = workflowConfig.input_file_patterns;
       for (const [key, val] of Object.entries(patterns)) {
-        expect(
-          val.load_strategy,
-          `${key} should use SELECTIVE_LOAD`
-        ).toBe("SELECTIVE_LOAD");
+        expect(val.load_strategy, `${key} should use SELECTIVE_LOAD`).toBe("SELECTIVE_LOAD");
       }
     });
   });
