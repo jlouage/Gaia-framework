@@ -124,23 +124,26 @@
   **Step 1 — Load all scan outputs:**
   Load gap entries from ALL of the following sources. For each file, if it exists, parse YAML gap entries matching the schema from gap-entry-schema.md. If a file is empty or missing, log a warning noting which scanner produced no results and continue processing the remaining files without error.
 
-  Deep analysis scan outputs (7 files):
+  Deep analysis scan outputs (7 files — Step 2.5):
   - {planning_artifacts}/brownfield-scan-config-contradiction.md
   - {planning_artifacts}/brownfield-scan-dead-code.md
-  - {planning_artifacts}/brownfield-scan-hard-coded-logic.md
-  - {planning_artifacts}/brownfield-scan-security-endpoint.md
+  - {planning_artifacts}/brownfield-scan-hardcoded.md
+  - {planning_artifacts}/brownfield-scan-security.md
   - {planning_artifacts}/brownfield-scan-runtime-behavior.md
-  - {planning_artifacts}/brownfield-scan-doc-code-drift.md
+  - {planning_artifacts}/brownfield-scan-doc-code.md
   - {planning_artifacts}/brownfield-scan-integration-seam.md
 
-  Step 2 documentation subagent outputs:
+  Test execution scan output (1 file — Step 2.75):
+  - {planning_artifacts}/brownfield-scan-test-execution.md (failing tests as gap entries)
+
+  Step 2 documentation subagent outputs (4 files):
   - {planning_artifacts}/api-documentation.md (API gaps)
   - {planning_artifacts}/event-catalog.md (event/messaging gaps)
   - {planning_artifacts}/ux-design.md (frontend/UX gaps)
   - {planning_artifacts}/dependency-map.md (dependency gaps)
 
-  Step 3 test execution results:
-  - {test_artifacts}/nfr-assessment.md (test execution gap findings)
+  Step 3 NFR assessment:
+  - {test_artifacts}/nfr-assessment.md (NFR gap findings)
 
   **Step 2 — Validate entries against schema:**
   For each parsed gap entry, validate that all required fields are present: id, category, severity, title, description (or evidence), evidence_file, evidence_line, recommendation. Entries missing any required field are logged as warnings (noting the source file and which field is missing) and skipped from consolidation rather than causing a failure.
@@ -197,6 +200,7 @@
   — If infrastructure: use IR-### for infrastructure requirements, OR-### for operational requirements, and SR-### for security requirements exclusively. Do NOT use FR/NFR prefixes.
   — If platform: use BOTH ID scheme families — FR-###/NFR-### for application-layer requirements and IR-###/OR-###/SR-### for infrastructure-layer requirements. All requirement IDs are globally unique within the project — the prefix disambiguates (e.g., FR-001 and IR-001 are distinct, no collision).</action>
   <action>Read upstream artifacts to inform gap analysis:</action>
+  <action>— project-documentation.md → project context: tech stack, architecture patterns, conventions, detected capability flags, CI/CD summary. Use for PRD Overview section (existing project summary) and to ground gap requirements in the actual project structure.</action>
   <action>— consolidated-gaps.md → primary input: deduplicated, ranked, and code-verified gap list from Steps 3.5 and 5.5. If a '## Verification Corrections for PRD' section exists, use it to correct factual errors from contradicted claims.</action>
   <action>— nfr-assessment.md → NFR section gets real "Current Baseline" and "Target" columns</action>
   <action>— api-documentation.md (if exists) → extract API gaps (undocumented endpoints, missing validation)</action>
