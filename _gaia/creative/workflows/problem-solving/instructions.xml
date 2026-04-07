@@ -197,10 +197,15 @@
 <!-- ═══════════════════════════════════════════════════════════ -->
 
 <step n="8" title="Resolution Classification">
-  <action>Based on the root cause analysis and selected solution, classify the resolution:
+  <critical>
+    <mandate>Classification is based on analysis output — do NOT invoke agents for classification</mandate>
+    <mandate>User MUST confirm or override classification before routing proceeds</mandate>
+  </critical>
 
-  **Quick fix** (&lt; 1 story point):
-  - Affects 1-2 files in a single component
+  <action>Read the analysis output from the prior steps. Evaluate the root cause against the classification decision matrix:
+
+  **Quick fix / isolated-fix** (&lt; 1 story point):
+  - Affects 1-2 files in a single component (component_count = 1, requires_upstream = false)
   - Root cause is clear and fix is bounded (config error, typo, off-by-one, missing condition)
   - No new requirements needed
 
@@ -214,18 +219,30 @@
   - Same as quick fix or bug fix but with priority:critical and priority_flag:next-sprint
 
   **Enhancement** (design gap revealed):
-  - Root cause is a missing capability or design limitation
+  - Root cause is a missing capability or design limitation (component_count > 1 OR design gap identified)
   - Requires PRD/architecture/UX changes — broader than a fix
   - Route through /gaia-add-feature for proper cascade
 
   **Systemic** (architecture or requirements problem):
-  - Root cause is in the architecture design or requirements definition
+  - Root cause is in the architecture design or requirements definition (requires_upstream = true)
   - Fix requires upstream changes before implementation
   - Escalate to Theo (architecture) or Derek (requirements)
-  </action>
+
+  If the scope analysis is inconclusive or the root cause does not match any single category, present all options without a highlighted recommendation. Otherwise, highlight the recommended classification.</action>
 
   <action>Present the recommended classification to the user with reasoning. Include: classification, affected components, estimated scope, and the resolution path that will be taken.</action>
-  <ask>Do you agree with this classification? [yes / change to: quick-fix|bug|critical|enhancement|systemic]</ask>
+  <ask>Do you agree with this classification?
+
+  Options:
+  [1] Confirm classification as the recommended type and proceed to routing
+  [2] Override classification — choose a different type:
+      - quick-fix/bug/critical: route to /gaia-create-story
+      - enhancement: route to /gaia-add-feature
+      - systemic: generate Problem Brief + escalation
+  [3] Decline routing — complete workflow with action plan only, skip all downstream routing
+
+  If override is selected, re-route to the selected classification path.
+  If decline is selected, skip routing and complete with action plan output only.</ask>
 </step>
 
 <step n="9" title="Problem-Solving Artifact">
@@ -296,26 +313,32 @@
 
 <step n="10" title="Resolution Execution">
   <action if="classification is quick-fix or bug or critical">
-    Invoke /gaia-create-story as a subagent with pre-populated context:
+    Prepare context for /gaia-create-story invocation with pre-populated fields:
     - title: derived from problem statement and root cause
     - epic: auto-detected from related stories found in Context Brief (or ask user if ambiguous)
     - priority: P0 for critical, P1 for high urgency, P2 for medium/low
     - priority_flag: "next-sprint" if urgency is critical or high
     - origin: "problem-solving"
     - origin_ref: "{creative_artifacts}/problem-solving-{date}.md"
+    - root_cause, affected_components, acceptance_criteria, rejected_solutions
     - Include in Dev Notes: root cause, affected components, selected solution, rejected solutions, test_gaps array
     - Include in acceptance criteria: criteria that verify the root cause is resolved + each test gap in test_gaps is closed
 
-    Spawn subagent: "Load {project-root}/_gaia/core/engine/workflow.xml, then process {project-root}/_gaia/lifecycle/workflows/4-implementation/create-story/workflow.yaml as workflow-config. Run in YOLO mode. Context: {classification} fix from problem-solving. Problem: {problem_statement}. Root cause: {root_cause}. Solution: {selected_solution}. Affected components: {affected_components}. Test gaps: {test_gaps}. Origin: problem-solving. Origin ref: {creative_artifacts}/problem-solving-{date}.md. Rejected solutions: {rejected_solutions}. Priority: {priority}. Priority flag: {priority_flag}. Epic: {epic_key}."
+    If test_gaps were identified during analysis, propagate them into the created story's Dev Notes section with structured fields: file path, gap description, suggested test type, severity.
+    If no test_gaps exist, create the story without a test gaps section — no error.
+    If the invocation fails (crash, context too large), log a warning and fall back to the action plan output only.
   </action>
+  <invoke-workflow if="classification is quick-fix or bug or critical" ref="create-story" context="Pre-populated from problem-solving analysis: title, epic, priority, origin=problem-solving, origin_ref={creative_artifacts}/problem-solving-{date}.md, root_cause, affected_components, acceptance_criteria, test_gaps (propagated to Dev Notes), rejected_solutions" />
 
   <action if="classification is enhancement">
     Route to /gaia-add-feature with the problem-solving artifact as context.
     Present to user: "This resolution reveals a design gap. Routing to /gaia-add-feature for proper triage and cascade."
-
-    Spawn subagent: "Load {project-root}/_gaia/core/engine/workflow.xml, then process {project-root}/_gaia/lifecycle/workflows/4-implementation/add-feature/workflow.yaml as workflow-config. Run in YOLO mode. Context: Enhancement identified during problem-solving. Description: {selected_solution}. Driver: problem-solving analysis (AF ref: {creative_artifacts}/problem-solving-{date}.md). Root cause: {root_cause}. Urgency: {urgency_level}."
+    Pass: scope_analysis, affected_components, proposed_changes, context_ref={creative_artifacts}/problem-solving-{date}.md
+    If the invocation fails (crash, context too large), log a warning and fall back to the action plan output only.
   </action>
+  <invoke-workflow if="classification is enhancement" ref="add-feature" context="Scope analysis and affected components from problem-solving: scope_analysis, affected_components, proposed_changes, context_ref={creative_artifacts}/problem-solving-{date}.md" />
 
+  <!-- Problem Brief output path: docs/planning-artifacts/problem-brief-{date}.md -->
   <action if="classification is systemic">
     Do NOT invoke a subagent. Present the escalation to the user:
     "This is a systemic issue requiring upstream changes. Escalating to {Theo if architecture / Derek if requirements}."
@@ -333,6 +356,7 @@
 
     Present the Problem Brief and suggest: "Run /gaia-agent-architect or /gaia-agent-pm to continue."
   </action>
+  <template-output if="classification is systemic" file="{planning_artifacts}/problem-brief-{date}.md" />
 
   <action>When subagent returns (if applicable): capture the created story key or add-feature ID. Update the problem-solving artifact with the resolution reference.</action>
 </step>
@@ -356,88 +380,5 @@
   - Enhancement: "Add-feature cascade in progress. Check assessment doc when complete."
   - Systemic: "Consult with {agent_name} to resolve the upstream issue before implementation."
   </action>
-</step>
-<step n="7" title="Resolution Routing">
-  <critical>
-    <mandate>Classification is based on analysis output — do NOT invoke agents for classification</mandate>
-    <mandate>User MUST confirm or override classification before routing proceeds</mandate>
-  </critical>
-
-  <!-- Phase 1: Classify the resolution based on root cause analysis output -->
-  <action>Read the analysis output from Step 6 (action plan). Evaluate the root cause against the classification decision matrix:
-    - **isolated-fix**: single component affected, clear root cause, scope less than 1 story point, no upstream architecture or requirements changes needed (component_count = 1, requires_upstream = false)
-    - **enhancement**: root cause reveals a design gap or missing capability, multi-component impact, or requires feature-level changes (component_count > 1 OR design gap identified)
-    - **systemic**: root cause is an architecture or requirements problem requiring upstream changes, cross-cutting concern affecting multiple subsystems (requires_upstream = true, architecture or requirements issue)
-    If the scope analysis is inconclusive or the root cause does not match any single category, present all three options without a highlighted recommendation. Otherwise, highlight the recommended classification.</action>
-
-  <!-- Phase 2: Present classification and allow user override (AC6) or decline (AC7) -->
-  <ask>Present the classification recommendation to the user:
-
-    **Resolution Classification:** {recommended_type}
-    **Rationale:** {classification_rationale}
-
-    Options:
-    [1] Confirm classification as **{recommended_type}** and proceed to routing
-    [2] Override classification — choose a different type:
-        - isolated-fix: single component fix, route to /gaia-create-story
-        - enhancement: multi-component improvement, route to /gaia-add-feature
-        - systemic: architectural concern, generate Problem Brief + escalation
-    [3] Decline routing — complete workflow with action plan only, skip all downstream routing
-
-    If the user selects override, re-route to the selected classification path.
-    If the user selects decline, skip routing and complete with action plan output only (no downstream workflow invocation).</ask>
-
-  <!-- Phase 3a: isolated-fix routing → /gaia-create-story (AC2, AC5) -->
-  <action if="classification == isolated-fix">Prepare context for /gaia-create-story invocation with pre-populated fields from analysis output:
-    - **title**: derived from the problem statement and root cause
-    - **epic**: auto-detected from related stories found in the problem context
-    - **priority**: mapped from the urgency input provided at problem framing
-    - **origin**: "problem-solving"
-    - **origin_ref**: path to the problem-solving artifact ({creative_artifacts}/problem-solving-{date}.md)
-    - **root_cause**: the identified root cause from Step 2
-    - **affected_components**: list of affected components from analysis
-    - **acceptance_criteria**: derived from the success criteria defined in Step 1
-    - **test_gap**: test_gaps field from E16-S2 analysis output (if present)
-    - **rejected_solutions**: solutions evaluated and rejected in Steps 4-5
-
-    If test_gaps were identified during analysis (E16-S2), propagate them into the created story's Dev Notes section with structured fields: file path, gap description, suggested test type, severity.
-    If no test_gaps exist, create the story without a test gaps section — no error.
-
-    Invoke /gaia-create-story as a subagent with this pre-populated context.
-    If the invocation fails (crash, context too large), log a warning and fall back to the action plan output only.</action>
-  <invoke-workflow if="classification == isolated-fix" workflow="create-story" context="Pre-populated from problem-solving analysis: title, epic, priority, origin=problem-solving, origin_ref={creative_artifacts}/problem-solving-{date}.md, root_cause, affected_components, acceptance_criteria, test_gaps (propagated to Dev Notes), rejected_solutions" />
-
-  <!-- Phase 3b: enhancement routing → /gaia-add-feature (AC3) -->
-  <action if="classification == enhancement">Prepare context for /gaia-add-feature invocation with:
-    - **scope_analysis**: full scope analysis from root cause evaluation
-    - **affected_components**: list of all components impacted by the enhancement
-    - **proposed_changes**: recommended approach from solution evaluation (Step 5)
-    - **context_ref**: path to the problem-solving artifact ({creative_artifacts}/problem-solving-{date}.md)
-
-    Invoke /gaia-add-feature as a subagent with this context.
-    If the invocation fails (crash, context too large), log a warning and fall back to the action plan output only.</action>
-  <invoke-workflow if="classification == enhancement" workflow="add-feature" context="Scope analysis and affected components from problem-solving: scope_analysis, affected_components, proposed_changes, context_ref={creative_artifacts}/problem-solving-{date}.md" />
-
-  <!-- Phase 3c: systemic routing → Problem Brief + escalation (AC4) -->
-  <!-- Problem Brief output path: docs/planning-artifacts/problem-brief-{date}.md -->
-  <action if="classification == systemic">Generate a Problem Brief document containing:
-    - **Root Cause**: full root cause analysis from Step 2
-    - **Affected Components**: all components and subsystems impacted
-    - **Risk Assessment**: severity, blast radius, and likelihood of recurrence
-    - **Evidence from Artifacts**: references to specific files, logs, or test results that support the analysis
-    - **Constraints**: real vs assumed constraints identified in Step 3
-    - **Rejected Solutions**: approaches considered and rejected with rationale from Steps 4-5
-    - **Recommended Approach**: the selected solution from Step 5 with implementation guidance
-
-    Write the Problem Brief to the planning artifacts directory.
-    If the file write fails (disk permissions, path does not exist), log a warning and display the Problem Brief content inline instead.
-
-    Suggest escalation to the appropriate agent based on the nature of the systemic issue:
-    - **Theo** (System Architect) for architecture issues — structural problems, cross-cutting concerns, design pattern violations
-    - **Derek** (Product Manager) for requirements gaps — missing requirements, conflicting requirements, scope ambiguity</action>
-  <template-output if="classification == systemic" file="{planning_artifacts}/problem-brief-{date}.md" />
-
-  <!-- Phase 4: Handle multiple resolutions if needed -->
-  <action if="multiple_resolutions_needed">If root cause analysis reveals both an immediate fix AND a broader enhancement needed, offer sequential routing: apply the isolated-fix first, then route the enhancement. Each routing follows its own classification path above.</action>
 </step>
 </workflow>
