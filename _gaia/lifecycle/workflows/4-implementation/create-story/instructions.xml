@@ -94,6 +94,14 @@
 <step n="6" title="Generate Output">
   <action>Read the story template from the engine-resolved template path. The engine resolves this in Step 1 (Load and Resolve Config): if {project-root}/custom/templates/story-template.md exists and is non-empty, the custom template is used; otherwise it falls back to {project-root}/_gaia/lifecycle/templates/story-template.md. Use whichever path the engine resolved.</action>
   <action>Read sizing_map from {project-root}/_gaia/_config/global.yaml to resolve T-shirt size to story points (S→2, M→5, L→8, XL→13).</action>
+  <action>Detect invocation context to determine origin fields:
+    If invoked from problem-solving routing (E16-S3): set origin="problem-solving" and origin_ref to the path of the Problem Brief or problem-solving checkpoint artifact (e.g., docs/creative-artifacts/problem-solving-YYYY-MM-DD.md).
+    If invoked from triage routing: set origin="triage" and origin_ref to the triage artifact path.
+    If invoked from add-feature routing: set origin="add-feature" and origin_ref to the source artifact path.
+    If invoked from sprint-planning: set origin="sprint-planning" and origin_ref to the sprint plan artifact path.
+    If invoked with explicit origin parameters from caller: use the provided origin and origin_ref values.
+    If invoked normally (no routing context): set origin=null and origin_ref=null (planned work default).
+  </action>
   <action>Populate ALL YAML frontmatter fields from epics-and-stories.md data:
     - key: story key from epics (e.g., E1-S1)
     - title: story title
@@ -110,6 +118,8 @@
     - date: current date
     - author: agent name (e.g., "Nate (Scrum Master)")
     - priority_flag: null (default — set to "next-sprint" by add-feature for high-urgency stories)
+    - origin: workflow origin (null for planned work, "problem-solving" from problem-solving routing, "triage" from triage, "add-feature" from add-feature routing, "sprint-planning" from sprint planning, "manual" for explicit manual creation)
+    - origin_ref: path to source artifact that triggered story creation (null when origin is null)
   </action>
   <template-output file="{implementation_artifacts}/{story_key}-{story_title_slug}.md">
     Generate the story file following the story-template.md structure. The filename must use the story key and slugified title (e.g., E1-S1-user-login.md). Include complete YAML frontmatter with ALL 15 fields populated. Fill all template sections: User Story, Acceptance Criteria, Tasks/Subtasks (linked to AC numbers), Dev Notes, Technical Notes, Dependencies, Test Scenarios, Project Structure Notes, References, Dev Agent Record, and Estimate. IMPORTANT: The body "**Status:**" line MUST match the frontmatter status field exactly. Both must say the same status value.

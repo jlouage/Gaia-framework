@@ -3,37 +3,382 @@
   <mandate>Always identify root cause before proposing solutions</mandate>
   <mandate>Separate symptoms from causes — refuse to treat symptoms</mandate>
   <mandate>Challenge assumed constraints — are they real or inherited?</mandate>
+  <mandate>NEVER interrogate the user for information that exists in project artifacts — gather context automatically</mandate>
+  <mandate>ALL code-change resolutions MUST route through /gaia-create-story — no invisible work</mandate>
 </critical>
-<step n="1" title="Problem Framing">
-  <action>Articulate the problem clearly and precisely</action>
-  <action>Separate symptoms from root causes</action>
-  <action>Define what "solved" looks like — success criteria</action>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- PHASE 1: INTAKE                                            -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+
+<step n="1" title="Problem Intake">
+  <ask>What is the problem? Describe the symptom or issue you are experiencing.</ask>
+  <ask>Urgency level? (critical — production outage / high — blocks work / medium — needs attention / low — backlog)</ask>
+  <action>Record: problem_statement, urgency_level</action>
+  <action>Extract domain keywords from the problem statement. Parse for four categories:
+  1. **File names** — any foo.ts, bar.yaml, config.json patterns mentioned
+  2. **Module names** — recognized GAIA module names (core, lifecycle, dev, creative, testing) or project-specific module references
+  3. **Error signatures** — stack trace patterns, error codes, exception names, HTTP status codes
+  4. **Domain terms** — expanded semantically using domain knowledge (e.g., "login fails" expands to: login, authentication, auth, session, JWT, token, sign-in, timeout, credentials)
+  No external lookup table required — use domain knowledge for semantic expansion.</action>
 </step>
-<step n="2" title="Root Cause Analysis">
+
+<step n="2" title="Context Gathering">
+  <action>Execute Tier 1 — Artifact Scan (always). Use expanded keywords to search. Enforce token budget cap: total gathered context must stay within 30K tokens (configurable via global.yaml problem_solving.context_budget). Apply sub-budgets per source, prioritized by relevance to the problem statement:</action>
+
+  <action>**Stories (budget: 8K tokens):** Glob {implementation_artifacts}/ for story files matching domain keywords. For each match, extract: story key, title, status, acceptance criteria, Review Gate table, findings. Prioritize stories with status in-progress, review, or done over backlog.</action>
+
+  <action>**Architecture (budget: 5K tokens):** Grep {planning_artifacts}/architecture.md for sections matching keywords. Extract: affected components, relevant ADRs, API contracts, data models. Summarize if section exceeds budget.</action>
+
+  <action>**PRD (budget: 5K tokens):** Grep {planning_artifacts}/prd.md for requirement sections matching keywords. Extract: relevant FR/NFR IDs, acceptance criteria, feature descriptions. Summarize if section exceeds budget.</action>
+
+  <action>**Decision Logs (budget: 3K tokens):** Read agent memory sidecars for domain-relevant entries:
+  - {memory_path}/pm-sidecar/decision-log.md — PM decisions
+  - {memory_path}/architect-sidecar/decision-log.md — architecture decisions
+  - {memory_path}/sm-sidecar/decision-log.md — sprint decisions
+  Skip any sidecar that does not exist (no error). Extract only entries matching keywords.</action>
+
+  <action>**Test Artifacts (budget: 4K tokens):** Check {test_artifacts}/test-plan.md for coverage of the affected area. Check {test_artifacts}/traceability-matrix.md to map requirements to tests. Identify coverage gaps and recent test review findings.</action>
+
+  <action>Determine if the problem is technical (runtime bug, code error, performance issue) or non-technical (process, requirements, strategy). If technical, execute Tier 2.</action>
+
+  <action if="problem is technical">**Tier 2 — Codebase Scan (budget: 5K tokens):**
+  - Grep {project-path}/ for affected routes, services, components, functions matching keywords
+  - Run: git log --oneline -20 -- {affected_paths} to find recent changes in the area
+  - Identify related test files and check if they exist
+  Summarize findings — do not dump raw code.</action>
+
+  <action>Synthesize all gathered context into a **Context Brief**:
+  ## Context Brief
+  **Problem:** {problem_statement}
+  **Urgency:** {urgency_level}
+  **Keywords:** {expanded_keywords}
+
+  ### Relevant Requirements
+  {FR/NFR IDs and summaries from PRD}
+
+  ### Architecture Context
+  {affected components, ADRs, design decisions}
+
+  ### Related Stories
+  {story keys, titles, statuses, review gate results}
+
+  ### Sprint History
+  {relevant sprint notes, findings, tech debt entries}
+
+  ### Decision Log Entries
+  {relevant decisions from PM, architect, SM sidecars}
+
+  ### Test Coverage
+  {coverage status, gaps identified, recent test findings}
+
+  ### Codebase Context (if technical)
+  {affected files, recent changes, test file status}
+
+  ### Keyword Hit Counts
+  {table of each keyword and how many matches it had across Tier 1 and Tier 2 sources}
+
+  ### Token Usage
+  {breakdown of tokens consumed per source type vs. sub-budget, total token usage vs. 30K cap}
+  </action>
+
+  <action if="no relevant or matching context found across all tiers">Proceed gracefully with an empty Context Brief. Log an info-level note: "No relevant context found — proceeding with user-provided information only." Do not halt or error.</action>
+
+  <ask>Here is what I found. Is anything missing from this context? Any recent changes not captured in artifacts?</ask>
+  <action>Incorporate any additional context the user provides.</action>
+  <action>Persist the validated Context Brief to the workflow checkpoint for use by subsequent analysis steps. Save to {checkpoint_path}/ so downstream steps (Problem Framing, Root Cause Analysis) can reference the gathered context without re-scanning.</action>
+</step>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- PHASE 2: CONTEXT-INFORMED ANALYSIS                         -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+
+<step n="3" title="Problem Framing">
+  <!-- context-informed: uses gathered context from Step 2, falls back to user interrogation if unavailable -->
+  <action>Check if a Context Brief is available from the Step 2 checkpoint. Set context_brief_available = true if the checkpoint contains a non-empty Context Brief; false otherwise (Step 0 was skipped, or Context Brief is empty).</action>
+
+  <action if="context_brief_available">**Context-informed path (AC1, AC2):** Using the Context Brief, articulate the problem clearly and precisely. Distinguish the user's reported symptom from the underlying issue revealed by artifact context:
+  - Read **Architecture Context** section for component design and API contracts
+  - Read **Related Stories** section for implementation state and acceptance criteria
+  - Read **Relevant Requirements** section for PRD-level expectations
+  Do NOT ask the user for project context that is already present in the Context Brief.</action>
+
+  <action if="context_brief_available">Separate symptoms from root causes — cross-reference the reported symptom against architecture design (from Context Brief), story implementation notes, and test results. Only ask the user for clarification on information NOT present in the Context Brief (AC3).</action>
+
+  <action if="context_brief_available">Define what "solved" looks like — success criteria grounded in existing acceptance criteria from related stories and PRD requirements found in the Context Brief.</action>
+
+  <action if="not context_brief_available">**Fallback path (AC6):** Context Brief is not available — fall back to interrogation-based problem framing with no errors or degraded experience.</action>
+  <ask if="not context_brief_available">Describe your project architecture and the components involved in this problem.</ask>
+  <ask if="not context_brief_available">What related stories or features have been implemented in this area?</ask>
+  <action if="not context_brief_available">Articulate the problem clearly and precisely based on user-provided information.</action>
+  <action if="not context_brief_available">Separate symptoms from root causes based on the user's description.</action>
+  <action if="not context_brief_available">Define what "solved" looks like — success criteria based on the user's stated goals.</action>
+</step>
+
+<step n="4" title="Root Cause Analysis">
   <action>Load methods from {data_path}/solving-methods.csv</action>
-  <action>Apply appropriate methodology: 5 Whys, Fishbone Diagram, or TRIZ</action>
-  <action>Trace causal chains to their source</action>
-  <action>Validate root cause — does fixing it fix the symptoms?</action>
+
+  <action if="context_brief_available">**Context-informed path (AC1, AC2):** Apply appropriate methodology: 5 Whys, Fishbone Diagram, or TRIZ. Ground each "why" in evidence from the Context Brief:
+  - Use **Decision Log Entries** to understand WHY components were built this way
+  - Use **Architecture Context** to identify design constraints that may have caused the issue
+  - Use **Test Coverage** section to identify existing gaps
+  Do NOT ask the user for information already present in the Context Brief.</action>
+
+  <action if="context_brief_available">Trace causal chains to their source. Use decision logs from the Context Brief to understand design rationale. Only ask the user for clarification when the Context Brief lacks specific causal information (AC3).</action>
+
+  <action if="context_brief_available">Validate root cause — does fixing it fix the symptoms? Cross-check against the architecture constraints and related story acceptance criteria from the Context Brief.</action>
+
+  <action if="not context_brief_available">**Fallback path (AC6):** Context Brief is not available — fall back to interrogation-based root cause analysis.</action>
+  <action if="not context_brief_available">Apply appropriate methodology: 5 Whys, Fishbone Diagram, or TRIZ.</action>
+  <ask if="not context_brief_available">What decisions led to the current architecture in the affected area? Why was it built this way?</ask>
+  <ask if="not context_brief_available">What test coverage exists for the affected components?</ask>
+  <action if="not context_brief_available">Trace causal chains to their source based on user-provided information.</action>
+  <action if="not context_brief_available">Validate root cause — does fixing it fix the symptoms?</action>
+
+  <action>Identify **test gaps** (AC4, AC5): analyze what tests should have caught this problem but did not. For each gap found, create a test gap entry. Populate the `test_gaps` output as an array of objects, each containing:
+  - `file_path` (string): the file or module path where the test gap exists
+  - `gap_description` (string): what test is missing or inadequate
+  - `suggested_test_type` (enum: unit | integration | e2e): the type of test that should be added
+  - `severity` (enum: critical | high | medium | low): how important the missing coverage is
+  If no test gaps are identified (well-tested area), set `test_gaps` to an empty array — never omit the field.</action>
+
+  <action>Persist `test_gaps` array to the workflow checkpoint at {checkpoint_path}/ so downstream steps (Resolution Routing, Step 9 artifact) can reference it without re-analysis.</action>
 </step>
-<step n="3" title="Constraint Identification">
-  <action>What are the REAL constraints vs assumed constraints?</action>
-  <action>Challenge each constraint: who said this? when? is it still true?</action>
-  <action>Identify contradictions — what two things seem mutually exclusive?</action>
+
+<step n="5" title="Constraint Identification">
+  <!-- context-informed: checks ADRs and decision logs for real constraints, falls back to interrogation -->
+  <action if="context_brief_available">**Context-informed path (AC1, AC2):** Identify REAL constraints vs assumed constraints by reading the **Architecture Context** section of the Context Brief:
+  - Check ADRs directly — are constraints documented and still valid?
+  - Read **Decision Log Entries** for historical constraint rationale
+  Do NOT ask the user about constraints that are documented in the Context Brief.</action>
+
+  <action if="context_brief_available">Challenge each constraint using decision log evidence from the Context Brief: who decided this? when? has the context changed since? Only ask the user about constraints NOT documented in available artifacts (AC3).</action>
+
+  <action if="not context_brief_available">**Fallback path (AC6):** Context Brief is not available — fall back to interrogation-based constraint identification.</action>
+  <ask if="not context_brief_available">What are the known constraints in this area? (technical, business, timeline)</ask>
+  <ask if="not context_brief_available">Who established these constraints and when? Are they still valid?</ask>
+  <action if="not context_brief_available">Determine what are the REAL constraints vs assumed constraints based on user input.</action>
+
+  <action>Identify contradictions — what two things seem mutually exclusive? Use TRIZ contradiction matrix if applicable.</action>
 </step>
-<step n="4" title="Solution Generation">
+
+<step n="6" title="Solution Generation">
   <action>Use TRIZ inventive principles or Theory of Constraints approach</action>
   <action>Apply First Principles thinking — reason up from fundamentals</action>
-  <action>Generate at least 5 candidate solutions</action>
+
+  <action if="context_brief_available">**Context-informed path (AC1, AC2):** Generate at least 5 candidate solutions. For each, use the Context Brief to:
+  - Note which **architecture components** (from Architecture Context section) would be affected
+  - Identify which **stories** (from Related Stories section) would need changes
+  - Cross-check against **ADR constraints** from the Architecture Context — flag solutions that would violate existing decisions
+  - Cross-check against **PRD requirements** from the Relevant Requirements section
+  Do NOT ask the user for architecture or requirement context that exists in the Context Brief.</action>
+
+  <action if="not context_brief_available">**Fallback path (AC6):** Generate at least 5 candidate solutions. For each, note which architecture components and stories would be affected.</action>
+  <ask if="not context_brief_available">What architecture patterns and components are involved in this area?</ask>
+  <action if="not context_brief_available">Cross-check each solution against known constraints and requirements as described by the user. Flag solutions that may violate existing decisions.</action>
 </step>
-<step n="5" title="Solution Evaluation">
-  <action>Assess feasibility, impact, and effort for each solution</action>
+
+<step n="7" title="Solution Evaluation">
+  <action if="context_brief_available">**Context-informed path (AC1, AC2):** Assess feasibility, impact, and effort for each solution:
+  - Use **Codebase Context** (Tier 2 data) from the Context Brief to ground effort estimates in actual code complexity
+  - Map solutions against **architecture constraints** and **PRD requirements** from the Context Brief
+  Do NOT ask the user for codebase details or effort estimates when that information is available in the Context Brief. Only ask for clarification on information NOT present (AC3).</action>
+
+  <action if="not context_brief_available">**Fallback path (AC6):** Assess feasibility, impact, and effort for each solution.</action>
+  <ask if="not context_brief_available">How complex is the codebase in the affected area? What is the estimated effort for each solution?</ask>
+
   <action>Map solutions to a 2x2: impact vs effort</action>
-  <action>Select the solution that best resolves the root cause</action>
+  <action>Select the solution that best resolves the root cause without violating architecture constraints.</action>
+  <action>Document rejected solutions with clear reasons — these will be passed to the dev agent to prevent re-exploration.</action>
 </step>
-<step n="6" title="Action Plan">
-  <action>Define concrete next steps with owners and timelines</action>
-  <action>Identify risks and mitigation strategies</action>
-  <action>Define how to measure success</action>
-  <template-output file="{creative_artifacts}/problem-solving-{date}.md" />
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- PHASE 3: RESOLUTION ROUTING                                -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+
+<step n="8" title="Resolution Classification">
+  <critical>
+    <mandate>Classification is based on analysis output — do NOT invoke agents for classification</mandate>
+    <mandate>User MUST confirm or override classification before routing proceeds</mandate>
+  </critical>
+
+  <action>Read the analysis output from the prior steps. Evaluate the root cause against the classification decision matrix:
+
+  **Quick fix / isolated-fix** (&lt; 1 story point):
+  - Affects 1-2 files in a single component (component_count = 1, requires_upstream = false)
+  - Root cause is clear and fix is bounded (config error, typo, off-by-one, missing condition)
+  - No new requirements needed
+
+  **Bug fix** (bounded scope, needs story):
+  - Affects multiple files or components
+  - Needs acceptance criteria and targeted testing
+  - Clear root cause with bounded fix
+
+  **Critical / Production** (any scope, urgent):
+  - Urgency is critical — production outage or blocking issue
+  - Same as quick fix or bug fix but with priority:critical and priority_flag:next-sprint
+
+  **Enhancement** (design gap revealed):
+  - Root cause is a missing capability or design limitation (component_count > 1 OR design gap identified)
+  - Requires PRD/architecture/UX changes — broader than a fix
+  - Route through /gaia-add-feature for proper cascade
+
+  **Systemic** (architecture or requirements problem):
+  - Root cause is in the architecture design or requirements definition (requires_upstream = true)
+  - Fix requires upstream changes before implementation
+  - Escalate to Theo (architecture) or Derek (requirements)
+
+  If the scope analysis is inconclusive or the root cause does not match any single category, present all options without a highlighted recommendation. Otherwise, highlight the recommended classification.</action>
+
+  <action>Present the recommended classification to the user with reasoning. Include: classification, affected components, estimated scope, and the resolution path that will be taken.</action>
+  <ask>Do you agree with this classification?
+
+  Options:
+  [1] Confirm classification as the recommended type and proceed to routing
+  [2] Override classification — choose a different type:
+      - quick-fix/bug/critical: route to /gaia-create-story
+      - enhancement: route to /gaia-add-feature
+      - systemic: generate Problem Brief + escalation
+  [3] Decline routing — complete workflow with action plan only, skip all downstream routing
+
+  If override is selected, re-route to the selected classification path.
+  If decline is selected, skip routing and complete with action plan output only.</ask>
+</step>
+
+<step n="9" title="Problem-Solving Artifact">
+  <template-output file="{creative_artifacts}/problem-solving-{date}.md">
+    Generate the problem-solving artifact with the following structure:
+
+    ---
+    template: problem-solving
+    date: {date}
+    urgency: {urgency_level}
+    classification: {resolution_classification}
+    status: resolved
+    keywords: [{expanded_keywords}]
+    affected_components: [{components}]
+    root_cause: "{root_cause_summary}"
+    test_gaps: [{test_gaps_array}]
+    resolution_path: "{quick-fix|bug|critical|enhancement|systemic}"
+    ---
+
+    # Problem-Solving Report: {problem_title}
+
+    ## Problem Statement
+    {user's original problem description}
+
+    ## Urgency
+    {urgency_level} — {urgency_justification}
+
+    ## Context Brief
+    {summarized context gathered in Step 2}
+
+    ## Root Cause Analysis
+    **Methodology:** {5 Whys / Fishbone / TRIZ}
+    **Root Cause:** {identified root cause with evidence}
+    **Causal Chain:** {documented chain from symptom to root cause}
+
+    ### Test Gaps
+    | # | File Path | Gap Description | Suggested Test Type | Severity |
+    |---|-----------|-----------------|---------------------|----------|
+    {for each entry in test_gaps array: file_path, gap_description, suggested_test_type, severity}
+    (Empty table if no test gaps identified)
+
+    ## Constraints
+    {real vs assumed constraints, with ADR references}
+
+    ## Solutions Considered
+    | # | Solution | Impact | Effort | Feasibility | Status |
+    |---|----------|--------|--------|-------------|--------|
+    {5+ solutions with selected and rejected status}
+
+    ## Selected Solution
+    {detailed description of chosen solution and why}
+
+    ## Rejected Solutions
+    {each rejected solution with clear reasoning — passed to dev agent}
+
+    ## Resolution Route
+    **Classification:** {quick-fix / bug / critical / enhancement / systemic}
+    **Path:** {/gaia-create-story / /gaia-add-feature / Escalate to {agent}}
+    **Pre-populated story context:** {summary of what will be passed to story creation}
+
+    ## Risk Assessment
+    {risks of the selected solution and mitigation strategies}
+
+    ## Success Metrics
+    {how to measure that the problem is truly solved}
+  </template-output>
+</step>
+
+<step n="10" title="Resolution Execution">
+  <action if="classification is quick-fix or bug or critical">
+    Prepare context for /gaia-create-story invocation with pre-populated fields:
+    - title: derived from problem statement and root cause
+    - epic: auto-detected from related stories found in Context Brief (or ask user if ambiguous)
+    - priority: P0 for critical, P1 for high urgency, P2 for medium/low
+    - priority_flag: "next-sprint" if urgency is critical or high
+    - origin: "problem-solving"
+    - origin_ref: "{creative_artifacts}/problem-solving-{date}.md"
+    - root_cause, affected_components, acceptance_criteria, rejected_solutions
+    - Include in Dev Notes: root cause, affected components, selected solution, rejected solutions, test_gaps array
+    - Include in acceptance criteria: criteria that verify the root cause is resolved + each test gap in test_gaps is closed
+
+    If test_gaps were identified during analysis, propagate them into the created story's Dev Notes section with structured fields: file path, gap description, suggested test type, severity.
+    If no test_gaps exist, create the story without a test gaps section — no error.
+    If the invocation fails (crash, context too large), log a warning and fall back to the action plan output only.
+  </action>
+  <invoke-workflow if="classification is quick-fix or bug or critical" ref="create-story" context="Pre-populated from problem-solving analysis: title, epic, priority, origin=problem-solving, origin_ref={creative_artifacts}/problem-solving-{date}.md, root_cause, affected_components, acceptance_criteria, test_gaps (propagated to Dev Notes), rejected_solutions" />
+
+  <action if="classification is enhancement">
+    Route to /gaia-add-feature with the problem-solving artifact as context.
+    Present to user: "This resolution reveals a design gap. Routing to /gaia-add-feature for proper triage and cascade."
+    Pass: scope_analysis, affected_components, proposed_changes, context_ref={creative_artifacts}/problem-solving-{date}.md
+    If the invocation fails (crash, context too large), log a warning and fall back to the action plan output only.
+  </action>
+  <invoke-workflow if="classification is enhancement" ref="add-feature" context="Scope analysis and affected components from problem-solving: scope_analysis, affected_components, proposed_changes, context_ref={creative_artifacts}/problem-solving-{date}.md" />
+
+  <!-- Problem Brief output path: docs/planning-artifacts/problem-brief-{date}.md -->
+  <action if="classification is systemic">
+    Do NOT invoke a subagent. Present the escalation to the user:
+    "This is a systemic issue requiring upstream changes. Escalating to {Theo if architecture / Derek if requirements}."
+
+    Generate a **Problem Brief** for the receiving agent:
+    ## Problem Brief (for {agent_name})
+    **From:** Nova (Problem-Solving)
+    **Source:** {creative_artifacts}/problem-solving-{date}.md
+    **Root Cause:** {root_cause}
+    **Affected Components:** {components}
+    **Constraints:** {real constraints identified}
+    **Evidence:** {key evidence from context gathering}
+    **Rejected Approaches:** {solutions that don't work and why}
+    **Recommendation:** {what Nova thinks should change at the architecture/requirements level}
+
+    Present the Problem Brief and suggest: "Run /gaia-agent-architect or /gaia-agent-pm to continue."
+  </action>
+  <template-output if="classification is systemic" file="{planning_artifacts}/problem-brief-{date}.md" />
+
+  <action>When subagent returns (if applicable): capture the created story key or add-feature ID. Update the problem-solving artifact with the resolution reference.</action>
+</step>
+
+<step n="11" title="Completion Summary">
+  <action>Present final summary:
+
+  **Problem-Solving Complete**
+
+  | Field | Value |
+  |-------|-------|
+  | Problem | {problem_statement} |
+  | Root Cause | {root_cause} |
+  | Classification | {classification} |
+  | Resolution | {story_key or add-feature ID or escalation target} |
+  | Test Gaps | {test_gaps.length} identified ({test_gaps summary}) |
+  | Artifact | {creative_artifacts}/problem-solving-{date}.md |
+
+  **Next steps:**
+  - Quick fix / Bug / Critical: "Run `/gaia-dev-story {story_key}` to implement the fix."
+  - Enhancement: "Add-feature cascade in progress. Check assessment doc when complete."
+  - Systemic: "Consult with {agent_name} to resolve the upstream issue before implementation."
+  </action>
 </step>
 </workflow>

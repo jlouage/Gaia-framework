@@ -33,7 +33,7 @@ name,displayName,description,module,phase,path,command,agent
 "quick-dev","Quick Dev","Implement a quick spec","lifecycle","quick-flow","_gaia/lifecycle/workflows/quick-flow/quick-dev/workflow.yaml","gaia-quick-dev","dev-*"
 "design-thinking","Design Thinking","Guide human-centered design process","creative","anytime","_gaia/creative/workflows/design-thinking/workflow.yaml","gaia-design-thinking","design-thinking-coach"
 "innovation-strategy","Innovation Strategy","Identify disruption opportunities","creative","anytime","_gaia/creative/workflows/innovation-strategy/workflow.yaml","gaia-innovation","innovation-strategist"
-"problem-solving","Problem Solving","Apply systematic problem-solving methodologies","creative","anytime","_gaia/creative/workflows/problem-solving/workflow.yaml","gaia-problem-solving","problem-solver"
+"problem-solving","Problem Solving","Apply systematic problem-solving methodologies with resolution routing","creative","anytime","_gaia/creative/workflows/problem-solving/workflow.yaml","gaia-problem-solving","problem-solver"
 "storytelling","Storytelling","Craft compelling narratives","creative","anytime","_gaia/creative/workflows/storytelling/workflow.yaml","gaia-storytelling","storyteller"
 "teach-me-testing","Teach Me Testing","Teach testing progressively","testing","anytime","_gaia/testing/workflows/teach-me-testing/workflow.yaml","gaia-teach-testing","test-architect"
 "edit-test-plan","Edit Test Plan","Edit an existing test plan — add test cases without regenerating","testing","anytime","_gaia/testing/workflows/edit-test-plan/workflow.yaml","gaia-edit-test-plan","test-architect"
