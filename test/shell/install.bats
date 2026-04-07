@@ -1801,3 +1801,214 @@ YAML
 
   rm -rf "$SRC_DIR"
 }
+
+# ─── E18-S1: Sprint Gate — Hard Block on Active Sprint ────────────────────
+
+# Helper: create a minimal installed GAIA target with sprint-status.yaml
+create_installed_target_with_sprint() {
+  local tgt="$1" sprint_yaml="$2"
+  local src
+  src="$(mktemp -d)"
+  create_mock_source "$src"
+
+  # Init a real install so all dirs exist
+  bash "$SCRIPT" init --source "$src" --yes "$tgt" >/dev/null 2>&1
+
+  # Write sprint-status.yaml
+  mkdir -p "$tgt/docs/implementation-artifacts"
+  echo "$sprint_yaml" > "$tgt/docs/implementation-artifacts/sprint-status.yaml"
+
+  # Return source dir path for update --source
+  echo "$src"
+}
+
+@test "E18-S1/SUS-01: update blocks when a story is in-progress (AC1, AC2)" {
+  local sprint_yaml
+  sprint_yaml="$(cat <<'YAML'
+sprint_id: "sprint-10"
+stories:
+  - key: "E1-S1"
+    title: "Test Story"
+    status: "in-progress"
+    points: 3
+YAML
+)"
+  local SRC_DIR
+  SRC_DIR="$(create_installed_target_with_sprint "$TEST_DIR" "$sprint_yaml")"
+
+  run bash "$SCRIPT" update --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"Upgrade blocked"* ]]
+  [[ "$output" == *"sprint-10"* ]]
+  [[ "$output" == *"1 stor"* ]]
+
+  rm -rf "$SRC_DIR"
+}
+
+@test "E18-S1/SUS-02: update blocks when a story is in review (AC1, AC2)" {
+  local sprint_yaml
+  sprint_yaml="$(cat <<'YAML'
+sprint_id: "sprint-10"
+stories:
+  - key: "E2-S3"
+    title: "Review Story"
+    status: "review"
+    points: 5
+YAML
+)"
+  local SRC_DIR
+  SRC_DIR="$(create_installed_target_with_sprint "$TEST_DIR" "$sprint_yaml")"
+
+  run bash "$SCRIPT" update --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"Upgrade blocked"* ]]
+
+  rm -rf "$SRC_DIR"
+}
+
+@test "E18-S1/SUS-03: update blocks when a story is ready-for-dev (AC1, AC2)" {
+  local sprint_yaml
+  sprint_yaml="$(cat <<'YAML'
+sprint_id: "sprint-10"
+stories:
+  - key: "E3-S1"
+    title: "Ready Story"
+    status: "ready-for-dev"
+    points: 2
+YAML
+)"
+  local SRC_DIR
+  SRC_DIR="$(create_installed_target_with_sprint "$TEST_DIR" "$sprint_yaml")"
+
+  run bash "$SCRIPT" update --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"Upgrade blocked"* ]]
+
+  rm -rf "$SRC_DIR"
+}
+
+@test "E18-S1/SUS-04: update proceeds when all stories are done (AC3)" {
+  local sprint_yaml
+  sprint_yaml="$(cat <<'YAML'
+sprint_id: "sprint-10"
+stories:
+  - key: "E1-S1"
+    title: "Done Story"
+    status: "done"
+    points: 3
+  - key: "E1-S2"
+    title: "Backlog Story"
+    status: "backlog"
+    points: 2
+YAML
+)"
+  local SRC_DIR
+  SRC_DIR="$(create_installed_target_with_sprint "$TEST_DIR" "$sprint_yaml")"
+
+  run bash "$SCRIPT" update --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+  [[ "$output" != *"Upgrade blocked"* ]]
+
+  rm -rf "$SRC_DIR"
+}
+
+@test "E18-S1/SUS-05: update proceeds when no sprint file exists (AC3)" {
+  local SRC_DIR
+  SRC_DIR="$(mktemp -d)"
+  create_mock_source "$SRC_DIR"
+
+  # Init without sprint-status.yaml
+  bash "$SCRIPT" init --source "$SRC_DIR" --yes "$TEST_DIR" >/dev/null 2>&1
+
+  # Ensure no sprint file exists
+  rm -f "$TEST_DIR/docs/implementation-artifacts/sprint-status.yaml"
+
+  run bash "$SCRIPT" update --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+  [[ "$output" != *"Upgrade blocked"* ]]
+
+  rm -rf "$SRC_DIR"
+}
+
+@test "E18-S1: update counts multiple active stories in error message (AC2)" {
+  local sprint_yaml
+  sprint_yaml="$(cat <<'YAML'
+sprint_id: "sprint-10"
+stories:
+  - key: "E1-S1"
+    title: "Story A"
+    status: "in-progress"
+    points: 3
+  - key: "E1-S2"
+    title: "Story B"
+    status: "review"
+    points: 5
+  - key: "E1-S3"
+    title: "Story C"
+    status: "done"
+    points: 2
+YAML
+)"
+  local SRC_DIR
+  SRC_DIR="$(create_installed_target_with_sprint "$TEST_DIR" "$sprint_yaml")"
+
+  run bash "$SCRIPT" update --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"2 stor"* ]]
+
+  rm -rf "$SRC_DIR"
+}
+
+@test "E18-S1: --skip-sprint-gate bypasses the gate (AC5)" {
+  local sprint_yaml
+  sprint_yaml="$(cat <<'YAML'
+sprint_id: "sprint-10"
+stories:
+  - key: "E1-S1"
+    title: "Active Story"
+    status: "in-progress"
+    points: 3
+YAML
+)"
+  local SRC_DIR
+  SRC_DIR="$(create_installed_target_with_sprint "$TEST_DIR" "$sprint_yaml")"
+
+  run bash "$SCRIPT" update --source "$SRC_DIR" --yes --skip-sprint-gate "$TEST_DIR"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"sprint gate bypassed"* ]] || [[ "$output" == *"Sprint gate bypassed"* ]] || [[ "$output" == *"--skip-sprint-gate"* ]]
+
+  rm -rf "$SRC_DIR"
+}
+
+@test "E18-S1: --help mentions --skip-sprint-gate (AC5)" {
+  run bash "$SCRIPT" --help
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"--skip-sprint-gate"* ]]
+}
+
+@test "E18-S1: sprint gate completes within 2 seconds (AC4)" {
+  local sprint_yaml
+  sprint_yaml="$(cat <<'YAML'
+sprint_id: "sprint-10"
+stories:
+  - key: "E1-S1"
+    title: "Story A"
+    status: "in-progress"
+    points: 3
+YAML
+)"
+  local SRC_DIR
+  SRC_DIR="$(create_installed_target_with_sprint "$TEST_DIR" "$sprint_yaml")"
+
+  local start_time end_time elapsed
+  start_time="$(date +%s)"
+  run bash "$SCRIPT" update --source "$SRC_DIR" --yes "$TEST_DIR"
+  end_time="$(date +%s)"
+  elapsed=$(( end_time - start_time ))
+
+  # Gate should fail fast (exit code 1) within 2 seconds
+  [ "$status" -eq 1 ]
+  [ "$elapsed" -le 2 ]
+
+  rm -rf "$SRC_DIR"
+}

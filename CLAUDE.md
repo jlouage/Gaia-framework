@@ -254,6 +254,16 @@ Publishing is fully automated — no manual steps required beyond creating the p
 
 After a release, verify: `npm view gaia-framework version`
 
+## Sprint Gate (Upgrade Protection)
+
+The installer's `update` command includes a sprint gate that prevents framework upgrades while a sprint is active. Before any files are modified, the installer reads `docs/implementation-artifacts/sprint-status.yaml` and checks whether any story has status `in-progress`, `review`, or `ready-for-dev`.
+
+- **Active sprint detected:** the upgrade halts with exit code 1 and a message identifying the sprint and the number of active stories.
+- **No active sprint** (all stories `done` or `backlog`): the gate passes and the upgrade proceeds.
+- **No sprint file:** the gate passes silently (fresh project or no sprint started).
+
+To bypass the gate (not recommended): `gaia-install.sh update --skip-sprint-gate [target]`
+
 ## Do Not
 
 - Pre-load files — load at runtime when needed
