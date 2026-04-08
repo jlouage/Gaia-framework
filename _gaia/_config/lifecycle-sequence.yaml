@@ -558,6 +558,17 @@ sequence:
         - command: /gaia-run-all-reviews
           context: "To complete the review gate"
 
+  test-gap-analysis:
+    module: testing
+    command: /gaia-test-gap-analysis
+    next:
+      standalone: true
+      suggestions:
+        - command: /gaia-test-design
+          context: "To design tests covering newly identified coverage gaps"
+        - command: /gaia-test-automate
+          context: "To automate tests filling the identified gaps"
+
   traceability:
     module: testing
     command: /gaia-trace

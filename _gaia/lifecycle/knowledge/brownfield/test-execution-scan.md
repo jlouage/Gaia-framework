@@ -12,18 +12,65 @@ Run the existing test suite at `{project-path}` during brownfield discovery. Cap
 
 ## Test Runner Auto-Detection
 
-Detect the test runner by checking for the following files at `{project-path}`. Use the **priority order** below — select the first matching runner. For monorepo/polyglot projects, detect **all** matching runners and execute them sequentially.
+Detect the test runner by checking for the following files at `{project-path}`. For monorepo/polyglot projects, detect **all** matching runners and execute them sequentially. Use the `detectTestRunners()` function from `src/brownfield/test-runner-detector.js` when available as a programmatic alternative.
 
 ### Detection Priority Order
 
-| Priority | File Check | Condition | Runner Command |
-|----------|-----------|-----------|----------------|
-| 1 | `package.json` | Has `scripts.test` defined AND value is not `"echo \"Error: no test specified\""` | `npm test` |
-| 2 | `pytest.ini` / `pyproject.toml` / `setup.cfg` | `pytest.ini` exists, OR `pyproject.toml` contains `[tool.pytest]`, OR `setup.cfg` contains `[tool:pytest]` | `pytest` |
-| 3 | `pom.xml` | File exists | `mvn test` |
-| 4 | `build.gradle` / `build.gradle.kts` | Either file exists | `gradle test` |
-| 5 | `go.mod` | File exists | `go test ./...` |
-| 6 | `pubspec.yaml` | File exists | `flutter test` |
+#### JavaScript/TypeScript — Granular Runner Detection (FR-231)
+
+Check `package.json` `devDependencies` for known runners: `jest`, `vitest`, `mocha`, `jasmine`. Also check `scripts.test` for runner name references. Additionally check for config files:
+
+| Runner | devDependencies Key | Config Files | Runner Command |
+|--------|-------------------|--------------|----------------|
+| Jest | `jest` | `jest.config.js`, `jest.config.ts`, `jest.config.json` | `npx jest` or `npm test` |
+| Vitest | `vitest` | `vitest.config.js`, `vitest.config.ts` | `npx vitest run` or `npm test` |
+| Mocha | `mocha` | `.mocharc.js`, `.mocharc.yml`, `.mocharc.json` | `npx mocha` or `npm test` |
+| Jasmine | `jasmine` | — | `npx jasmine` or `npm test` |
+
+If `package.json` has `scripts.test` defined (and value is not the npm default `"echo \"Error: no test specified\""`), fall back to `npm test` as the runner command.
+
+#### Python
+
+| File Check | Condition | Runner Command |
+|-----------|-----------|----------------|
+| `pytest.ini` / `pyproject.toml` / `setup.cfg` | `pytest.ini` exists, OR `pyproject.toml` contains `[tool.pytest]`, OR `setup.cfg` contains `[tool:pytest]` | `pytest` |
+
+#### Java — JUnit via Maven or Gradle
+
+| File Check | Condition | Runner Command |
+|-----------|-----------|----------------|
+| `pom.xml` | File exists (Maven convention implies JUnit/Surefire) | `mvn test` |
+| `build.gradle` / `build.gradle.kts` | Either file exists AND contains `test {` block | `gradle test` |
+
+#### Go
+
+| File Check | Condition | Runner Command |
+|-----------|-----------|----------------|
+| `go.mod` | File exists | `go test ./...` |
+
+#### Flutter/Dart
+
+| File Check | Condition | Runner Command |
+|-----------|-----------|----------------|
+| `pubspec.yaml` | File exists | `flutter test` |
+
+#### BATS (Bash Automated Testing System)
+
+| File Check | Condition | Runner Command |
+|-----------|-----------|----------------|
+| `*.bats` files | Any `.bats` file found in project root or test directories (max 2 levels deep) | `bats test/` |
+
+### Monorepo Support (AC5, AC6)
+
+For monorepo projects, detect workspace packages from:
+- `package.json` `workspaces` field (npm/yarn workspaces)
+- `pnpm-workspace.yaml` `packages` list
+
+Scan each workspace package directory independently. All detected runners are collected into an array — no overwriting. Duplicates are deduplicated.
+
+### Zero False Positives (NFR-041)
+
+Only report a detected runner when a config file OR a package.json dependency is explicitly found. Never guess based on file contents, comments, or heuristics alone. If no runner is detected, result is `null` (or empty array), not a guess.
 
 ### No Test Suite Detected (AC6)
 
