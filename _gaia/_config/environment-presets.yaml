@@ -1,0 +1,140 @@
+# GAIA Environment Presets — E20-S2 (FR-245, ADR-033)
+#
+# User-facing entry point for promotion-chain configuration. Each preset is a
+# complete, ready-to-use promotion_chain array that can be copied into
+# global.yaml under `ci_cd.promotion_chain`. The presets are consumed by
+# /gaia-ci-setup (E20-S3) which offers them during initial project setup.
+#
+# The schema of each promotion_chain entry is defined in architecture §10.24.1
+# and enforced by the E20-S1 validator (test/validators/promotion-chain-validator.js).
+# Required fields per entry: id, name, branch, ci_provider.
+# Optional fields used here: merge_strategy, environment, test_tiers, auto_merge,
+# approval_required, description, ci_checks.
+#
+# Test-tier convention (§10.24.3): additive — later environments include all
+# earlier tiers plus additional ones (e.g., [1] -> [1, 2] -> [1, 2, 3]).
+#
+# Backward compatibility (NFR-045): this file is purely additive. Projects that
+# do not set `ci_cd.promotion_chain` in global.yaml are unaffected.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# solo — Solo developer shipping direct to main
+# ─────────────────────────────────────────────────────────────────────────────
+solo:
+  description: "Solo developer shipping direct to main. Single environment, auto-merge, full test coverage on the only branch."
+  promotion_chain:
+    - id: "prod"
+      name: "Production"
+      branch: "main"
+      environment: "production"
+      ci_provider: "github_actions"
+      merge_strategy: "squash"
+      test_tiers: [1, 2, 3]
+      auto_merge: true
+      description: "Solo preset — single environment on main. auto_merge is enabled because there is no upstream environment to promote from."
+
+# ─────────────────────────────────────────────────────────────────────────────
+# small-team — 2-5 developers with a single pre-prod gate
+# ─────────────────────────────────────────────────────────────────────────────
+small-team:
+  description: "Small team (2-5 developers) with a single pre-prod gate. Feature branches merge to develop for integration, then promote to main for release."
+  promotion_chain:
+    - id: "dev"
+      name: "Development"
+      branch: "develop"
+      environment: "development"
+      ci_provider: "github_actions"
+      merge_strategy: "squash"
+      test_tiers: [1]
+      auto_merge: false
+      description: "Integration branch for the small team. Runs tier-1 (unit + lint) on every feature merge."
+    - id: "prod"
+      name: "Production"
+      branch: "main"
+      environment: "production"
+      ci_provider: "github_actions"
+      merge_strategy: "squash"
+      test_tiers: [1, 2, 3]
+      auto_merge: false
+      description: "Release branch. Runs the full tier-1/2/3 suite before promotion from develop."
+
+# ─────────────────────────────────────────────────────────────────────────────
+# standard — Standard three-tier flow (dev -> staging -> prod)
+# ─────────────────────────────────────────────────────────────────────────────
+standard:
+  description: "Standard three-tier flow for most product teams. Feature branches land on develop, promote to staging for pre-prod validation, then promote to main for release."
+  promotion_chain:
+    - id: "dev"
+      name: "Development"
+      branch: "develop"
+      environment: "development"
+      ci_provider: "github_actions"
+      merge_strategy: "squash"
+      test_tiers: [1]
+      auto_merge: false
+      description: "Integration branch. Tier-1 tests run on every feature merge."
+    - id: "staging"
+      name: "Staging"
+      branch: "staging"
+      environment: "staging"
+      ci_provider: "github_actions"
+      merge_strategy: "squash"
+      test_tiers: [1, 2]
+      auto_merge: false
+      description: "Pre-production validation. Adds tier-2 (integration) tests on top of tier-1."
+    - id: "prod"
+      name: "Production"
+      branch: "main"
+      environment: "production"
+      ci_provider: "github_actions"
+      merge_strategy: "squash"
+      test_tiers: [1, 2, 3]
+      auto_merge: false
+      description: "Production release. Runs the full tier-1/2/3 suite before promotion from staging."
+
+# ─────────────────────────────────────────────────────────────────────────────
+# enterprise — Four-stage flow with dedicated UAT and approval gates
+# ─────────────────────────────────────────────────────────────────────────────
+enterprise:
+  description: "Enterprise four-stage flow with a dedicated UAT environment and mandatory approval gates on staging and production. Uses merge (not squash) to preserve individual commit history for audit trails."
+  promotion_chain:
+    - id: "dev"
+      name: "Development"
+      branch: "develop"
+      environment: "development"
+      ci_provider: "github_actions"
+      merge_strategy: "merge"
+      test_tiers: [1]
+      auto_merge: false
+      approval_required: false
+      description: "Integration branch. Tier-1 tests (unit + lint) on every feature merge."
+    - id: "uat"
+      name: "User Acceptance Testing"
+      branch: "uat"
+      environment: "uat"
+      ci_provider: "github_actions"
+      merge_strategy: "merge"
+      test_tiers: [1, 2]
+      auto_merge: false
+      approval_required: false
+      description: "User acceptance testing environment. Adds tier-2 integration tests. Business stakeholders validate features here before staging promotion."
+    - id: "staging"
+      name: "Staging"
+      branch: "staging"
+      environment: "staging"
+      ci_provider: "github_actions"
+      merge_strategy: "merge"
+      test_tiers: [1, 2, 3]
+      auto_merge: false
+      approval_required: true
+      description: "Pre-production staging. Runs the full tier-1/2/3 suite. Requires explicit approval before promotion — enforced by branch protection."
+    - id: "prod"
+      name: "Production"
+      branch: "main"
+      environment: "production"
+      ci_provider: "github_actions"
+      merge_strategy: "merge"
+      test_tiers: [1, 2, 3]
+      auto_merge: false
+      approval_required: true
+      description: "Production release. Requires explicit approval before promotion from staging — enforced by branch protection and a release manager sign-off."

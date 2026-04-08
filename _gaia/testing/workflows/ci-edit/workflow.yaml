@@ -1,0 +1,30 @@
+name: ci-edit
+description: 'Edit the ci_cd.promotion_chain in global.yaml — add, remove, edit, or reorder environments'
+module: testing
+agent: test-architect
+val_validate_output: true
+config_resolved: "{installed_path}/.resolved/ci-edit.yaml"
+config_source: "{project-root}/_gaia/testing/config.yaml"
+installed_path: "{project-root}/_gaia/testing/workflows/ci-edit"
+instructions: "{installed_path}/instructions.xml"
+validation: "{installed_path}/checklist.md"
+input_file_patterns:
+  global_yaml:
+    whole: "{project-root}/_gaia/_config/global.yaml"
+    load_strategy: "FULL_LOAD"
+  test_environment:
+    whole: "{project-root}/_gaia/_config/test-environment.yaml"
+    load_strategy: "FULL_LOAD"
+quality_gates:
+  pre_start:
+    - check: "global_yaml_exists"
+      on_fail: "HALT: global.yaml not found at {project-root}/_gaia/_config/global.yaml. This workflow edits the ci_cd.promotion_chain block — run /gaia-ci-setup first to create the initial chain."
+  post_complete:
+    - check: "chain_passes_e20_s1_validator"
+      on_fail: "HALT: updated promotion chain failed schema validation — changes were not written to {project-root}/_gaia/_config/global.yaml. Review violations above and re-run /gaia-ci-edit."
+on_error:
+  missing_file: "ask_user"
+  unresolved_variable: "halt"
+
+output:
+  primary: "{project-root}/_gaia/_config/global.yaml"

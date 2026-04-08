@@ -7,6 +7,13 @@ const SIDECAR_DIR = join(MEMORY_DIR, "validator-sidecar");
 const GROUND_TRUTH = join(SIDECAR_DIR, "ground-truth.md");
 const MEMORY_CONFIG = join(MEMORY_DIR, "config.yaml");
 
+/**
+ * E8-S13: Val Permanent Memory and Ground Truth Seed
+ *
+ * Per E9-S22, sidecars ship as empty templates (entry_count: 0). Ground truth
+ * population is a runtime operation performed by `/gaia-refresh-ground-truth`.
+ * These tests validate the shipped template structure, not populated content.
+ */
 describe("E8-S13: Val Permanent Memory and Ground Truth Seed", () => {
   // AC1: validator-sidecar directory with 3 required files
   describe("AC1: Validator sidecar structure", () => {
@@ -24,76 +31,30 @@ describe("E8-S13: Val Permanent Memory and Ground Truth Seed", () => {
     });
   });
 
-  // AC2: Ground truth seeded with verified facts and counts
-  describe("AC2: Ground truth seeded facts", () => {
-    it("test_ac2_ground_truth_seeded_facts — contains sections for all framework asset types with counts", () => {
+  // AC2: Ground truth shipped as empty template (entry_count: 0)
+  describe("AC2: Ground truth empty template invariant", () => {
+    it("test_ac2_ground_truth_empty_template — frontmatter entry_count is 0", () => {
       expect(existsSync(GROUND_TRUTH)).toBe(true);
 
-      const content = readFileSync(GROUND_TRUTH, "utf-8").toLowerCase();
+      const content = readFileSync(GROUND_TRUTH, "utf-8");
+      const entryMatch = content.match(/entry_count:\s*(\d+)/);
+      expect(entryMatch, "entry_count must exist in frontmatter").not.toBeNull();
+      expect(parseInt(entryMatch[1], 10), "empty template ships with entry_count: 0").toBe(0);
 
-      const requiredSections = [
-        "workflow",
-        "instruction",
-        "slash command",
-        "skill",
-        "template",
-        "agent",
-        "manifest",
-      ];
-
-      for (const section of requiredSections) {
-        expect(content, `Missing section for: ${section}`).toContain(section);
-      }
-
-      // Verify counts are present (numbers following section references)
-      const countPattern = /\b\d+\b/;
-      expect(content).toMatch(countPattern);
-
-      // Verify counts reference filesystem verification
-      expect(content).toMatch(/verif|count|total|found/);
+      const tokensMatch = content.match(/estimated_tokens:\s*(\d+)/);
+      expect(tokensMatch, "estimated_tokens must exist in frontmatter").not.toBeNull();
+      expect(parseInt(tokensMatch[1], 10), "empty template ships with estimated_tokens: 0").toBe(0);
     });
   });
 
-  // AC3: Documentation of corrections, inventories, patterns, structure, coverage
-  describe("AC3: Ground truth documentation sections", () => {
-    it("test_ac3_ground_truth_documentation_sections — contains correction, inventory, pattern, structure, and coverage sections", () => {
+  // AC3: Ground truth has canonical header and description
+  describe("AC3: Ground truth canonical structure", () => {
+    it("test_ac3_ground_truth_canonical_structure — has header and description", () => {
       expect(existsSync(GROUND_TRUTH)).toBe(true);
 
-      const content = readFileSync(GROUND_TRUTH, "utf-8").toLowerCase();
-
-      const requiredDocSections = [
-        {
-          name: "location corrections",
-          patterns: [
-            "location correction",
-            "path correction",
-            "location fix",
-            "path verification",
-            "path mismatch",
-          ],
-        },
-        {
-          name: "variable inventories",
-          patterns: ["variable inventor", "variable catalog", "variables"],
-        },
-        {
-          name: "skill system patterns",
-          patterns: ["skill system", "skill pattern", "shared skill", "skill"],
-        },
-        {
-          name: "command structure",
-          patterns: ["command structure", "slash command", "command routing"],
-        },
-        {
-          name: "manifest coverage",
-          patterns: ["manifest coverage", "coverage gap", "manifest gap"],
-        },
-      ];
-
-      for (const section of requiredDocSections) {
-        const found = section.patterns.some((p) => content.includes(p));
-        expect(found, `Missing documentation section: ${section.name}`).toBe(true);
-      }
+      const content = readFileSync(GROUND_TRUTH, "utf-8");
+      expect(content, "missing Ground Truth header").toMatch(/# Ground Truth/);
+      expect(content, "missing description blockquote").toMatch(/>/);
     });
   });
 
