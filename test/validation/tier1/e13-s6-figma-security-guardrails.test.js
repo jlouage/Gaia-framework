@@ -3,10 +3,7 @@ import { readFileSync, existsSync, readdirSync, statSync } from "fs";
 import { resolve, join } from "path";
 import { PROJECT_ROOT } from "../../helpers/project-root.js";
 
-const SKILL_PATH = resolve(
-  PROJECT_ROOT,
-  "_gaia/dev/skills/figma-integration.md",
-);
+const SKILL_PATH = resolve(PROJECT_ROOT, "_gaia/dev/skills/figma-integration.md");
 const GITIGNORE_PATH = resolve(PROJECT_ROOT, ".gitignore");
 
 /**
@@ -61,14 +58,7 @@ describe("E13-S6 — Figma Security Guardrails", () => {
 
     it("each skill section contains a token safety mandate", () => {
       const content = readFileSync(SKILL_PATH, "utf8");
-      const sections = [
-        "detection",
-        "tokens",
-        "components",
-        "frames",
-        "assets",
-        "export",
-      ];
+      const sections = ["detection", "tokens", "components", "frames", "assets", "export"];
 
       for (const section of sections) {
         const marker = `<!-- SECTION: ${section} -->`;
@@ -78,14 +68,12 @@ describe("E13-S6 — Figma Security Guardrails", () => {
         // Get content from this section to the next section or end
         const nextMarkerIdx = content.indexOf("<!-- SECTION:", idx + marker.length);
         const sectionContent =
-          nextMarkerIdx > -1
-            ? content.slice(idx, nextMarkerIdx)
-            : content.slice(idx);
+          nextMarkerIdx > -1 ? content.slice(idx, nextMarkerIdx) : content.slice(idx);
 
         // Each section must mention that MCP auth is handled by MCP server
         expect(
           sectionContent.toLowerCase(),
-          `Section '${section}' missing MCP auth boundary reminder`,
+          `Section '${section}' missing MCP auth boundary reminder`
         ).toMatch(/mcp.*(server|protocol).*handle.*auth|auth.*handle.*mcp|mcp auth/i);
       }
     });
@@ -96,10 +84,9 @@ describe("E13-S6 — Figma Security Guardrails", () => {
       const files = collectFiles(fixturesDir);
       for (const file of files) {
         const content = readFileSync(file, "utf8");
-        expect(
-          content,
-          `Fixture file ${file} contains a Figma token pattern`,
-        ).not.toMatch(TOKEN_PATTERN);
+        expect(content, `Fixture file ${file} contains a Figma token pattern`).not.toMatch(
+          TOKEN_PATTERN
+        );
       }
     });
   });
@@ -144,7 +131,7 @@ describe("E13-S6 — Figma Security Guardrails", () => {
       const content = readFileSync(SKILL_PATH, "utf8");
       // Must contain the canonical error format
       expect(content).toMatch(
-        /Figma MCP error:.*\{?status.code\}?.*Falling back to markdown-only/i,
+        /Figma MCP error:.*\{?status.code\}?.*Falling back to markdown-only/i
       );
     });
 
@@ -156,10 +143,10 @@ describe("E13-S6 — Figma Security Guardrails", () => {
         .filter((line) => line.toLowerCase().includes("error"));
       for (const line of errorRelatedLines) {
         expect(line, `Error line contains Figma URL: ${line}`).not.toMatch(
-          /https?:\/\/[^\s]*figma\.com/,
+          /https?:\/\/[^\s]*figma\.com/
         );
         expect(line, `Error line contains file key pattern: ${line}`).not.toMatch(
-          /[A-Za-z0-9]{22,}(?![\w-])/,
+          /[A-Za-z0-9]{22,}(?![\w-])/
         );
       }
     });
@@ -191,7 +178,7 @@ describe("E13-S6 — Figma Security Guardrails", () => {
     it("notes that scope enforcement is the MCP server's responsibility", () => {
       const content = readFileSync(SKILL_PATH, "utf8");
       expect(content.toLowerCase()).toMatch(
-        /scope.*enforcement.*mcp.*server|mcp.*server.*enforce.*scope/,
+        /scope.*enforcement.*mcp.*server|mcp.*server.*enforce.*scope/
       );
     });
   });
