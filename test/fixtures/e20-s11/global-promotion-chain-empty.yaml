@@ -1,0 +1,7 @@
+# E20-S11 fixture: promotion_chain is an empty array
+framework_name: "GAIA"
+framework_version: "1.93.0"
+project_name: "fixture-promotion-chain-empty"
+project_path: "."
+ci_cd:
+  promotion_chain: []

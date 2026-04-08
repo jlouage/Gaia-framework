@@ -1,0 +1,6 @@
+# E20-S11 fixture: global.yaml with no ci_cd section at all (canonical pre-E20 baseline)
+framework_name: "GAIA"
+framework_version: "1.93.0"
+project_name: "fixture-no-ci-cd"
+project_path: "."
+output_folder: "{project-root}/docs"
