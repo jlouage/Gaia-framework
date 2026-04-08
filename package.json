@@ -42,6 +42,7 @@
   },
   "files": [
     "bin/",
+    "lib/",
     "gaia-install.sh",
     "_gaia/",
     ".claude/",
