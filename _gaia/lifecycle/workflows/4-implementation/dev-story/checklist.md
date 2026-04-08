@@ -24,3 +24,4 @@ validation-target: 'Story implementation'
 - [ ] All Definition of Done items verified complete
 - [ ] Files changed list in story file
 - [ ] Checkpoint archived
+- [ ] PR merged to promotion_chain[0] via configured merge strategy (when ci_cd.promotion_chain is configured)
