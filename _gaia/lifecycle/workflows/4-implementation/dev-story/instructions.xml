@@ -48,6 +48,16 @@
   </action>
   <action if="mode == REWORK or mode == RESUME">Skip status change — story is already in-progress.</action>
 </step>
+<step n="4b" title="Figma Design Consumption">
+  <action>Check for figma: metadata block in story file YAML frontmatter. Expected fields: file_key (string — Figma file identifier), pages (list of page names to extract from), node_ids (list of specific node IDs), design_version (string — Figma lastModified hash for traceability). Also check ux-design.md for a figma: metadata block.</action>
+  <action if="no figma: metadata block found in story file or ux-design.md">No Figma metadata present — skip all Figma-related actions. Use ux-design.md text as-is with zero behavioral change. Proceed to Step 5.</action>
+  <action if="figma: metadata block is present">JIT-load figma-integration.md tokens and components sections for MCP extraction.</action>
+  <action if="figma: metadata block is present">Check for cached responses in {project-path}/.figma-cache/ using composite cache key {file_key}:{page_id}:{design_version_hash}. If cache hit with valid version hash, use cached data. If cache miss or design version changed since last implementation, proceed with MCP extraction.</action>
+  <action if="figma: metadata block is present and MCP available">Extract design tokens via MCP and write design-tokens.json to {planning_artifacts}/design-system/ in W3C DTCG format. Extract component specs via MCP and write component-specs.yaml to the same directory.</action>
+  <action if="figma: metadata block is present and MCP unreachable">If cached data exists in {project-path}/.figma-cache/ (even with expired TTL), continue with last-known-good files and display [OFFLINE] warning: "Design data loaded from cache — MCP unreachable. Token data may be stale." Do not halt — proceed with stale data.</action>
+  <action if="figma: metadata block is present">Compare design_version in story figma: metadata against the current Figma file version. If the design version has changed since the last implementation run, offer an incremental update: "Design has changed since last implementation (stored: {old_version}, current: {new_version}). Run incremental token update? [y/n]". Record the design_version consumed in the story figma: metadata for traceability.</action>
+  <action if="figma: metadata block is present">JIT-load figma-integration.md export section. Generate stack-specific scaffolded code from intermediate files (design-tokens.json and component-specs.yaml) using the active dev agent's resolution table. Output token files and component scaffolds to {project-path} design system directory.</action>
+</step>
 <step n="5" title="Plan Implementation">
   <action if="mode == REWORK">REWORK MODE — Focus plan on fixing review feedback:
     1. Read the story's Review Gate table — identify which reviews FAILED

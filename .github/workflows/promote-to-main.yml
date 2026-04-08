@@ -102,12 +102,19 @@ jobs:
           echo "Creating GitHub Release for $TAG..."
           gh release create "$TAG" --generate-notes --title "$TAG"
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.VERSION_BUMP_TOKEN }}
 
       - name: Generate checksums
         run: |
+          VERSION="${{ steps.release-version.outputs.version }}"
+          rm -f gaia-framework-*.tgz
           npm pack
-          TGZ_FILE=$(ls gaia-framework-*.tgz)
+          TGZ_FILE="gaia-framework-${VERSION}.tgz"
+          if [ ! -f "$TGZ_FILE" ]; then
+            echo "::error::Expected tarball $TGZ_FILE not found after npm pack"
+            ls -la gaia-framework-*.tgz || true
+            exit 1
+          fi
           shasum -a 256 "$TGZ_FILE" > checksums.txt
           echo "Generated checksums:"
           cat checksums.txt

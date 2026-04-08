@@ -53,3 +53,18 @@ skills:
       - { id: input-validation, line_range: [69, 118], description: "Validation at system boundaries" }
       - { id: secrets-management, line_range: [119, 166], description: "Environment-based secrets" }
       - { id: cors-csrf, line_range: [167, 230], description: "CORS and CSRF configuration, protection" }
+
+  - file: figma-integration.md
+    sections:
+      - { id: detection, line_range: [48, 135], description: "Figma MCP detection probe, failure handling, adapter selection, security guardrails, API scopes, error sanitization" }
+      - { id: tokens, line_range: [136, 166], description: "Design token extraction in W3C DTCG format" }
+      - { id: components, line_range: [167, 202], description: "Component spec extraction to tech-agnostic YAML" }
+      - { id: frames, line_range: [203, 223], description: "UI kit frame generation across viewports" }
+      - { id: assets, line_range: [224, 247], description: "Asset export at multiple densities" }
+      - { id: export, line_range: [248, 299], description: "Per-stack token resolution table, path resolution rules, and semantic alias resolution for all dev agents" }
+      - { id: import-detection, line_range: [300, 322], description: "Import mode entry point — URL/key validation, error handling" }
+      - { id: import-discovery, line_range: [323, 347], description: "Import mode page and frame discovery via MCP" }
+      - { id: import-tokens, line_range: [348, 366], description: "Import mode design token extraction to W3C DTCG" }
+      - { id: import-screens, line_range: [367, 390], description: "Import mode screen inventory and frame-to-screen mapping" }
+      - { id: import-generate, line_range: [391, 419], description: "Import mode ux-design.md generation with figma: frontmatter" }
+      - { id: fidelity, line_range: [420, 498], description: "Design-to-implementation fidelity gate — token drift detection, per-category reporting, threshold-based gating" }

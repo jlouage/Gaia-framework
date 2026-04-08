@@ -1,0 +1,376 @@
+{
+  "$schema_version": "1.0.0",
+  "color": {
+    "white": {
+      "$type": "color",
+      "$value": "#FFFFFF",
+      "$description": "Pure white"
+    },
+    "black": {
+      "$type": "color",
+      "$value": "#000000",
+      "$description": "Pure black"
+    },
+    "gray-50": {
+      "$type": "color",
+      "$value": "#F9FAFB",
+      "$description": "Lightest gray"
+    },
+    "gray-100": {
+      "$type": "color",
+      "$value": "#F3F4F6",
+      "$description": "Very light gray"
+    },
+    "gray-200": {
+      "$type": "color",
+      "$value": "#E5E7EB",
+      "$description": "Light gray"
+    },
+    "gray-300": {
+      "$type": "color",
+      "$value": "#D1D5DB",
+      "$description": "Medium-light gray"
+    },
+    "gray-500": {
+      "$type": "color",
+      "$value": "#6B7280",
+      "$description": "Medium gray"
+    },
+    "gray-700": {
+      "$type": "color",
+      "$value": "#374151",
+      "$description": "Dark gray"
+    },
+    "gray-900": {
+      "$type": "color",
+      "$value": "#111827",
+      "$description": "Darkest gray"
+    },
+    "blue-500": {
+      "$type": "color",
+      "$value": "#3B82F6",
+      "$description": "Primary blue"
+    },
+    "blue-600": {
+      "$type": "color",
+      "$value": "#2563EB",
+      "$description": "Hover blue"
+    },
+    "blue-700": {
+      "$type": "color",
+      "$value": "#1D4ED8",
+      "$description": "Active blue"
+    },
+    "red-500": {
+      "$type": "color",
+      "$value": "#EF4444",
+      "$description": "Error red"
+    },
+    "red-600": {
+      "$type": "color",
+      "$value": "#DC2626",
+      "$description": "Hover error red"
+    },
+    "green-500": {
+      "$type": "color",
+      "$value": "#22C55E",
+      "$description": "Success green"
+    },
+    "yellow-500": {
+      "$type": "color",
+      "$value": "#EAB308",
+      "$description": "Warning yellow"
+    },
+    "surface-primary": {
+      "$type": "color",
+      "$value": "{color.white}",
+      "$description": "Primary background surface (semantic alias)"
+    },
+    "surface-secondary": {
+      "$type": "color",
+      "$value": "{color.gray-50}",
+      "$description": "Secondary background surface (semantic alias)"
+    },
+    "text-primary": {
+      "$type": "color",
+      "$value": "{color.gray-900}",
+      "$description": "Primary text color (semantic alias)"
+    },
+    "text-secondary": {
+      "$type": "color",
+      "$value": "{color.gray-500}",
+      "$description": "Secondary text color (semantic alias)"
+    },
+    "text-inverse": {
+      "$type": "color",
+      "$value": "{color.white}",
+      "$description": "Inverse text on dark backgrounds (semantic alias)"
+    },
+    "border-default": {
+      "$type": "color",
+      "$value": "{color.gray-200}",
+      "$description": "Default border color (semantic alias)"
+    },
+    "border-focus": {
+      "$type": "color",
+      "$value": "{color.blue-500}",
+      "$description": "Focus ring border color (semantic alias)"
+    },
+    "interactive-primary": {
+      "$type": "color",
+      "$value": "{color.blue-500}",
+      "$description": "Primary interactive element color (semantic alias)"
+    },
+    "interactive-primary-hover": {
+      "$type": "color",
+      "$value": "{color.blue-600}",
+      "$description": "Primary interactive hover state (semantic alias)"
+    },
+    "interactive-primary-active": {
+      "$type": "color",
+      "$value": "{color.blue-700}",
+      "$description": "Primary interactive active state (semantic alias)"
+    },
+    "feedback-error": {
+      "$type": "color",
+      "$value": "{color.red-500}",
+      "$description": "Error feedback color (semantic alias)"
+    },
+    "feedback-success": {
+      "$type": "color",
+      "$value": "{color.green-500}",
+      "$description": "Success feedback color (semantic alias)"
+    },
+    "feedback-warning": {
+      "$type": "color",
+      "$value": "{color.yellow-500}",
+      "$description": "Warning feedback color (semantic alias)"
+    }
+  },
+  "spacing": {
+    "0": {
+      "$type": "dimension",
+      "$value": "0px",
+      "$description": "No spacing"
+    },
+    "1": {
+      "$type": "dimension",
+      "$value": "4px",
+      "$description": "4px — base unit"
+    },
+    "2": {
+      "$type": "dimension",
+      "$value": "8px",
+      "$description": "8px — 2x base"
+    },
+    "3": {
+      "$type": "dimension",
+      "$value": "12px",
+      "$description": "12px — 3x base"
+    },
+    "4": {
+      "$type": "dimension",
+      "$value": "16px",
+      "$description": "16px — 4x base"
+    },
+    "6": {
+      "$type": "dimension",
+      "$value": "24px",
+      "$description": "24px — 6x base"
+    },
+    "8": {
+      "$type": "dimension",
+      "$value": "32px",
+      "$description": "32px — 8x base"
+    },
+    "12": {
+      "$type": "dimension",
+      "$value": "48px",
+      "$description": "48px — 12x base"
+    },
+    "16": {
+      "$type": "dimension",
+      "$value": "64px",
+      "$description": "64px — 16x base"
+    }
+  },
+  "typography": {
+    "display-large": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "Inter",
+        "fontSize": "48px",
+        "fontWeight": 700,
+        "lineHeight": 1.1,
+        "letterSpacing": "-0.02em"
+      },
+      "$description": "Display large heading"
+    },
+    "heading-1": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "Inter",
+        "fontSize": "32px",
+        "fontWeight": 700,
+        "lineHeight": 1.2,
+        "letterSpacing": "-0.01em"
+      },
+      "$description": "Page heading"
+    },
+    "heading-2": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "Inter",
+        "fontSize": "24px",
+        "fontWeight": 600,
+        "lineHeight": 1.3,
+        "letterSpacing": "0"
+      },
+      "$description": "Section heading"
+    },
+    "heading-3": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "Inter",
+        "fontSize": "20px",
+        "fontWeight": 600,
+        "lineHeight": 1.4,
+        "letterSpacing": "0"
+      },
+      "$description": "Subsection heading"
+    },
+    "body-large": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "Inter",
+        "fontSize": "18px",
+        "fontWeight": 400,
+        "lineHeight": 1.6,
+        "letterSpacing": "0"
+      },
+      "$description": "Large body text"
+    },
+    "body": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "Inter",
+        "fontSize": "16px",
+        "fontWeight": 400,
+        "lineHeight": 1.5,
+        "letterSpacing": "0"
+      },
+      "$description": "Default body text"
+    },
+    "body-small": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "Inter",
+        "fontSize": "14px",
+        "fontWeight": 400,
+        "lineHeight": 1.5,
+        "letterSpacing": "0"
+      },
+      "$description": "Small body text"
+    },
+    "caption": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "Inter",
+        "fontSize": "12px",
+        "fontWeight": 400,
+        "lineHeight": 1.4,
+        "letterSpacing": "0.01em"
+      },
+      "$description": "Caption and helper text"
+    },
+    "label": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "Inter",
+        "fontSize": "14px",
+        "fontWeight": 500,
+        "lineHeight": 1.4,
+        "letterSpacing": "0.01em"
+      },
+      "$description": "Form label and button text"
+    }
+  },
+  "shadow": {
+    "sm": {
+      "$type": "shadow",
+      "$value": {
+        "offsetX": "0px",
+        "offsetY": "1px",
+        "blur": "2px",
+        "spread": "0px",
+        "color": "rgba(0, 0, 0, 0.05)"
+      },
+      "$description": "Subtle shadow for cards and surfaces"
+    },
+    "md": {
+      "$type": "shadow",
+      "$value": {
+        "offsetX": "0px",
+        "offsetY": "4px",
+        "blur": "6px",
+        "spread": "-1px",
+        "color": "rgba(0, 0, 0, 0.1)"
+      },
+      "$description": "Medium shadow for elevated elements"
+    },
+    "lg": {
+      "$type": "shadow",
+      "$value": {
+        "offsetX": "0px",
+        "offsetY": "10px",
+        "blur": "15px",
+        "spread": "-3px",
+        "color": "rgba(0, 0, 0, 0.1)"
+      },
+      "$description": "Large shadow for modals and popovers"
+    },
+    "focus-ring": {
+      "$type": "shadow",
+      "$value": {
+        "offsetX": "0px",
+        "offsetY": "0px",
+        "blur": "0px",
+        "spread": "3px",
+        "color": "rgba(59, 130, 246, 0.5)"
+      },
+      "$description": "Focus ring outline shadow"
+    }
+  },
+  "borderRadius": {
+    "none": {
+      "$type": "dimension",
+      "$value": "0px",
+      "$description": "No border radius"
+    },
+    "sm": {
+      "$type": "dimension",
+      "$value": "4px",
+      "$description": "Small border radius"
+    },
+    "md": {
+      "$type": "dimension",
+      "$value": "8px",
+      "$description": "Medium border radius"
+    },
+    "lg": {
+      "$type": "dimension",
+      "$value": "12px",
+      "$description": "Large border radius"
+    },
+    "xl": {
+      "$type": "dimension",
+      "$value": "16px",
+      "$description": "Extra large border radius"
+    },
+    "full": {
+      "$type": "dimension",
+      "$value": "9999px",
+      "$description": "Fully rounded (pill shape)"
+    }
+  }
+}
