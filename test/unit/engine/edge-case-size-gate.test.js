@@ -22,9 +22,7 @@ describe("E19-S8: Edge Case Size Gate (S Skip, M+ Run)", () => {
 
     it("skips edge case analysis when size is S", () => {
       // Must contain logic that skips edge case for S-sized stories
-      expect(createStoryXml).toMatch(
-        /size\s*==\s*['"]?S['"]?.*[Ss]kip.*edge\s*case/is
-      );
+      expect(createStoryXml).toMatch(/size\s*==\s*['"]?S['"]?.*[Ss]kip.*edge\s*case/is);
     });
   });
 
@@ -42,16 +40,12 @@ describe("E19-S8: Edge Case Size Gate (S Skip, M+ Run)", () => {
   describe("AC3: Gate decision logged in Dev Notes", () => {
     it("logs skip decision for S stories in Dev Notes or story output", () => {
       // Must mention logging the gate decision
-      expect(createStoryXml).toMatch(
-        /[Ee]dge\s*case\s*analysis:\s*skipped\s*\(size=S\)/
-      );
+      expect(createStoryXml).toMatch(/[Ee]dge\s*case\s*analysis:\s*skipped\s*\(size=S\)/);
     });
 
     it("logs completion decision for M+ stories in Dev Notes or story output", () => {
       // Must mention logging the gate decision for M+ sizes
-      expect(createStoryXml).toMatch(
-        /[Ee]dge\s*case\s*analysis:\s*completed\s*\(size=/
-      );
+      expect(createStoryXml).toMatch(/[Ee]dge\s*case\s*analysis:\s*completed\s*\(size=/);
     });
   });
 
@@ -81,9 +75,7 @@ describe("E19-S8: Edge Case Size Gate (S Skip, M+ Run)", () => {
       expect(step6Match).not.toBeNull();
 
       // Find where the size gate check is
-      const sizeGateIndex = createStoryXml.search(
-        /<check\s[^>]*if="[^"]*size[^"]*"/
-      );
+      const sizeGateIndex = createStoryXml.search(/<check\s[^>]*if="[^"]*size[^"]*"/);
       const step6Index = createStoryXml.search(/<step n="6"/);
 
       expect(sizeGateIndex).toBeGreaterThan(-1);
