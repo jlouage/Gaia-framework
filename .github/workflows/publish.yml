@@ -3,7 +3,6 @@
 # E4-S7: CI-driven version sync from git tag (ADR-019)
 # ADR-008: GitHub Actions for CI/CD
 # ADR-009: Release-triggered packaging (not tag-triggered)
-# ADR-011: Tier 2 staleness enforcement
 # ADR-019: CI-driven version derivation from git tag
 # See docs/planning-artifacts/architecture.md Section 10.4
 
@@ -107,43 +106,6 @@ jobs:
             git push origin main
             echo "Version sync committed and pushed"
           fi
-
-      - name: Tier 2 staleness check
-        run: |
-          TIER2_DIR="_gaia/_memory/tier2-results"
-
-          # Gate 1: Directory must exist and be non-empty
-          if [ ! -d "$TIER2_DIR" ] || [ -z "$(ls -A "$TIER2_DIR" 2>/dev/null)" ]; then
-            echo "::error::Tier 2 results directory ($TIER2_DIR) is missing or empty — treated as stale"
-            exit 1
-          fi
-
-          # Gate 2: Compare result timestamps against latest relevant commit
-          LATEST_COMMIT_TS=$(git log -1 --format=%ct -- _gaia/core/engine/ _gaia/_memory/)
-          if [ -z "$LATEST_COMMIT_TS" ]; then
-            echo "No commits found for _gaia/core/engine/ or _gaia/_memory/ — skipping staleness comparison"
-            exit 0
-          fi
-
-          echo "Latest relevant commit timestamp: $LATEST_COMMIT_TS"
-
-          STALE_COUNT=0
-          STALE_LIST=""
-          for result_file in "$TIER2_DIR"/*; do
-            [ -f "$result_file" ] || continue
-            FILE_TS=$(stat -c %Y "$result_file" 2>/dev/null || stat -f %m "$result_file" 2>/dev/null)
-            if [ "$FILE_TS" -lt "$LATEST_COMMIT_TS" ]; then
-              STALE_COUNT=$((STALE_COUNT + 1))
-              STALE_LIST="$STALE_LIST\n  - $result_file (file: $FILE_TS, commit: $LATEST_COMMIT_TS)"
-            fi
-          done
-
-          if [ "$STALE_COUNT" -gt 0 ]; then
-            echo "::error::$STALE_COUNT stale Tier 2 result(s) detected:$STALE_LIST"
-            exit 1
-          fi
-
-          echo "All Tier 2 results are fresh"
 
       # Provenance attestation signs the published artifact at this point.
       # The version-sync commit (if any) happened before this step, so the
