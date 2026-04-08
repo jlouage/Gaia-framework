@@ -16,6 +16,8 @@ test_scenarios:
     expected: Single retry after delay, fallback with warning if retry fails
   - scenario: Timeout exceeding 5 seconds
     expected: Fallback with warning, continue markdown-only
+  - scenario: Design tool detection via MCP probe
+    expected: Correct adapter selected based on available MCP tool prefix
   - scenario: Token extraction produces W3C DTCG format
     expected: design-tokens.json contains $type/$value structure with semantic aliases
   - scenario: Component spec extraction
@@ -46,6 +48,10 @@ test_scenarios:
 
 Detect Figma MCP server availability using a lightweight, read-only probe call.
 This section is consumed by `/gaia-create-ux` at workflow start.
+
+> **Security mandate:** NEVER persist Figma API tokens in any GAIA file — checkpoints, sidecars, logs, or artifacts. MCP auth is handled by the MCP server process; GAIA does not touch tokens.
+
+> **Detection-only mandate:** GAIA MUST never install, configure, or modify the MCP server. Detection is read-only — probe for availability via `figma/get_user_info` or tool listing, nothing more.
 
 ### Probe Call
 
@@ -82,6 +88,36 @@ Figma MCP detected. Select UX design mode:
   [s] Skip    — Proceed with markdown-only (ignore Figma)
 ```
 
+### Minimum API Scopes
+
+The Figma API token used by the MCP server requires these minimum scopes:
+
+| Scope | Required For | Mode |
+|-------|-------------|------|
+| `files:read` | Reading design files, styles, components | Default (all modes) |
+| `file_content:read` | Reading file content, nodes, images | Default (all modes) |
+| `files:write` | Creating frames, writing to design files | Generate mode only |
+
+Scope enforcement is the MCP server's responsibility — GAIA documents scope expectations only and does not validate or request token scopes.
+
+### Error Sanitization Rules
+
+All error messages from MCP operations MUST follow this safe error format:
+
+```
+Figma MCP error: {status_code} — {generic_description}. Falling back to markdown-only workflow.
+```
+
+**Disallowed content in error messages:** Figma file URLs, file keys, node IDs, design data, access tokens, or any dynamic content from the Figma API response.
+
+| Status Code | Generic Description |
+|-------------|-------------------|
+| 401 | Authentication failed |
+| 403 | Access denied |
+| 404 | Resource not found |
+| 429 | Rate limit exceeded — retry once, then fallback |
+| 500 | Server error |
+
 ### Security Boundary
 
 - The Figma API token lives exclusively in the MCP server configuration (ADR-024)
@@ -97,6 +133,8 @@ Figma MCP detected. Select UX design mode:
 
 <!-- SECTION: tokens -->
 ## Design Token Extraction
+
+> **Security mandate:** MCP auth is handled by the MCP server — NEVER persist or reference Figma API tokens in extraction outputs, logs, or GAIA files.
 
 Extract design tokens from the connected design tool and output in W3C DTCG format.
 
@@ -126,6 +164,8 @@ Extract design tokens from the connected design tool and output in W3C DTCG form
 
 <!-- SECTION: components -->
 ## Component Spec Extraction
+
+> **Security mandate:** MCP auth is handled by the MCP server — NEVER include Figma API tokens in component specs, logs, or any GAIA output files.
 
 Extract component specifications into a tech-agnostic intermediate format.
 
@@ -161,6 +201,8 @@ components:
 <!-- SECTION: frames -->
 ## Frame Generation
 
+> **Security mandate:** MCP auth is handled by the MCP server — NEVER persist Figma API tokens in frame metadata, logs, or any GAIA output files.
+
 Create UI kit frames in the design tool across standard viewports.
 
 ### Generation Steps
@@ -179,6 +221,8 @@ Frame metadata logged for verification. No file output — frames are created di
 
 <!-- SECTION: assets -->
 ## Asset Export
+
+> **Security mandate:** MCP auth is handled by the MCP server — NEVER include Figma API tokens in asset manifests, export logs, or any GAIA output files.
 
 Export raster and vector assets from the design tool at required densities.
 
@@ -201,6 +245,8 @@ Export raster and vector assets from the design tool at required densities.
 
 <!-- SECTION: export -->
 ## Per-Stack Token Resolution
+
+> **Security mandate:** MCP auth is handled by the MCP server — NEVER embed Figma API tokens in generated token files, stack outputs, or any GAIA output files.
 
 Maps abstract design tokens to framework-specific implementations. Each dev agent uses this table to generate native code from `design-tokens.json`.
 

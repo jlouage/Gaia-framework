@@ -56,9 +56,9 @@ skills:
 
   - file: figma-integration.md
     sections:
-      - { id: detection, line_range: [44, 97], description: "Figma MCP server detection probe, failure handling, and adapter selection" }
-      - { id: tokens, line_range: [98, 126], description: "Design token extraction in W3C DTCG format" }
-      - { id: components, line_range: [127, 160], description: "Component spec extraction to tech-agnostic YAML" }
-      - { id: frames, line_range: [161, 179], description: "UI kit frame generation across viewports" }
-      - { id: assets, line_range: [180, 201], description: "Asset export at multiple densities" }
-      - { id: export, line_range: [202, 221], description: "Per-stack token resolution table for all dev agents" }
+      - { id: detection, line_range: [46, 133], description: "Figma MCP detection probe, failure handling, adapter selection, security guardrails, API scopes, error sanitization" }
+      - { id: tokens, line_range: [134, 164], description: "Design token extraction in W3C DTCG format" }
+      - { id: components, line_range: [165, 200], description: "Component spec extraction to tech-agnostic YAML" }
+      - { id: frames, line_range: [201, 221], description: "UI kit frame generation across viewports" }
+      - { id: assets, line_range: [222, 245], description: "Asset export at multiple densities" }
+      - { id: export, line_range: [246, 267], description: "Per-stack token resolution table for all dev agents" }

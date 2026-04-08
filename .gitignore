@@ -13,5 +13,8 @@ coverage/
 _memory/checkpoints/
 _memory/*-sidecar/archive/
 
+# Figma MCP cached responses — never commit design data
+.figma-cache/
+
 # BATS test helpers (downloaded by test/shell/setup-bats.sh)
 test/shell/test_helper/

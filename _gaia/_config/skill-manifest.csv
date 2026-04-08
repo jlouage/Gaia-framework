@@ -13,3 +13,4 @@ name,displayName,description,path,applicable_agents
 "memory-management","Memory Management","Session load/save, decision formatting, stale detection, deduplication, context summarization, cross-ref loading, budget-monitoring","_gaia/lifecycle/skills/memory-management.md","all"
 "memory-management-cross-agent","Memory Management Cross-Agent","Cross-agent memory read protocol for loading other agents' sidecar files","_gaia/lifecycle/skills/memory-management-cross-agent.md","all"
 "document-rulesets","Document Rulesets","Artifact type detection, document-specific validation rulesets (prd, arch, ux, test-plan, epics), two-pass validation logic","_gaia/lifecycle/skills/document-rulesets.md","validator"
+"figma-integration","Figma Integration","Design tool detection, token extraction (W3C DTCG), component specs, frame generation, asset export, per-stack resolution","_gaia/dev/skills/figma-integration.md","all-dev"
