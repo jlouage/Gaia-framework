@@ -1,0 +1,9 @@
+# E20-S11 fixture: ci_cd present with other fields but no promotion_chain key
+framework_name: "GAIA"
+framework_version: "1.93.0"
+project_name: "fixture-ci-cd-no-chain"
+project_path: "."
+ci_cd:
+  some_other_field: true
+  unrelated:
+    nested: value
