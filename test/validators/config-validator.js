@@ -3,6 +3,7 @@ import { join, dirname, basename } from "path";
 import yaml from "js-yaml";
 import { walkFiles } from "../validation/helpers/fs-walk.js";
 import { PROJECT_ROOT } from "../helpers/project-root.js";
+import { validatePromotionChain } from "./promotion-chain-validator.js";
 
 // Regex matching {var} and {{var} patterns in config values
 const VAR_PATTERN = /\{?\{([^}]+)\}/g;
@@ -248,6 +249,11 @@ function findModuleFiles(modDir, pattern, usePath = false) {
 export function resolveWorkflowConfig(workflowPath, projectRoot, globalConfig) {
   const workflowConfig = loadYaml(workflowPath);
   if (!workflowConfig) return null;
+
+  // E20-S1: validate the promotion_chain block (if any) before any workflow
+  // can resolve config. Throws PromotionChainValidationError on violation —
+  // halts the resolution chain with a clear, descriptive error.
+  validatePromotionChain(globalConfig);
 
   const gaiaDir = join(projectRoot, "_gaia");
   const moduleConfig = loadYaml(join(gaiaDir, workflowConfig.module, "config.yaml"));
