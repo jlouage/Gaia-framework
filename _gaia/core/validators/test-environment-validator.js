@@ -207,9 +207,14 @@ function validateRunnerEntry(runner, index) {
  * Validate test-environment.yaml content against the manifest schema.
  *
  * @param {string|null} content — Raw YAML content, null if file absent, or empty string.
+ * @param {object} [options] — Optional cross-validation context.
+ * @param {object} [options.globalConfig] — Parsed global.yaml content. When provided
+ *   and `ci_cd.promotion_chain` exists, the validator cross-checks every
+ *   `promotion_chain_env_id` against chain ids and emits an orphan warning
+ *   if the id is not present (E20-S10, AC4).
  * @returns {ValidationResult}
  */
-export function validateTestEnvironment(content) {
+export function validateTestEnvironment(content, options = {}) {
   // AC5: Missing file is not an error — fallback to auto-discovery
   if (content === null || content === undefined || content.trim() === "") {
     return {
@@ -248,6 +253,35 @@ export function validateTestEnvironment(content) {
   } else {
     for (let i = 0; i < parsed.runners.length; i++) {
       warnings.push(...validateRunnerEntry(parsed.runners[i], i));
+    }
+  }
+
+  // E20-S10 AC4: Cross-validate promotion_chain_env_id references against
+  // the promotion chain when the caller provides a globalConfig. When
+  // `ci_cd` is absent (AC6 backward compat), this check is skipped entirely
+  // — promotion_chain_env_id fields are silently ignored.
+  const globalConfig = options && options.globalConfig;
+  const chain = globalConfig?.ci_cd?.promotion_chain;
+
+  if (Array.isArray(chain) && Array.isArray(parsed.runners)) {
+    const knownIds = chain
+      .map((entry) => (entry && entry.id ? entry.id : null))
+      .filter((id) => id !== null);
+
+    for (const runner of parsed.runners) {
+      if (!runner || typeof runner !== "object") continue;
+      const envId = runner.promotion_chain_env_id;
+      if (envId === undefined || envId === null || envId === "" || envId === "null") {
+        continue;
+      }
+      if (!knownIds.includes(envId)) {
+        const tierName = runner.name || `tier-${runner.tier ?? "?"}`;
+        warnings.push(
+          `WARNING [test-environment.yaml]: tier '${tierName}' references ` +
+            `promotion_chain_env_id '${envId}' which does not exist in ` +
+            `ci_cd.promotion_chain (known ids: [${knownIds.join(", ")}]).`
+        );
+      }
     }
   }
 

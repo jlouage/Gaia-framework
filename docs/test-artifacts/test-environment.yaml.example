@@ -5,13 +5,15 @@
 # Place this file at {project-path}/test-environment.yaml.
 # When absent, the bridge falls back to auto-discovery (FR-196).
 #
-# Schema version: 1
-# Reference: architecture.md Section 10.20.5
+# Schema version: 2  (bumped from 1 for promotion_chain_env_id support — E20-S10)
+# Reference: architecture.md Section 10.20.5, 10.24.3
 
 # ─── Required Fields ───────────────────────────────────────────────
 
 # Schema version (required, integer). Allows forward-compatible evolution.
-version: 1
+# v1: base schema (E17-S7)
+# v2: adds optional per-runner `promotion_chain_env_id` field (E20-S10)
+version: 2
 
 # Runner definitions (required, list). Each entry declares a named test runner
 # with its CLI command and associated tier.
@@ -22,6 +24,12 @@ runners:
     tier: 1                           # Test tier: 1 (unit), 2 (integration), 3 (e2e) (required, integer)
     test_pattern: "test/unit/**/*.test.js"   # Glob to find test files (optional)
     timeout_seconds: 120              # Max execution time in seconds (optional, default: 300)
+    # Optional cross-reference to `ci_cd.promotion_chain[].id` in global.yaml.
+    # When set, the Test Execution Bridge enriches its context with the linked
+    # environment's CI provider, branch, and ci_checks. Omit or set to null to
+    # use tier-local config only (pre-E20 behavior). Silently ignored when
+    # global.yaml has no `ci_cd` block (NFR-045 backward compat).
+    # promotion_chain_env_id: "dev"
 
   # Tier 2 — Integration tests: service containers required
   - name: integration
@@ -29,6 +37,7 @@ runners:
     tier: 2
     test_pattern: "test/integration/**/*.test.js"
     timeout_seconds: 300
+    # promotion_chain_env_id: "staging"   # opt-in link to staging chain entry
 
   # Tier 3 — E2E / System tests: deployed application required
   - name: e2e
@@ -36,6 +45,7 @@ runners:
     tier: 3
     test_pattern: "test/e2e/**/*.test.js"
     timeout_seconds: 600
+    # promotion_chain_env_id: "prod"      # opt-in link to prod chain entry
 
 # ─── Optional Fields ──────────────────────────────────────────────
 
