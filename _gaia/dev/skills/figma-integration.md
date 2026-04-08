@@ -262,6 +262,35 @@ Maps abstract design tokens to framework-specific implementations. Each dev agen
 ### Resolution Process
 
 1. Read `design-tokens.json` (W3C DTCG format) from `{planning_artifacts}/design-system/`
-2. Identify the active dev agent's stack from the agent persona
-3. For each token, generate the stack-native representation using the table above
-4. Output token files to the project's design system directory (stack-specific path)
+2. Read `component-specs.yaml` from the same directory for component definitions and widget hints
+3. Identify the active dev agent's stack from the agent persona
+4. For each token, generate the stack-native representation using the table above
+5. For each component, use the `widget_hints` field to guide framework-specific widget/component tree generation
+6. Output token files to the project's design system directory (stack-specific path)
+
+### Token Path Resolution Rules
+
+Token paths use `{group.token}` syntax. The resolution pattern per stack:
+
+| Stack | Pattern | Example Path | Resolved Output |
+|-------|---------|-------------|-----------------|
+| TypeScript/React | `--{group}-{token}` | `{color.blue-500}` | `var(--color-blue-500)` |
+| Angular | `${group}-{token}` | `{spacing.4}` | `$spacing-4` |
+| Flutter/Dart | `AppTokens.{group}.{token}` | `{typography.body}` | `AppTokens.typography.body` |
+| Java/Spring | `design.{group}.{token}` | `{color.interactive-primary}` | `design.color.interactive-primary` |
+| Python | `TOKENS['{group}']['{token}']` | `{shadow.md}` | `TOKENS['shadow']['md']` |
+| Mobile (RN) | `tokens.{group}.{token}` | `{borderRadius.md}` | `tokens.borderRadius.md` |
+| Mobile (Swift) | `DesignTokens.{group}.{token}` | `{color.blue-500}` | `DesignTokens.color.blue500` |
+| Mobile (Compose) | `AppTheme.{group}.{token}` | `{spacing.2}` | `AppTheme.spacing.s2` |
+
+### Semantic Alias Resolution
+
+Semantic tokens reference primitives via `{group.token}` syntax in their `$value` field. When generating stack-specific code, resolve the alias chain to produce the final value. Example:
+
+```
+"interactive-primary": { "$type": "color", "$value": "{color.blue-500}" }
+→ resolves to → #3B82F6
+→ CSS: --color-interactive-primary: #3B82F6;
+→ SCSS: $color-interactive-primary: #3B82F6;
+→ Dart: static const interactivePrimary = Color(0xFF3B82F6);
+```

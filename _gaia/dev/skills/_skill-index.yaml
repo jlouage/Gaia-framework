@@ -61,4 +61,4 @@ skills:
       - { id: components, line_range: [165, 200], description: "Component spec extraction to tech-agnostic YAML" }
       - { id: frames, line_range: [201, 221], description: "UI kit frame generation across viewports" }
       - { id: assets, line_range: [222, 245], description: "Asset export at multiple densities" }
-      - { id: export, line_range: [246, 267], description: "Per-stack token resolution table for all dev agents" }
+      - { id: export, line_range: [246, 296], description: "Per-stack token resolution table, path resolution rules, and semantic alias resolution for all dev agents" }
