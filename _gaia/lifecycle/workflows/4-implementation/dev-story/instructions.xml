@@ -262,7 +262,23 @@
   <action>On success: report "Pushed {branch_name} to origin with upstream tracking. Ready for PR creation in Step 14."</action>
 </step>
 <step n="14" title="Create Pull Request">
-  <action>PLACEHOLDER (FR-248) — implemented in E20-S6. If the promotion-chain guard or no-remote flag from Step 13 is set, this step is skipped.</action>
+  <critical>
+    <mandate>This step implements FR-248 (dev-story PR creation, architecture §10.24.5). It is gated by the ci_cd.promotion_chain configuration in global.yaml for backward compatibility (NFR-045) and by the no-remote flag set by Step 13. Step 14 targets promotion_chain[0].branch — the first environment in the chain is always the PR target (architecture rule §10.24.1).</mandate>
+  </critical>
+  <action>PROMOTION CHAIN GUARD (NFR-045 / ADR-033 / E20-S11): Reuse the guard decision from Step 13 — if the ci_cd.promotion_chain was determined to be absent, skip this step silently (no error, no warning, no output) and proceed to Step 15. The canonical predicate lives in {project-path}/scripts/lib/promotion-chain-guard.js (chainPresent).</action>
+  <action>NO-REMOTE SKIP (AC4 of E20-S5): If Step 13 set the no-remote skip flag (because `git remote -v` returned empty), skip this step silently and proceed to Step 15 — PR creation requires a remote.</action>
+  <action>CI PROVIDER DETECTION (AC5, FR-248): Read the resolved global config and extract ci_cd.promotion_chain[0].ci_provider. Map the ci_provider value to the CLI tool name using the following table:
+    — github_actions → gh
+    — gitlab_ci → glab
+    — other providers → consult the extensible mapping table; HALT if no mapping is registered for the provider.
+    The first entry of promotion_chain is authoritative for PR target selection because the first environment in the chain is always the PR target (architecture §10.24.1).</action>
+  <action>TOOL AVAILABILITY CHECK (AC6): Verify the mapped CLI tool is installed by running `command -v {tool}` (or `which {tool}`) in {project-path}. If the tool is not found on PATH, HALT with the message: "Required tool {tool} not found. Install it or complete PR creation manually." Do not attempt PR creation without the tool.</action>
+  <action>EXISTING PR DETECTION (AC4, MPC-29): Before creating a new PR, query for an existing PR on the current branch targeting promotion_chain[0].branch. For github_actions: `gh pr list --head {branch_name} --base {promotion_chain[0].branch} --json number,url --jq '.[0]'` in {project-path}. For gitlab_ci: the equivalent `glab mr list` query. If a PR is found, capture its number and URL, emit the message "PR #{number} already exists — proceeding to CI check", set a pr_exists flag, and skip the creation command below.</action>
+  <action>PR TITLE CONSTRUCTION (AC2): Build the PR title using the convention `{story_key}: {story_title}` — for example, "E20-S6: Dev-Story Step 14 — Create PR". The story_key and story_title are already loaded from the story file frontmatter in Step 1.</action>
+  <action>PR BODY CONSTRUCTION (AC3): Build the PR body as a markdown block that includes (in order): (1) the story key as a heading; (2) an acceptance criteria summary — a bullet list of AC titles extracted from the story file's "## Acceptance Criteria" section; (3) a link to the story file path (relative to the repository root, e.g., `docs/implementation-artifacts/{story_key}-*.md`). The story file path provides reviewers with quick access to full context during review.</action>
+  <action>PR CREATION COMMAND (AC1, FR-248, MPC-28): If pr_exists is not set, execute the provider-specific PR creation command in {project-path}. For github_actions: `gh pr create --base {promotion_chain[0].branch} --title "{title}" --body "{body}"`. For gitlab_ci: `glab mr create --target-branch {promotion_chain[0].branch} --title "{title}" --description "{body}"`. Capture the created PR number and URL from the command output.</action>
+  <action>ERROR HANDLING: If the PR creation command fails (network failure, auth failure, permission denied, etc.), capture the full stderr output and HALT with an actionable error message that includes: (a) the exact command that failed, (b) the raw stderr, (c) a suggested retry step ("re-run /gaia-dev-story to resume from this step after resolving the issue").</action>
+  <action>On success: report "Created PR #{number} targeting {promotion_chain[0].branch}: {url}. Ready for CI check in Step 15."</action>
 </step>
 <step n="15" title="Wait for CI">
   <action>PLACEHOLDER (FR-249, NFR-043) — implemented in E20-S7. If the promotion-chain guard or no-remote flag from Step 13 is set, this step is skipped.</action>
