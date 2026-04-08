@@ -531,6 +531,15 @@ sequence:
     next:
       primary: /gaia-readiness-check
 
+  ci-edit:
+    module: testing
+    command: /gaia-ci-edit
+    next:
+      standalone: true
+      suggestions:
+        - command: /gaia-build-configs
+          context: "Regenerate resolved configs after editing the promotion chain"
+
   atdd:
     module: testing
     command: /gaia-atdd
