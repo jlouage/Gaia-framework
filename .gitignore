@@ -9,6 +9,9 @@ docs/phases/
 node_modules/
 coverage/
 
+# npm pack output — local publishable tarballs, never committed
+*.tgz
+
 # Memory — checkpoints are ephemeral, archive is pruned
 _memory/checkpoints/
 _memory/*-sidecar/archive/
