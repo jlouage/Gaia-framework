@@ -180,6 +180,7 @@ abstract: true
   <skill name="code-review-standards" path="_gaia/dev/skills/code-review-standards.md" />
   <skill name="documentation-standards" path="_gaia/dev/skills/documentation-standards.md" />
   <skill name="security-basics" path="_gaia/dev/skills/security-basics.md" />
+  <skill name="figma-integration" path="_gaia/dev/skills/figma-integration.md" />
 </skill-registry>
 
 </agent>

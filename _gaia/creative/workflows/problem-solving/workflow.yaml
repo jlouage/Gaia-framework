@@ -1,13 +1,43 @@
 name: problem-solving
-description: 'Apply systematic problem-solving methodologies to complex challenges'
+description: 'Context-aware problem-solving with auto artifact gathering and tiered resolution routing'
 module: creative
 agent: problem-solver
+execution_mode: planning
 config_resolved: "{installed_path}/.resolved/problem-solving.yaml"
 config_source: "{project-root}/_gaia/creative/config.yaml"
 installed_path: "{project-root}/_gaia/creative/workflows/problem-solving"
 instructions: "{installed_path}/instructions.xml"
 validation: "{installed_path}/checklist.md"
+
+# Context gathering configuration
+context_budget: 30000
+context_sub_budgets:
+  stories: 8000
+  architecture: 5000
+  prd: 5000
+  decision_logs: 3000
+  codebase: 5000
+  test_artifacts: 4000
+
+input_file_patterns:
+  prd:
+    whole: "{planning_artifacts}/prd.md"
+    load_strategy: "SELECTIVE_LOAD"
+  architecture:
+    whole: "{planning_artifacts}/architecture.md"
+    load_strategy: "SELECTIVE_LOAD"
+  sprint_status:
+    whole: "{implementation_artifacts}/sprint-status.yaml"
+    load_strategy: "SELECTIVE_LOAD"
+  test_plan:
+    whole: "{test_artifacts}/test-plan.md"
+    load_strategy: "SELECTIVE_LOAD"
+  traceability:
+    whole: "{test_artifacts}/traceability-matrix.md"
+    load_strategy: "SELECTIVE_LOAD"
+
 output:
   primary: "{creative_artifacts}/problem-solving-{date}.md"
+
 data_files:
   methods: "{data_path}/solving-methods.csv"

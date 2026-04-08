@@ -59,10 +59,10 @@ describe("E11-S10: Gap Consolidation & Deduplication", () => {
       const scanTypes = [
         "config-contradiction",
         "dead-code",
-        "hard-coded-logic",
-        "security-endpoint",
+        "hardcoded",
+        "security",
         "runtime-behavior",
-        "doc-code-drift",
+        "doc-code",
         "integration-seam",
       ];
       for (const scanType of scanTypes) {

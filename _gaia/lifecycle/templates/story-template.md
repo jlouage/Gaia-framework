@@ -12,6 +12,8 @@ points: "{story_points}"
 risk: "{high/medium/low}"
 sprint_id: null
 priority_flag: null
+origin: null
+origin_ref: null
 depends_on: []
 blocks: []
 traces_to: []
