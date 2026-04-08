@@ -209,10 +209,7 @@ describe("E19-S12 AC2: Config file scanner detects test runners", () => {
   });
 
   it("BTI-02j: detects pytest from pyproject.toml with [tool.pytest.ini_options]", async () => {
-    writeFileSync(
-      join(projectDir, "pyproject.toml"),
-      "[tool.pytest.ini_options]\naddopts = '-v'"
-    );
+    writeFileSync(join(projectDir, "pyproject.toml"), "[tool.pytest.ini_options]\naddopts = '-v'");
 
     const result = await detectTestRunners(projectDir);
     expect(result).toContain("pytest");
@@ -231,7 +228,7 @@ describe("E19-S12 AC2: Config file scanner detects test runners", () => {
   it("BTI-02l: detects JUnit/Maven from pom.xml with surefire", async () => {
     writeFileSync(
       join(projectDir, "pom.xml"),
-      '<project><build><plugins><plugin><artifactId>maven-surefire-plugin</artifactId></plugin></plugins></build></project>'
+      "<project><build><plugins><plugin><artifactId>maven-surefire-plugin</artifactId></plugin></plugins></build></project>"
     );
 
     const result = await detectTestRunners(projectDir);
@@ -239,10 +236,7 @@ describe("E19-S12 AC2: Config file scanner detects test runners", () => {
   });
 
   it("BTI-02m: detects Go test from go.mod", async () => {
-    writeFileSync(
-      join(projectDir, "go.mod"),
-      "module example.com/myapp\n\ngo 1.21\n"
-    );
+    writeFileSync(join(projectDir, "go.mod"), "module example.com/myapp\n\ngo 1.21\n");
 
     const result = await detectTestRunners(projectDir);
     expect(result).toContain("go-test");
@@ -358,7 +352,7 @@ describe("E19-S12 AC4: Zero false positives — NFR-041", () => {
   it("BTI-04e: pom.xml without surefire plugin does not detect junit", async () => {
     writeFileSync(
       join(projectDir, "pom.xml"),
-      '<project><modelVersion>4.0.0</modelVersion></project>'
+      "<project><modelVersion>4.0.0</modelVersion></project>"
     );
 
     // pom.xml exists but no surefire plugin — should still detect junit (Maven convention)
@@ -411,15 +405,9 @@ describe("E19-S12 AC5: Monorepo workspace scanning", () => {
   });
 
   it("BTI-05b: detects workspaces from pnpm-workspace.yaml", async () => {
-    writeFileSync(
-      join(projectDir, "pnpm-workspace.yaml"),
-      "packages:\n  - 'packages/*'\n"
-    );
+    writeFileSync(join(projectDir, "pnpm-workspace.yaml"), "packages:\n  - 'packages/*'\n");
 
-    writeFileSync(
-      join(projectDir, "package.json"),
-      JSON.stringify({ name: "monorepo" })
-    );
+    writeFileSync(join(projectDir, "package.json"), JSON.stringify({ name: "monorepo" }));
 
     const pkgB = join(projectDir, "packages", "pkg-b");
     mkdirSync(pkgB, { recursive: true });
