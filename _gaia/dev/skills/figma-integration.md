@@ -41,7 +41,9 @@ test_scenarios:
 
 **Selection logic:** probe MCP tool list for known prefixes in order: `figma_` / `figma/` → `penpot_` → `sketch_`. Use the first match. If none found, report "No design tool MCP server detected."
 
-**MCP constraint (FR-140):** operations are read-heavy/write-light. Most interactions read design data (tokens, components, styles). Write operations are limited to frame generation and are clearly documented per section.
+**Zero-change path:** When no `figma:` metadata block is present in the story file or ux-design.md, all Figma-related operations are skipped — the dev agent reads ux-design.md text as-is (no MCP calls, no cache reads, no design system files generated). **MCP constraint (FR-140):** operations are read-heavy/write-light; most interactions read design data (tokens, components, styles). Write operations are limited to frame generation and are documented per section.
+
+**Response Cache and Offline Fallback (NFR-028):** MCP responses are cached in `{project-path}/.figma-cache/` (gitignored) with composite key `{file_key}:{page_id}:{design_version_hash}`, where the version hash derives from the Figma file's `lastModified` timestamp. The version hash is the primary invalidation signal — a changed design always triggers a fresh MCP call. A 1-hour TTL serves as secondary expiry when version metadata cannot be fetched. When the MCP server is unreachable and the cache TTL has expired, the skill continues with last-known-good files from `.figma-cache/`, emitting an `[OFFLINE]` warning logged in the story's dev record — stale design data is preferable to blocking implementation.
 
 <!-- SECTION: detection -->
 ## Detection Probe

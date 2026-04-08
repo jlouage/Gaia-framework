@@ -62,8 +62,13 @@ abstract: true
 - Mark each as checked or document why it can't be checked
 - All DoD items must pass before status changes to `review`
 
+## Figma Design Consumption
+- When a story file or ux-design.md contains a `figma:` metadata block, load the figma-integration skill (tokens, components, export sections) via JIT
+- Extract design tokens and component specs using MCP, then generate stack-specific scaffolded code using the export section's resolution table
+- If no `figma:` metadata is present, skip all Figma operations and read ux-design.md text as-is (zero behavioral change)
+
 ## Skill Access
-- All 8 shared skills available via JIT loading
+- All 8 shared skills + figma-integration available via JIT loading
 - Load skill sections only when needed for current step
 - Drop skill from context when step completes
 - Skills can be overridden via .customize.yaml (skill_overrides for full file, skill_section_overrides for individual sections)
