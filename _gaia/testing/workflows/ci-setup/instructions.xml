@@ -8,32 +8,100 @@
   <action>If no config found: note that no existing CI platform was detected</action>
   <ask>Which CI platform would you like to use? Options: GitHub Actions, GitLab CI, Jenkins, CircleCI, or other. {If detected: "Detected: {platform} — recommended based on existing config."}</ask>
 </step>
-<step n="2" title="Define Pipeline">
+<step n="2" title="Preset Selection (Promotion Chain)">
+  <critical>
+    <mandate>This step configures the ci_cd.promotion_chain block in {project-root}/_gaia/_config/global.yaml. It uses the 4 canonical presets from {project-root}/_gaia/_config/environment-presets.yaml (created by E20-S2) and reuses the E20-S1 promotion-chain schema validator.</mandate>
+  </critical>
+
+  <!-- AC5 (Task 1.5): existing ci_cd block — overwrite / skip / edit -->
+  <action>Read {project-root}/_gaia/_config/global.yaml. Check whether a top-level ci_cd block exists (with or without a promotion_chain field).</action>
+  <check if="ci_cd block exists in global.yaml">
+    Warn the user: "Existing ci_cd configuration found in global.yaml." and present three options:
+      [o]verwrite — replace the existing ci_cd.promotion_chain with a newly selected preset (or custom chain)
+      [s]kip — leave the existing ci_cd block unchanged and proceed to Step 3 (no write performed)
+      [e]dit — redirect the user to /gaia-ci-edit (E20-S4) for structured editing of the existing chain
+    Respect the user's choice:
+      - On [s]kip: jump directly to Step 3 without modifying global.yaml — backward compatible, no-op.
+      - On [e]dit: hand off to /gaia-ci-edit and terminate this step.
+      - On [o]verwrite: fall through to the preset-selection prompt below.
+  </check>
+
+  <!-- AC1 (Task 1.2): load presets from environment-presets.yaml -->
+  <action>Read {project-root}/_gaia/_config/environment-presets.yaml — this file is produced by E20-S2 and contains the four canonical presets (solo, small-team, standard, enterprise). Each preset exposes a `description` field and a `promotion_chain` array.</action>
+  <check if="environment-presets.yaml not found">HALT with error "Environment presets file not found at _gaia/_config/environment-presets.yaml. Run E20-S2 (Environment Presets Definition) before re-running /gaia-ci-setup." — this is the AC10/test-scenario-10 failure mode.</check>
+  <action>Parse the YAML and extract the 4 preset names: solo, small-team, standard, enterprise. For each preset, extract its `description` string to show to the user.</action>
+
+  <!-- AC6 (Task 1.4): YOLO mode auto-selects 'standard' -->
+  <check if="yolo_mode">
+    Auto-select the `standard` preset without prompting the user — this follows the existing YOLO convention of auto-answering from context when unambiguous. Log to the user: "YOLO mode: auto-selected `standard` preset (3-tier dev → staging → prod flow)." Skip the ask prompt below and proceed straight to the preset application action.
+  </check>
+
+  <!-- AC1 (Task 1.3): present presets table + custom option -->
+  <ask>
+    Select a promotion-chain preset for this project:
+
+    | # | Preset       | Description                                                                                                  |
+    |---|--------------|--------------------------------------------------------------------------------------------------------------|
+    | 1 | solo         | {presets.solo.description} — single environment, direct to main, auto-merge.                                 |
+    | 2 | small-team   | {presets.small-team.description} — 2 envs (develop → main) for a small team with one pre-prod gate.          |
+    | 3 | standard     | {presets.standard.description} — 3 envs (dev → staging → prod), the recommended default for product teams.  |
+    | 4 | enterprise   | {presets.enterprise.description} — 4 envs (dev → uat → staging → prod) with approval gates and audit trail. |
+    | 5 | custom       | Define your own promotion_chain interactively (see Task 3 builder below).                                    |
+
+    Choose [1] solo / [2] small-team / [3] standard / [4] enterprise / [5] custom:
+  </ask>
+
+  <!-- AC3 (Task 3): custom environment builder -->
+  <check if="user selected custom">
+    Enter the interactive custom environment builder. For each environment, prompt the user for the following fields one-by-one, then loop until the user chooses to finish:
+      <action>Prompt for `id` (string, slug format [a-z0-9-]+, must be unique within the chain) — required.</action>
+      <action>Prompt for `name` (human-readable string) — required.</action>
+      <action>Prompt for `branch` (git branch name, must be unique within the chain) — required.</action>
+      <action>Prompt for `ci_provider` — present enum selection: [1] github_actions [2] gitlab_ci [3] jenkins [4] circleci [5] azure_devops [6] bitbucket [7] none. Required.</action>
+      <action>Prompt for `merge_strategy` — present enum selection: [1] merge [2] squash [3] rebase. Required unless a default is set in ci_cd.default_merge_strategy.</action>
+      <action>Prompt for `ci_checks` — optional array of check names (e.g., lint, unit, integration, e2e). Accept empty to skip.</action>
+      <ask>Environment {n} defined. Add another environment? [y]es / [n]o (finish)</ask>
+    When the user finishes, assemble the `promotion_chain` array from the collected entries. If the user added zero environments, warn them that the E20-S1 schema validator requires a minimum of one environment and return to the loop.
+  </check>
+
+  <!-- AC2 (Task 2): apply the chosen preset — write ci_cd.promotion_chain to global.yaml -->
+  <action>If the user chose a named preset (solo/small-team/standard/enterprise): use the full promotion_chain array from the selected preset in environment-presets.yaml verbatim. If the user chose custom: use the array assembled by the custom builder above.</action>
+  <action>Load the current {project-root}/_gaia/_config/global.yaml content. Preserve all existing fields and comments — only add or replace the top-level `ci_cd` key. Merge semantics: write `ci_cd.promotion_chain: {selected array}` under the existing `ci_cd` block if one exists (from the overwrite path), or create a new `ci_cd` block containing only `promotion_chain` if none exists. All other global.yaml content (framework_version, user_name, project_path, planning_artifacts, etc.) MUST remain unchanged.</action>
+  <action>Write the updated content back to global.yaml. Do not reformat unrelated sections — emit a minimal diff focused on the ci_cd block.</action>
+
+  <!-- AC4 (Task 4): E20-S1 schema validation -->
+  <action>After the write completes, invoke the E20-S1 schema validator at {project-path}/test/validators/promotion-chain-validator.js on the newly written block. The validator enforces: (a) minimum 1 environment (FR-252), (b) no duplicate ids across entries, (c) no duplicate branches across entries, (d) each entry has required fields id/name/branch/ci_provider, (e) ci_provider is one of the enum values, (f) merge_strategy (if set) is one of merge/squash/rebase, (g) id matches slug pattern [a-z0-9-]+.</action>
+  <check if="validation fails">
+    Display the specific violation(s) returned by the validator — include each violation's field path and reason (e.g., "promotion_chain[1].id duplicates promotion_chain[0].id" or "promotion_chain is empty — minimum 1 environment required"). Prompt the user to correct the failing fields. After corrections, re-run the validator. Repeat this validate→correct loop until the block passes.
+  </check>
+  <action>When validation passes, log success: "ci_cd.promotion_chain written to global.yaml and validated ({n} environment(s))."</action>
+</step>
+<step n="3" title="Define Pipeline">
   <action>Build > lint > test > coverage > deploy gates</action>
 </step>
-<step n="3" title="Quality Gates">
+<step n="4" title="Quality Gates">
   <action>Define pass/fail thresholds: coverage %, test pass rate</action>
 </step>
-<step n="4" title="Secrets Management">
+<step n="5" title="Secrets Management">
   <action>Identify all required secrets from architecture and PRD: API keys, database credentials, auth secrets, third-party service keys</action>
   <action>Document how to add secrets to the selected CI platform (e.g., GitHub Repository Secrets, GitLab CI/CD Variables)</action>
   <action>Define environment-level separation: which secrets differ between staging and production</action>
   <action>List each secret with its name, purpose, and which pipeline stages need it</action>
 </step>
-<step n="5" title="Deployment Strategy">
+<step n="6" title="Deployment Strategy">
   <action>Define staging deployment: auto-deploy on merge to develop branch after all gates pass</action>
   <action>Define production deployment: deploy on merge to main with manual approval gate</action>
   <action>Define rollback procedure: how to revert a failed deployment (rollback trigger, steps, verification)</action>
 </step>
-<step n="6" title="Monitoring and Notifications">
+<step n="7" title="Monitoring and Notifications">
   <action>Configure pipeline failure notifications: Slack webhook, email, or platform-native alerts</action>
   <action>Add pipeline status badge for the project README</action>
   <action>Recommend metrics dashboard for pipeline health (run duration trends, failure rates, flaky test tracking)</action>
 </step>
-<step n="7" title="Generate Pipeline Config">
+<step n="8" title="Generate Pipeline Config">
   <action>Generate CI config file (.github/workflows/ci.yml or equivalent)</action>
 </step>
-<step n="8" title="Generate Output">
+<step n="9" title="Generate Output">
   <action>Generate CI/CD pipeline configuration document with: pipeline stages, quality gates, secrets management, deployment strategy, and monitoring setup</action>
   <template-output file="{test_artifacts}/ci-setup.md" />
 </step>
