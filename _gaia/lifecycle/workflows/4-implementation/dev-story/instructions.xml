@@ -249,7 +249,28 @@
   <action>Stage all changes</action>
   <action>Commit with conventional commit format: type(scope): description</action>
 </step>
-<step n="13" title="Post-Complete Gate">
+<step n="13" title="Push Feature Branch">
+  <critical>
+    <mandate>This step implements FR-247 (dev-story push step, architecture §10.24.5). It is gated by the ci_cd.promotion_chain configuration in global.yaml for backward compatibility (NFR-045).</mandate>
+  </critical>
+  <action>PROMOTION CHAIN GUARD (NFR-045): Read {project-root}/_gaia/_config/global.yaml and check whether ci_cd.promotion_chain is defined. If the ci_cd block is absent, or if ci_cd.promotion_chain is missing or empty, skip Steps 13, 14, 15, and 16 silently — no error, no warning, no output. Proceed directly to Step 17 (Post-Complete Gate). This preserves existing behavior for projects that have not opted in to the promotion chain.</action>
+  <action>NO-REMOTE DETECTION (AC2): Run `git remote -v` in {project-path}. If the output is empty (no git remote is configured), display the warning "No git remote configured — skipping push/PR/CI steps. Complete these manually." and set a skip flag to bypass Steps 14, 15, and 16. Proceed directly to Step 17.</action>
+  <action>BRANCH NAME DERIVATION (AC4): JIT-load the branch-naming section of the git-workflow skill from {project-root}/_gaia/dev/skills/git-workflow.md. Read the current checked-out branch via `git branch --show-current` in {project-path}. Validate that the current branch name follows the git-workflow skill convention (e.g., feat/{story_key}-{slug}). If the branch name does not match the convention, warn the user but continue — the current branch is authoritative.</action>
+  <action>PUSH (AC1, FR-247): Execute `git push -u origin {branch_name}` in {project-path}, where {branch_name} is the current branch resolved above. The `-u` flag sets upstream tracking, which is required for subsequent `gh pr create` in Step 14.</action>
+  <action>RETRY LOGIC (AC3): If the first push attempt fails, capture the full git stderr output. Classify the error: authentication failure (exit 128 with "Authentication failed"), network failure ("Could not resolve host", connection timeout), or other. Wait 5 seconds, then retry the push exactly once.</action>
+  <check if="push_retry_also_fails">HALT with an actionable error message that includes the raw git error output (both attempts): "Failed to push feature branch after retry. Error classification: {auth|network|other}. Git output: {stderr}. Resolve the issue manually, then re-run /gaia-dev-story to resume from this step."</check>
+  <action>On success: report "Pushed {branch_name} to origin with upstream tracking. Ready for PR creation in Step 14."</action>
+</step>
+<step n="14" title="Create Pull Request">
+  <action>PLACEHOLDER (FR-248) — implemented in E20-S6. If the promotion-chain guard or no-remote flag from Step 13 is set, this step is skipped.</action>
+</step>
+<step n="15" title="Wait for CI">
+  <action>PLACEHOLDER (FR-249, NFR-043) — implemented in E20-S7. If the promotion-chain guard or no-remote flag from Step 13 is set, this step is skipped.</action>
+</step>
+<step n="16" title="Merge Pull Request">
+  <action>PLACEHOLDER (FR-250) — implemented in E20-S8. If the promotion-chain guard or no-remote flag from Step 13 is set, this step is skipped.</action>
+</step>
+<step n="17" title="Post-Complete Gate">
   <action>Verify all tests pass (final confirmation)</action>
   <action>Verify all acceptance criteria met</action>
   <action>Verify all subtasks marked complete</action>
@@ -257,7 +278,7 @@
   <check if="any_test_fails">HALT: All tests must pass before marking complete</check>
   <check if="any_dod_unchecked">HALT: All Definition of Done items must be checked before moving to review. Unchecked items: {list}. Return to Step 10 to resolve.</check>
 </step>
-<step n="14" title="Update Status">
+<step n="18" title="Update Status">
   <invoke-protocol ref="status-sync" story_key="{story_key}" new_status="review" source_workflow="dev-story" />
   <action>Append files changed list to story file</action>
   <action>Initialize Review Gate section in story file: set all six rows (Code Review, QA Tests, Security Review, Test Automation, Test Review, Performance Review) to PENDING with report link "—". If Review Gate section already exists, reset all rows to PENDING.</action>
@@ -265,7 +286,7 @@
     Update story file with status change to 'review', list of files changed, and initialized Review Gate table (all 6 rows PENDING).
   </template-output>
 </step>
-<step n="15" title="Auto-Run Reviews (YOLO only)">
+<step n="19" title="Auto-Run Reviews (YOLO only)">
   <action if="not yolo_mode">Skip this step — in normal mode, user runs /gaia-run-all-reviews manually when ready.</action>
   <action if="yolo_mode">Spawn a subagent using the Agent tool with this prompt:
     "Load {project-root}/_gaia/core/engine/workflow.xml, then process {project-root}/_gaia/lifecycle/workflows/4-implementation/run-all-reviews/workflow.yaml as workflow-config. The story key is {story_key}. Run in YOLO mode — auto-proceed past all template-outputs. Follow the workflow engine instructions EXACTLY."
