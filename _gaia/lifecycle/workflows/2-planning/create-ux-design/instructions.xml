@@ -32,21 +32,105 @@
   <action>Plan keyboard navigation, screen reader support</action>
   <action>Define color contrast and text sizing standards</action>
 </step>
-<step n="7" title="Figma Import Mode (Optional)" if="figma_mcp_available">
-  <ask>A Figma MCP server is available. Would you like to import an existing Figma file to generate ux-design.md? This reads design data from Figma (read-only — no write operations). (import / skip)</ask>
-  <action if="import">JIT-load figma-integration:import-detection section. Prompt user for Figma file URL or raw file key. Parse and validate the key via MCP.</action>
-  <action if="import">JIT-load figma-integration:import-discovery section. Run page and frame discovery — enumerate all pages and frames from the Figma file.</action>
-  <action if="import">JIT-load figma-integration:import-tokens section. Extract design tokens from the Figma file and write design-tokens.json in W3C DTCG format to {planning_artifacts}/design-system/.</action>
-  <action if="import">JIT-load figma-integration:import-screens section. Build screen inventory from frame hierarchy with viewport classification and component instance extraction.</action>
-  <action if="import">JIT-load figma-integration:import-generate section. Generate ux-design.md with figma: YAML frontmatter (file_key, pages, node_ids), Design Tokens section, Component Inventory, and Screen Descriptions.</action>
-  <action if="skip">Figma import skipped. Proceeding with manual UX design generation.</action>
+<step n="7" title="Figma MCP Detection and Mode Selection">
+  <action>Probe for available Figma MCP server. Load figma-integration.md detection section JIT to determine if a design tool adapter is available.</action>
+  <action if="figma_mcp_available">Present mode selection to user: [Generate] Create Figma frames alongside ux-design.md | [Import] Import existing Figma designs (read-only) | [Skip] Text-only UX spec, no Figma integration</action>
+  <action if="not figma_mcp_available">Skip Figma integration — proceed with text-only UX design output. Log: "No Figma MCP server detected. Generating markdown-only ux-design.md."</action>
 </step>
-<step n="8" title="Generate Output">
+<step n="8" title="Generate Mode — UI Kit Page Creation" if="figma_mcp_available AND user_selected_generate">
+  <critical>
+    <mandate>Generate mode is the ONLY mode that performs write operations to Figma (FR-140). All other modes are read-only. Write operations: create pages, create frames, create component instances. Minimum required Figma API scopes: files:read + file_content:read + files:write.</mandate>
+  </critical>
+  <action>Load figma-integration.md frames section JIT from _gaia/dev/skills/figma-integration.md</action>
+  <action>Create a UI Kit page named "UI Kit — Generated" in the Figma design file via MCP</action>
+  <action>Extract design tokens from {planning_artifacts}/design-system/design-tokens.json (W3C DTCG format)</action>
+  <action>Create color styles with semantic aliases from token definitions (e.g., color.surface.primary, color.text.primary)</action>
+  <action>Create typography styles from composite token specs (heading-1, heading-2, body, caption)</action>
+  <action>Create spacing grid tokens and base components with state variants (default, hover, active, disabled, focus)</action>
+  <action>Error handling: on HTTP 429 rate limit, perform a single retry after backoff. If 429 persists, graceful fallback to markdown-only flow — log warning and skip remaining Figma operations.</action>
+</step>
+<step n="9" title="Generate Mode — Per-Screen Frame Generation" if="figma_mcp_available AND user_selected_generate">
+  <action>Parse PRD user journeys to determine screens needing frames</action>
+  <action>For each screen, generate frames at 6 viewports: 280px (foldable inner, FR-174), 375px (mobile), 600px (foldable outer, FR-174), 768px (tablet portrait), 1024px (tablet landscape, FR-174), 1280px (desktop)</action>
+  <action>Compose frames using UI Kit components from the previous step — apply auto-layout with responsive constraints from component specs</action>
+  <action>Label frames using naming convention: {ScreenName}/{Viewport} (e.g., Dashboard/Desktop, Login/Mobile)</action>
+  <action>Collect all generated Figma node IDs for downstream recording in ux-design.md</action>
+</step>
+<step n="10" title="Generate Mode — Prototype Flow Setup" if="figma_mcp_available AND user_selected_generate">
+  <action>Map PRD user journey steps to the generated screen frames</action>
+  <action>Create prototype flow connections between frames via Figma MCP, linking screens in the order defined by each user journey</action>
+  <action>Validate flow completeness: every user journey step must map to a generated frame. Flag any unmapped journey steps as warnings.</action>
+</step>
+<step n="11" title="Generate Mode — Asset Export Configuration" if="figma_mcp_available AND user_selected_generate">
+  <action>Configure PNG export at 1x, 2x, 3x densities for raster assets (images, illustrations)</action>
+  <action>Configure SVG export for icon components</action>
+  <action>Generate platform-specific asset catalogs per FR-175: iOS .xcassets catalog structure with Contents.json manifests, Android drawable-mdpi/drawable-hdpi/drawable-xhdpi/drawable-xxhdpi/drawable-xxxhdpi directories</action>
+  <action>Write export configuration and asset manifest to {planning_artifacts}/design-system/assets/ directory</action>
+  <action>Check {project-path}/.figma-cache/ for cached responses (1h TTL) before making MCP read calls — use cached data if fresh, fetch and cache if stale or missing</action>
+</step>
+<step n="12" title="Generate Mode — Record Figma Node IDs and Enhance ux-design.md" if="figma_mcp_available AND user_selected_generate">
+  <action>Build Screen-to-Frame mapping table from all generated Figma node IDs: columns Screen Name | Viewport | Figma Node ID | Page</action>
+  <action>Add figma: YAML frontmatter block to ux-design.md containing: file_key, pages array with node IDs for each generated page, and last_synced ISO 8601 timestamp</action>
+  <action>Add Design Tokens reference section linking to {planning_artifacts}/design-system/design-tokens.json with token category summary</action>
+  <action>Add Component Inventory section listing all generated UI Kit components with their Figma node IDs, variant counts, and state definitions</action>
+  <action>Add Screen-to-Frame mapping table with all generated frames across all viewports</action>
+  <action>Ensure backward compatibility: existing text-only ux-design.md content is preserved. Figma sections are additive — they appear after the standard UX design sections.</action>
+</step>
+<step n="13" title="Import Mode — File Key Entry and Validation" if="figma_mcp_available AND user_selected_import">
+  <critical>
+    <mandate>Import mode is strictly READ-ONLY. Only get_file, get_file_nodes, and get_image MCP calls are permitted. Zero write operations to Figma. Minimum required Figma API scopes: files:read + file_content:read.</mandate>
+  </critical>
+  <action>JIT-load figma-integration:import-detection section from _gaia/dev/skills/figma-integration.md</action>
+  <ask>Enter the Figma file URL (e.g., https://www.figma.com/file/abc123/Design-Name) or raw file key:</ask>
+  <action>Parse input: extract file key from URL format, or accept raw key directly</action>
+  <action>Validate key via lightweight figma/get_file MCP call with depth=1 (metadata only)</action>
+  <action>Handle errors: invalid key format (client-side rejection), 404 not found, 403 permission denied, 429 rate limited (single retry after 1s delay), 5-second timeout (abort gracefully per E13-S1)</action>
+</step>
+<step n="14" title="Import Mode — Page and Frame Discovery" if="figma_mcp_available AND user_selected_import">
+  <action>JIT-load figma-integration:import-discovery section</action>
+  <action>Call figma/get_file with full depth to retrieve the complete document tree</action>
+  <action>Parse response: extract pages (top-level CANVAS nodes) and frames (FRAME nodes within each page)</action>
+  <action>Build Page → Frames hierarchy with metadata (name, nodeId, absoluteBoundingBox dimensions)</action>
+  <action>Classify frames by viewport width: mobile (≤480px), tablet (481–1024px), desktop (>1024px)</action>
+  <action>Cache response in {project-path}/.figma-cache/ with 1-hour TTL per ADR-024</action>
+  <action>Handle partial access: if some pages/frames are inaccessible, continue with warnings and proceed with accessible content</action>
+</step>
+<step n="15" title="Import Mode — Design Token Extraction" if="figma_mcp_available AND user_selected_import">
+  <action>JIT-load figma-integration:import-tokens section</action>
+  <action>Extract color styles from file's styles and document nodes, resolving fill/stroke references to RGBA values</action>
+  <action>Extract typography styles: font family, size, weight, line height, letter spacing</action>
+  <action>Extract effect styles: drop-shadow and inner-shadow parameters</action>
+  <action>Extract spacing values from auto-layout frames: itemSpacing, paddingLeft/Right/Top/Bottom</action>
+  <action>Map all extracted tokens to W3C DTCG format with semantic alias support (e.g., Primary/500 → color.primary.500)</action>
+  <action>Write design-tokens.json to {planning_artifacts}/design-system/ with schema_version field</action>
+</step>
+<step n="16" title="Import Mode — Screen Inventory" if="figma_mcp_available AND user_selected_import">
+  <action>JIT-load figma-integration:import-screens section</action>
+  <action>Group frames by page from the discovered hierarchy</action>
+  <action>Build per-frame metadata: name, nodeId, width, height, viewport classification</action>
+  <action>Extract component instances used in each frame — map to component-specs.yaml format (name, props, layout type)</action>
+  <action>Generate structured screen-to-frame mapping with tracked nodeIds for downstream dev agent consumption (E13-S5)</action>
+  <action>Write component-specs.yaml to {planning_artifacts}/design-system/</action>
+</step>
+<step n="17" title="Import Mode — Generate ux-design.md Content" if="figma_mcp_available AND user_selected_import">
+  <action>JIT-load figma-integration:import-generate section</action>
+  <action>Prepare figma: YAML frontmatter block containing: file_key, pages array, node_ids array, imported_at ISO 8601 timestamp, import_mode: true</action>
+  <action>Prepare Design Tokens section with token path references (e.g., {color.primary}, {spacing.4})</action>
+  <action>Prepare Component Inventory section listing all components discovered from frame extraction with props and variants</action>
+  <action>Prepare Screen Descriptions section with per-screen: frame name, node ID, viewport classification, component list, layout description</action>
+  <action>Verify read-only guarantee: audit all MCP calls made during steps 13-17 — confirm only get_file, get_file_nodes, and get_image were used. Zero write operations. Abort and report if any write operation is detected.</action>
+</step>
+<step n="18" title="Generate Output">
   <template-output file="{planning_artifacts}/ux-design.md">
-    Generate UX design document with: personas, information architecture, wireframe descriptions, interaction patterns, component specifications, accessibility plan, and FR-to-Screen Mapping table (FR ID | Screen/Page | Wireframe Section). If Figma import was used in Step 7, the document is already populated — enhance it with any additional UX decisions from Steps 2-6.
+    Generate UX design document with: personas, information architecture, wireframe descriptions, interaction patterns, component specifications, accessibility plan, FR-to-Screen Mapping table (FR ID | Screen/Page | Wireframe Section). If Generate mode was active: include figma: frontmatter block, Design Tokens section, Component Inventory with Figma node IDs, and Screen-to-Frame mapping table. If Import mode was active: include figma: frontmatter block (file_key, pages, node_ids, imported_at, import_mode: true), Design Tokens section with token references, Component Inventory, and Screen Descriptions.
   </template-output>
 </step>
-<step n="9" title="Optional: Accessibility Review">
+<step n="19" title="FR-140 Compliance Check" if="figma_mcp_available AND user_selected_generate">
+  <action>Audit all MCP calls executed during Generate mode: classify each as READ (get_file, get_styles, get_components, get_images, get_frames) or WRITE (create_frame, create_component_instance, create_page)</action>
+  <action>Verify FR-140 constraint: write operations only occurred during Generate mode steps (8–12). Import mode and Skip mode must have zero write calls.</action>
+  <action>Document minimum required Figma API scopes: files:read + file_content:read (default for all modes), files:write (Generate mode only)</action>
+</step>
+<step n="20" title="Optional: Accessibility Review">
   <ask>Would you like to review the UX design for WCAG 2.1 accessibility compliance? This spawns a subagent in a separate context. Recommended for user-facing applications. (yes / skip)</ask>
   <action>If yes: spawn a subagent using the Agent tool: "Load {project-root}/_gaia/core/tasks/review-accessibility.xml. Read its entire contents. Target: {planning_artifacts}/ux-design.md. Follow the flow steps EXACTLY. Generate accessibility findings report."</action>
   <action>If skip: accessibility review can be run anytime later with /gaia-review-a11y</action>

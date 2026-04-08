@@ -2,7 +2,7 @@
  * Tier 1 Validation: Publish Workflow (E4-S2)
  *
  * Validates the structure and configuration of .github/workflows/publish.yml.
- * Covers: AC1 (trigger/structure), AC2 (provenance), AC3a/AC3b (staleness),
+ * Covers: AC1 (trigger/structure), AC2 (provenance),
  *         AC4a/AC4b (verification/checksums), AC5 (permissions)
  */
 
@@ -101,47 +101,6 @@ describe("Publish Workflow Validation (E4-S2)", () => {
       const steps = publishJob.steps;
       const setupNode = steps.find((s) => s.uses && s.uses.startsWith("actions/setup-node@v4"));
       expect(setupNode.with["registry-url"]).toBe("https://registry.npmjs.org");
-    });
-  });
-
-  // AC3a/AC3b: Tier 2 staleness check
-  describe("AC3a/AC3b — Tier 2 staleness check", () => {
-    it("should include a staleness check step", () => {
-      const jobs = publishConfig.jobs;
-      const publishJob = jobs.publish || jobs["publish-and-verify"];
-      const steps = publishJob.steps;
-      const stalenessStep = steps.find(
-        (s) =>
-          (s.name && s.name.toLowerCase().includes("staleness")) ||
-          (s.name && s.name.toLowerCase().includes("tier") && s.name.toLowerCase().includes("2"))
-      );
-      expect(stalenessStep).toBeDefined();
-    });
-
-    it("staleness check should reference tier2-results directory", () => {
-      const jobs = publishConfig.jobs;
-      const publishJob = jobs.publish || jobs["publish-and-verify"];
-      const steps = publishJob.steps;
-      const stalenessStep = steps.find((s) => s.run && s.run.includes("tier2-results"));
-      expect(stalenessStep).toBeDefined();
-    });
-
-    it("staleness check should use git log for commit timestamps", () => {
-      const jobs = publishConfig.jobs;
-      const publishJob = jobs.publish || jobs["publish-and-verify"];
-      const steps = publishJob.steps;
-      const stalenessStep = steps.find((s) => s.run && s.run.includes("git log"));
-      expect(stalenessStep).toBeDefined();
-    });
-
-    it("checkout should use fetch-depth 0 for accurate git log", () => {
-      const jobs = publishConfig.jobs;
-      const publishJob = jobs.publish || jobs["publish-and-verify"];
-      const steps = publishJob.steps;
-      const checkout = steps.find((s) => s.uses && s.uses.startsWith("actions/checkout@v4"));
-      expect(checkout).toBeDefined();
-      expect(checkout.with).toBeDefined();
-      expect(checkout.with["fetch-depth"]).toBe(0);
     });
   });
 

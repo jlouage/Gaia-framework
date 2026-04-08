@@ -9,11 +9,14 @@ docs/phases/
 node_modules/
 coverage/
 
+# npm pack output — local publishable tarballs, never committed
+*.tgz
+
 # Memory — checkpoints are ephemeral, archive is pruned
 _memory/checkpoints/
 _memory/*-sidecar/archive/
 
-# Figma MCP response cache (local, 1-hour TTL)
+# Figma MCP cached responses — never commit design data
 .figma-cache/
 
 # BATS test helpers (downloaded by test/shell/setup-bats.sh)

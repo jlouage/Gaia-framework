@@ -14,12 +14,7 @@ import path from "node:path";
 import yaml from "js-yaml";
 
 const PROJECT_ROOT = path.resolve(import.meta.dirname, "../../..");
-const DESIGN_SYSTEM_DIR = path.join(
-  PROJECT_ROOT,
-  "docs",
-  "planning-artifacts",
-  "design-system"
-);
+const DESIGN_SYSTEM_DIR = path.join(PROJECT_ROOT, "docs", "planning-artifacts", "design-system");
 const DESIGN_TOKENS_PATH = path.join(DESIGN_SYSTEM_DIR, "design-tokens.json");
 const COMPONENT_SPECS_PATH = path.join(DESIGN_SYSTEM_DIR, "component-specs.yaml");
 

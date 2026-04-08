@@ -4,6 +4,18 @@ version: '1.0'
 requires_mcp: design-tool
 applicable_agents: [typescript-dev, angular-dev, flutter-dev, java-dev, python-dev, mobile-dev]
 test_scenarios:
+  - scenario: Figma MCP server available and healthy
+    expected: Mode selection (Generate/Import/Skip) presented to user
+  - scenario: Figma MCP server not installed
+    expected: Silent fallback to markdown-only, no error or warning
+  - scenario: Figma MCP server not running
+    expected: Silent fallback to markdown-only, no error or warning
+  - scenario: Figma API token expired
+    expected: Warning displayed, fallback to markdown-only
+  - scenario: Rate limited (429)
+    expected: Single retry after delay, fallback with warning if retry fails
+  - scenario: Timeout exceeding 5 seconds
+    expected: Fallback with warning, continue markdown-only
   - scenario: Design tool detection via MCP probe
     expected: Correct adapter selected based on available MCP tool prefix
   - scenario: Token extraction produces W3C DTCG format
@@ -29,43 +41,102 @@ test_scenarios:
 
 **Selection logic:** probe MCP tool list for known prefixes in order: `figma_` / `figma/` → `penpot_` → `sketch_`. Use the first match. If none found, report "No design tool MCP server detected."
 
-**Zero-change path:** When no `figma:` metadata block is present in the story file or ux-design.md, all Figma-related operations are skipped entirely. The dev agent reads ux-design.md text as-is with zero behavioral change — this is the unchanged fallback path. No MCP calls, no cache reads, no design system files generated.
+**Zero-change path:** When no `figma:` metadata block is present in the story file or ux-design.md, all Figma-related operations are skipped — the dev agent reads ux-design.md text as-is (no MCP calls, no cache reads, no design system files generated). **MCP constraint (FR-140):** operations are read-heavy/write-light; most interactions read design data (tokens, components, styles). Write operations are limited to frame generation and are documented per section.
 
-**MCP constraint (FR-140):** operations are read-heavy/write-light. Most interactions read design data (tokens, components, styles). Write operations are limited to frame generation and are clearly documented per section.
-
-**Response Cache:** MCP responses are cached in `{project-path}/.figma-cache/` to prevent redundant API calls. Cache key is a composite: `{file_key}:{page_id}:{design_version_hash}` where `design_version_hash` is derived from the Figma file's `lastModified` timestamp. The version hash is the primary cache invalidation mechanism — a changed design always triggers a fresh MCP call regardless of age. The TTL (1-hour / 3600 seconds) serves as a secondary expiry for cases where the MCP server is available but version metadata cannot be fetched. Cache is gitignored.
-
-**Offline Fallback (NFR-028):** When the MCP server is unreachable and the cache TTL has expired, the skill does not fail or halt. Instead it continues with last-known-good files from `.figma-cache/`, emitting an `[OFFLINE]` warning to the user. This ensures dev agents can always proceed — stale design data is preferable to blocking implementation. The `[OFFLINE]` marker is logged in the story's dev record for traceability.
+**Response Cache and Offline Fallback (NFR-028):** MCP responses are cached in `{project-path}/.figma-cache/` (gitignored) with composite key `{file_key}:{page_id}:{design_version_hash}`, where the version hash derives from the Figma file's `lastModified` timestamp. The version hash is the primary invalidation signal — a changed design always triggers a fresh MCP call. A 1-hour TTL serves as secondary expiry when version metadata cannot be fetched. When the MCP server is unreachable and the cache TTL has expired, the skill continues with last-known-good files from `.figma-cache/`, emitting an `[OFFLINE]` warning logged in the story's dev record — stale design data is preferable to blocking implementation.
 
 <!-- SECTION: detection -->
-## Design Tool Detection
+## Detection Probe
 
-Probe for available design tool MCP servers and select the correct adapter.
+Detect Figma MCP server availability using a lightweight, read-only probe call.
+This section is consumed by `/gaia-create-ux` at workflow start.
 
-### Detection Steps
+> **Security mandate:** NEVER persist Figma API tokens in any GAIA file — checkpoints, sidecars, logs, or artifacts. MCP auth is handled by the MCP server process; GAIA does not touch tokens.
 
-1. **List MCP tools** — call the MCP tool listing endpoint to get all available tools
-2. **Match prefix** — scan tool names for known adapter prefixes:
-   - `figma_*` or `figma/*` → select FigmaAdapter
-   - `penpot_*` → select PenpotAdapter (not yet available)
-   - `sketch_*` → select SketchAdapter (not yet available)
-3. **Validate connectivity** — call a lightweight read operation (e.g., `figma/get_file` with the project file key) to confirm the MCP server is responsive
-4. **Report result** — output which adapter was selected and whether connectivity passed
+> **Detection-only mandate:** GAIA MUST never install, configure, or modify the MCP server. Detection is read-only — probe for availability via `figma/get_user_info` or tool listing, nothing more.
 
-### Output
+### Probe Call
 
-```yaml
-design_tool_detected: true
-adapter: FigmaAdapter
-mcp_prefix: "figma/"
-connectivity: verified
-available_operations: [get_file, get_styles, get_components, get_images]
+Use `figma/get_user_info` as the detection probe:
+- Read-only, lightweight, validates both connectivity and token validity
+- 5-second hard timeout (NFR-026 compliance)
+- Zero added latency when MCP is not available (silent skip)
+
+### Detection Flow
+
+1. **Attempt probe:** call `figma/get_user_info` with a 5-second hard timeout
+2. **On success:** set `figma_mcp_available = true`, proceed to mode selection
+3. **On failure:** classify the failure and handle per the failure mode table below
+
+### Failure Mode Handling
+
+| Failure | Detection Signal | Behavior |
+|---------|-----------------|----------|
+| **Not installed** (AC5) | Tool not found / tool not available | Silent fallback to markdown-only mode — no error, no warning, no prompt |
+| **Not running** (AC6) | Connection refused / connection error | Silent fallback to markdown-only mode — no error, no warning, no prompt |
+| **Token expired** (AC7) | 401 or 403 response from `figma/get_user_info` | Warn: "Figma token expired — falling back to markdown" then continue markdown-only |
+| **Rate limited** (AC8) | 429 response | Retry once after `Retry-After` header delay (default: 2 seconds). If retry also fails, warn and fallback to markdown-only |
+| **Timeout** (AC9) | No response within 5-second hard timeout | Warn: "Figma MCP did not respond within 5 seconds — falling back to markdown" then continue markdown-only |
+| **Malformed response** | Unexpected or partial data | Treat as unavailable — silent fallback to markdown-only |
+
+### Mode Selection (on success)
+
+When `figma_mcp_available == true`, present the user with:
+
+```
+Figma MCP detected. Select UX design mode:
+  [g] Generate — AI-generated UX with Figma export
+  [i] Import  — Import existing Figma designs into GAIA
+  [s] Skip    — Proceed with markdown-only (ignore Figma)
 ```
 
-If no design tool is detected, halt with: "No design tool MCP server detected. Ensure a Figma (or compatible) MCP server is configured."
+### Minimum API Scopes
+
+The Figma API token used by the MCP server requires these minimum scopes:
+
+| Scope | Required For | Mode |
+|-------|-------------|------|
+| `files:read` | Reading design files, styles, components | Default (all modes) |
+| `file_content:read` | Reading file content, nodes, images | Default (all modes) |
+| `files:write` | Creating frames, writing to design files | Generate mode only |
+
+Scope enforcement is the MCP server's responsibility — GAIA documents scope expectations only and does not validate or request token scopes.
+
+### Error Sanitization Rules
+
+All error messages from MCP operations MUST follow this safe error format:
+
+```
+Figma MCP error: {status_code} — {generic_description}. Falling back to markdown-only workflow.
+```
+
+**Disallowed content in error messages:** Figma file URLs, file keys, node IDs, design data, access tokens, or any dynamic content from the Figma API response.
+
+| Status Code | Generic Description |
+|-------------|-------------------|
+| 401 | Authentication failed |
+| 403 | Access denied |
+| 404 | Resource not found |
+| 429 | Rate limit exceeded — retry once, then fallback |
+| 500 | Server error |
+
+### Security Boundary
+
+- The Figma API token lives exclusively in the MCP server configuration (ADR-024)
+- GAIA files must NEVER contain or log Figma tokens, API keys, or credentials
+- Detection probe interacts through MCP tool abstraction only — no direct HTTP calls
+
+### Traceability
+
+- FR-132: Figma MCP detection probe requirement
+- FR-143: Graceful MCP failure handling
+- NFR-026: MCP detection latency < 5 seconds
+- ADR-024: Figma MCP integration via shared skill
 
 <!-- SECTION: tokens -->
 ## Design Token Extraction
+
+> **Security mandate:** MCP auth is handled by the MCP server — NEVER persist or reference Figma API tokens in extraction outputs, logs, or GAIA files.
 
 Extract design tokens from the connected design tool and output in W3C DTCG format.
 
@@ -95,6 +166,8 @@ Extract design tokens from the connected design tool and output in W3C DTCG form
 
 <!-- SECTION: components -->
 ## Component Spec Extraction
+
+> **Security mandate:** MCP auth is handled by the MCP server — NEVER include Figma API tokens in component specs, logs, or any GAIA output files.
 
 Extract component specifications into a tech-agnostic intermediate format.
 
@@ -130,6 +203,8 @@ components:
 <!-- SECTION: frames -->
 ## Frame Generation
 
+> **Security mandate:** MCP auth is handled by the MCP server — NEVER persist Figma API tokens in frame metadata, logs, or any GAIA output files.
+
 Create UI kit frames in the design tool across standard viewports.
 
 ### Generation Steps
@@ -148,6 +223,8 @@ Frame metadata logged for verification. No file output — frames are created di
 
 <!-- SECTION: assets -->
 ## Asset Export
+
+> **Security mandate:** MCP auth is handled by the MCP server — NEVER include Figma API tokens in asset manifests, export logs, or any GAIA output files.
 
 Export raster and vector assets from the design tool at required densities.
 
@@ -170,6 +247,8 @@ Export raster and vector assets from the design tool at required densities.
 
 <!-- SECTION: export -->
 ## Per-Stack Token Resolution
+
+> **Security mandate:** MCP auth is handled by the MCP server — NEVER embed Figma API tokens in generated token files, stack outputs, or any GAIA output files.
 
 Maps abstract design tokens to framework-specific implementations. Each dev agent uses this table to generate native code from `design-tokens.json`.
 

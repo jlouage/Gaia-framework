@@ -3,7 +3,7 @@
 # After modifying this file, run /gaia-build-configs to regenerate resolved configs.
 
 framework_name: "GAIA"
-framework_version: "1.73.2"
+framework_version: "1.85.0-rc.1"
 
 # User settings
 user_name: "jlouage"
@@ -38,6 +38,10 @@ sizing_map:
   M: 5
   L: 8
   XL: 13
+
+# Problem-solving workflow — context gathering configuration
+problem_solving:
+  context_budget: 30000  # Max tokens for auto-gathered context (Step 0)
 
 # Framework paths
 installed_path: "{project-root}/_gaia"

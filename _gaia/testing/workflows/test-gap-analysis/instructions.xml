@@ -1,0 +1,53 @@
+<workflow name="test-gap-analysis">
+<critical>
+  <mandate>Scan test-plan.md and story files to identify acceptance criteria gaps — NFR-040 requires completion in under 60 seconds</mandate>
+  <mandate>Output must follow the FR-223 schema: summary count, per-story gap table, coverage percentage</mandate>
+  <mandate>When no gaps are detected, output must state "No coverage gaps detected" with a summary count of zero</mandate>
+</critical>
+
+<step n="1" title="Determine Mode">
+  <action>Check the --mode argument: coverage or verification</action>
+  <action>If no mode specified, default to coverage mode</action>
+  <action>If mode is 'verification', skip to verification-mode steps (E19-S2 scope — not implemented yet)</action>
+</step>
+
+<step n="2" title="Scan Test Plan">
+  <action>Read {test_artifacts}/test-plan.md</action>
+  <action>Extract all test case IDs and their linked story keys from the test plan</action>
+  <action>Build a map of test_case_id -> [story_keys] for cross-referencing</action>
+  <action>If test-plan.md is missing, log warning: "test-plan.md not found — partial coverage analysis only" and continue with empty test case map</action>
+</step>
+
+<step n="3" title="Scan Story Files">
+  <action>Scan all story files in docs/implementation-artifacts/ matching pattern {story_key}-*.md</action>
+  <action>For each story file, extract all acceptance criteria (AC items) from the "Acceptance Criteria" section</action>
+  <action>Build a map of story_key -> [AC items] with their identifiers (AC1, AC2, etc.)</action>
+  <action>Track untested acceptance criteria — ACs that have no matching test case in the test plan map</action>
+</step>
+
+<step n="4" title="Cross-Reference and Identify Gaps">
+  <action>For each story's acceptance criteria, check if a corresponding test case exists in the test plan</action>
+  <action>Flag each AC as covered (has test case) or uncovered-ac (no test case found)</action>
+  <action>Calculate coverage rate per story: covered_ACs / total_ACs</action>
+  <action>Calculate overall coverage percentage across all stories</action>
+</step>
+
+<step n="5" title="Generate Output (FR-223 Schema)">
+  <action>Generate the output artifact at {test_artifacts}/test-gap-analysis-{date}.md</action>
+  <action>Output must include the following FR-223 schema sections:
+    - Summary section with total count of stories analyzed, ACs scanned, gaps found, and overall coverage percentage
+    - Per-story gap table listing each story, its ACs, and their coverage status
+    - Coverage rate breakdown showing covered vs uncovered acceptance criteria
+  </action>
+  <action>If zero gaps are detected (all ACs have corresponding test cases):
+    Output "No coverage gaps detected" in the summary section with a gap count of 0 and coverage rate of 100%</action>
+  <template-output file="{test_artifacts}/test-gap-analysis-{date}.md">
+    Gap analysis report following FR-223 schema with summary count, per-story gap table, and coverage percentage.
+  </template-output>
+</step>
+
+<step n="6" title="Performance Validation">
+  <action>Verify workflow completed within the NFR-040 constraint of under 60 seconds</action>
+  <action>Log total execution time in the output footer</action>
+</step>
+</workflow>

@@ -45,6 +45,17 @@
       (file paths, component references, API endpoints, dependency versions).
       Verify against filesystem and ground truth (if available).
       Classify findings as CRITICAL (broken reference), WARNING (outdated), INFO (style).
+
+  (g) Origin Field Validation (optional fields — backward compatible):
+      The origin and origin_ref fields are OPTIONAL — stories without these fields
+      are valid (backward compatibility). Missing origin/origin_ref fields do NOT
+      cause errors and are accepted without warnings.
+      If the origin field IS present, validate:
+        - origin must be one of: "manual", "problem-solving", "triage", "add-feature",
+          "sprint-planning", or null. An invalid origin enum value is a CRITICAL finding.
+        - If origin is non-null, origin_ref must be non-empty (not null, not empty string).
+          A non-null origin with empty or null origin_ref is a WARNING finding.
+      If origin is null or absent, origin_ref is not validated (orphaned refs are acceptable).
   </action>
 </step>
 <step n="3" title="Validation Fix Loop">
