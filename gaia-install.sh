@@ -77,6 +77,7 @@ OPT_YES=false
 OPT_DRY_RUN=false
 OPT_VERBOSE=false
 OPT_BRANCH=""
+OPT_SKIP_SPRINT_GATE=false
 
 # ─── Utility Functions ──────────────────────────────────────────────────────
 
@@ -254,6 +255,53 @@ read_package_version() {
 count_files() {
   local dir="$1" pattern="${2:-*}"
   find "$dir" -name "$pattern" -type f 2>/dev/null | wc -l | tr -d ' '
+}
+
+# ─── Sprint Gate (E18-S1, ADR-029 §10.21.2) ───────────────────────────────
+# Reads sprint-status.yaml and hard-blocks the upgrade if any story has an
+# active status (in-progress, review, or ready-for-dev).
+
+check_sprint_gate() {
+  local target="$1"
+  local sprint_file="$target/docs/implementation-artifacts/sprint-status.yaml"
+
+  # AC3: If no sprint file exists, gate passes silently
+  if [[ ! -f "$sprint_file" ]]; then
+    [[ "$OPT_VERBOSE" == true ]] && detail "No sprint-status.yaml found — sprint gate passes"
+    return 0
+  fi
+
+  # Extract sprint_id (top-level field, unindented)
+  local sprint_id
+  sprint_id="$(extract_yaml_value "$sprint_file" "sprint_id")"
+  [[ -z "$sprint_id" ]] && sprint_id="unknown"
+
+  # Count active stories — match only indented status: lines (story entries)
+  local active_count=0
+  while IFS= read -r line; do
+    local status_val
+    status_val="${line#*status:}"              # strip key
+    status_val="${status_val#"${status_val%%[![:space:]]*}"}"  # trim leading whitespace
+    status_val="${status_val#[\"\']}"           # trim leading quote
+    status_val="${status_val%[\"\']}"           # trim trailing quote
+    case "$status_val" in
+      in-progress|review|ready-for-dev)
+        active_count=$((active_count + 1))
+        ;;
+    esac
+  done < <(grep '^[[:space:]]\{1,\}status:' "$sprint_file")
+
+  # AC3: If no active stories, gate passes
+  if [[ "$active_count" -eq 0 ]]; then
+    [[ "$OPT_VERBOSE" == true ]] && detail "Sprint gate passes — no active stories"
+    return 0
+  fi
+
+  # AC2: Hard block with clear error message
+  local story_word="stories"
+  [[ "$active_count" -eq 1 ]] && story_word="story"
+  error "Upgrade blocked: sprint \`${sprint_id}\` is active (${active_count} ${story_word} in progress). Complete or pause the sprint before upgrading."
+  return 1
 }
 
 # ─── cmd_init ───────────────────────────────────────────────────────────────
@@ -534,6 +582,15 @@ cmd_update() {
     printf "Proceed with update? [y/N]: "
     local confirm; read -r confirm
     [[ "$confirm" =~ ^[Yy] ]] || { info "Aborted."; exit 0; }
+  fi
+
+  # Sprint Gate (E18-S1, ADR-029 §10.21.2): block upgrade if active sprint
+  if [[ "$OPT_SKIP_SPRINT_GATE" == true ]]; then
+    warn "Sprint gate bypassed via --skip-sprint-gate — proceed with caution"
+  else
+    if ! check_sprint_gate "$TARGET"; then
+      exit 1
+    fi
   fi
 
   local timestamp
@@ -929,12 +986,13 @@ ${BOLD}Commands:${RESET}
   status     Show installation info
 
 ${BOLD}Options:${RESET}
-  --source <path>   Local GAIA source (or clones from GitHub if omitted)
-  --branch <name>   Clone from a specific branch
-  --yes             Skip confirmation prompts
-  --dry-run         Show what would be done without making changes
-  --verbose         Show detailed progress
-  --help            Show this help message
+  --source <path>      Local GAIA source (or clones from GitHub if omitted)
+  --branch <name>      Clone from a specific branch
+  --yes                Skip confirmation prompts
+  --dry-run            Show what would be done without making changes
+  --verbose            Show detailed progress
+  --skip-sprint-gate   Bypass the active-sprint upgrade gate (NOT RECOMMENDED)
+  --help               Show this help message
 
 ${BOLD}Examples:${RESET}
   gaia-install.sh init ~/my-new-project
@@ -1002,6 +1060,10 @@ parse_args() {
         ;;
       --verbose)
         OPT_VERBOSE=true
+        shift
+        ;;
+      --skip-sprint-gate)
+        OPT_SKIP_SPRINT_GATE=true
         shift
         ;;
       --branch)

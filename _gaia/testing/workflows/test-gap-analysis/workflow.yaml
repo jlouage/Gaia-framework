@@ -1,0 +1,38 @@
+name: test-gap-analysis
+description: 'Scan test suite against requirements to identify untested or under-tested areas'
+module: testing
+agent: test-architect
+execution_mode: planning
+modes:
+  - coverage
+  - verification
+default_mode: coverage
+config_resolved: "{installed_path}/.resolved/test-gap-analysis.yaml"
+config_source: "{project-root}/_gaia/testing/config.yaml"
+installed_path: "{project-root}/_gaia/testing/workflows/test-gap-analysis"
+instructions: "{installed_path}/instructions.xml"
+validation: "{installed_path}/checklist.md"
+traces_to:
+  - FR-221
+  - FR-223
+  - NFR-040
+performance_constraints:
+  max_duration_seconds: 60  # NFR-040 — workflow must complete in under 60 seconds
+input_file_patterns:
+  test_plan:
+    whole: "{test_artifacts}/test-plan.md"
+    load_strategy: "FULL_LOAD"
+  story_files:
+    whole: "{implementation_artifacts}/*.md"
+    load_strategy: "INDEX_GUIDED"
+  architecture:
+    whole: "{planning_artifacts}/architecture.md"
+    load_strategy: "INDEX_GUIDED"
+  sprint_status:
+    whole: "{implementation_artifacts}/sprint-status.yaml"
+    load_strategy: "FULL_LOAD"
+output:
+  primary: "{test_artifacts}/test-gap-analysis-{date}.md"
+on_error:
+  missing_file: "warn_and_continue"
+  unresolved_variable: "halt"
