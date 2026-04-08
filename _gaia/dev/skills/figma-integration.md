@@ -41,7 +41,9 @@ test_scenarios:
 
 **Selection logic:** probe MCP tool list for known prefixes in order: `figma_` / `figma/` → `penpot_` → `sketch_`. Use the first match. If none found, report "No design tool MCP server detected."
 
-**MCP constraint (FR-140):** operations are read-heavy/write-light. Most interactions read design data (tokens, components, styles). Write operations are limited to frame generation and are clearly documented per section.
+**Zero-change path:** When no `figma:` metadata block is present in the story file or ux-design.md, all Figma-related operations are skipped — the dev agent reads ux-design.md text as-is (no MCP calls, no cache reads, no design system files generated). **MCP constraint (FR-140):** operations are read-heavy/write-light; most interactions read design data (tokens, components, styles). Write operations are limited to frame generation and are documented per section.
+
+**Response Cache and Offline Fallback (NFR-028):** MCP responses are cached in `{project-path}/.figma-cache/` (gitignored) with composite key `{file_key}:{page_id}:{design_version_hash}`, where the version hash derives from the Figma file's `lastModified` timestamp. The version hash is the primary invalidation signal — a changed design always triggers a fresh MCP call. A 1-hour TTL serves as secondary expiry when version metadata cannot be fetched. When the MCP server is unreachable and the cache TTL has expired, the skill continues with last-known-good files from `.figma-cache/`, emitting an `[OFFLINE]` warning logged in the story's dev record — stale design data is preferable to blocking implementation.
 
 <!-- SECTION: detection -->
 ## Detection Probe
@@ -294,3 +296,203 @@ Semantic tokens reference primitives via `{group.token}` syntax in their `$value
 → SCSS: $color-interactive-primary: #3B82F6;
 → Dart: static const interactivePrimary = Color(0xFF3B82F6);
 ```
+
+<!-- SECTION: import-detection -->
+## Import Mode — Detection and Entry Point
+
+Import mode reverses the Generate flow: reads existing Figma designs INTO GAIA (Figma → ux-design.md) instead of generating Figma frames FROM GAIA. Uses only read operations from the DesignToolProvider interface: `detect()`, `getTokens()`, `getComponents()`, `getFrames()`. No `exportAssets()` needed.
+
+### Import Entry Point
+
+The detection probe mode selection menu (from E13-S1) presents three options: **Generate** | **Import** | **Skip**. When the user selects Import mode:
+
+1. **Accept input** — prompt for Figma file URL or raw file key
+2. **Parse URL** — extract file key from `https://www.figma.com/file/{key}/...` format, or accept raw key directly
+3. **Validate file key** — issue a lightweight `figma/get_file` MCP call with `depth=1` (metadata only) to confirm the file exists and is accessible
+4. **Handle errors:**
+   - Invalid key format → client-side rejection, no MCP call
+   - 404 not found → "Figma file not found. Verify the file key or URL."
+   - 403 permission denied → "Access denied. Ensure the file is shared with your Figma account."
+   - 429 rate limited → single retry after 1-second delay; if retry fails, abort gracefully
+   - 5-second timeout → "MCP server unresponsive. Import aborted." (per E13-S1 hard limit)
+
+### API Scopes
+
+Import mode uses only read scopes: `files:read` and `file_content:read`. No write operations are performed on the Figma file — import is strictly read-only.
+
+<!-- SECTION: import-discovery -->
+## Import Mode — Page and Frame Discovery
+
+Enumerate all pages and top-level frames from the Figma file to build a complete document tree.
+
+### Discovery Steps
+
+1. **Fetch full document tree** — call `figma/get_file` with full depth to retrieve the complete document tree
+2. **Extract pages** — parse response for top-level CANVAS nodes (Figma's page type)
+3. **Extract frames** — within each CANVAS, collect FRAME nodes with metadata: name, nodeId, absoluteBoundingBox (x, y, width, height)
+4. **Build Page → Frames hierarchy** — structure: `{ page: { name, nodeId, frames: [{ name, nodeId, width, height }] } }`
+5. **Classify frames by viewport** — based on absoluteBoundingBox width:
+   - Mobile: width ≤ 480px
+   - Tablet: width 481–1024px
+   - Desktop: width > 1024px
+6. **Cache response** — store in `{project-path}/.figma-cache/` with 1-hour TTL per ADR-024
+
+### Partial Access Handling
+
+If some pages or frames are inaccessible (permission restricted), generate a partial ux-design.md with `[PARTIAL]` warnings for inaccessible pages. Do not abort the entire import.
+
+### Empty File Handling
+
+If the Figma file contains no frames (empty file), generate a minimal ux-design.md with empty screen sections and a note: "No frames found in Figma file."
+
+<!-- SECTION: import-tokens -->
+## Import Mode — Design Token Extraction
+
+Extract design tokens from an existing Figma file and write them in W3C DTCG format. This reverses the generate flow — reading tokens FROM Figma rather than pushing tokens TO Figma.
+
+### Extraction Steps
+
+1. **Extract color styles** — read the file's `styles` and `document` nodes. Resolve fill and stroke references to RGBA values. Map named styles to semantic token names using naming pattern: `Primary/500` → `color.primary.500`
+2. **Extract typography styles** — resolve font family, font size, font weight, line height, letter spacing from text style nodes
+3. **Extract effect styles** — resolve drop-shadow and inner-shadow parameters (offsetX, offsetY, blur, spread, color). Also extract blur effect parameters
+4. **Extract spacing from auto-layout** — read auto-layout frame properties: itemSpacing, paddingLeft, paddingRight, paddingTop, paddingBottom
+5. **Map to W3C DTCG format** — each token gets `$type`, `$value`, and optional `$description` per the W3C Design Tokens Community Group draft specification. Composite tokens (typography) use nested structure
+6. **Resolve semantic aliases** — match Figma style names to conventional naming patterns and create alias references (e.g., `color.surface.primary` → `{color.white}`)
+7. **Write output** — save design-tokens.json to `{planning_artifacts}/design-system/` with `schema_version` field
+
+### Error messages
+
+Log error messages with status codes only — no URLs, file keys, or design data in log output (per E13-S6 / FR-143).
+
+<!-- SECTION: import-screens -->
+## Import Mode — Screen Inventory
+
+Build a complete screen-to-frame mapping from the discovered page and frame hierarchy.
+
+### Screen Inventory Steps
+
+1. **Group frames by page** — organize the frame list from import-discovery into page groups
+2. **Build per-frame metadata** — for each frame: name, nodeId, width, height, viewport classification (mobile/tablet/desktop)
+3. **Extract component instances** — for each frame, enumerate component instances used within it. Map to component-specs.yaml format: name, props, layout type
+4. **Generate screen-to-frame mapping** — produce a structured mapping:
+   ```yaml
+   screens:
+     - page: "Home"
+       frames:
+         - name: "Home/Desktop"
+           nodeId: "123:456"
+           width: 1280
+           height: 800
+           viewport: desktop
+           components: [Button, Card, TextInput]
+   ```
+5. **Track all node IDs** — every Figma node referenced must include its nodeId for downstream dev agent consumption (E13-S5)
+
+<!-- SECTION: import-generate -->
+## Import Mode — Generate ux-design.md
+
+Assemble the extracted data into a complete ux-design.md document with Figma metadata frontmatter.
+
+### Generation Steps
+
+1. **Write `figma:` YAML frontmatter** — include:
+   ```yaml
+   figma:
+     file_key: "{extracted_file_key}"
+     pages: ["Page 1", "Page 2"]
+     node_ids: ["0:1", "123:456", "789:012"]
+     imported_at: "{ISO 8601 timestamp}"
+     import_mode: true
+   ```
+2. **Write Design Tokens section** — reference token paths from design-tokens.json (e.g., `{color.primary}`, `{spacing.4}`)
+3. **Write Component Inventory section** — list all components discovered from frame extraction with props and variants
+4. **Write Screen Descriptions** — for each screen: frame name, node ID, viewport classification, component list, and layout description
+5. **Preserve read-only guarantee** — the entire generation step produces only local files. Zero write operations to Figma via MCP. Only `get_file`, `get_file_nodes`, and `get_image` calls are used throughout the import flow
+
+### Output Files
+
+- `{planning_artifacts}/ux-design.md` — enhanced with `figma:` frontmatter
+- `{planning_artifacts}/design-system/design-tokens.json` — W3C DTCG format
+- `{planning_artifacts}/design-system/component-specs.yaml` — component specs (updated with import data)
+
+**Shared formats:** Import mode writes the same intermediate files as Generate mode (design-tokens.json, component-specs.yaml) using identical schemas from E13-S3. This ensures downstream dev agents consume imported designs identically to generated ones.
+
+<!-- SECTION: fidelity -->
+## Design-to-Implementation Fidelity Gate
+
+Post-implementation verification layer that compares token values in generated code against the approved `design-tokens.json` to detect and measure drift between design intent and implementation. Addresses FR-171 and ADR-024. Consumed by `/gaia-code-review` as a conditional step when the story has a `figma:` frontmatter block.
+
+### Token Extraction from Generated Code
+
+Scan generated code files for token references using platform-specific patterns:
+
+- **CSS custom properties:** `var(--color-primary-500)` maps to `color.primary.500`
+- **SCSS variables:** `$color-primary-500` maps to `color.primary.500`
+- **Flutter ThemeData:** `AppTokens.color.primary500` maps to `color.primary.500`
+- **Spring properties:** `design.tokens.color.primary.500`
+- **Python dict:** `TOKENS['color']['primary.500']`
+- **React Native / Swift / Compose:** platform-specific mappings per the export section resolution table
+
+Use the per-stack token resolution table from the `export` section above to reverse-map platform-specific references back to canonical W3C DTCG paths before comparison.
+
+### Deep Comparison Engine
+
+For each token reference extracted from code:
+
+1. Look up the canonical W3C DTCG path in `{planning_artifacts}/design-system/design-tokens.json`
+2. Compare the value used in code against the approved value in design-tokens.json
+3. Classify each token as:
+   - **matched** — value in code exactly matches design-tokens.json
+   - **drifted** — token exists in design-tokens.json but value differs
+   - **missing** — token referenced in code but absent from design-tokens.json
+
+### Per-Category Drift Reporting
+
+Group all compared tokens by W3C DTCG top-level category:
+
+- `color.*` — color palette, semantic colors, surface colors
+- `typography.*` — font families, sizes, weights, line heights
+- `spacing.*` — margins, paddings, gaps
+- `border.*` / `radius.*` — border widths, styles, border-radius values
+
+Calculate drift percentage per category using the formula: `drift_pct = (drifted + missing) / total × 100`
+
+Generate a structured fidelity report with a per-category breakdown table:
+
+| Category | Total | Matched | Drifted | Missing | Drift % | Status |
+|----------|-------|---------|---------|---------|---------|--------|
+| color.*  | 20    | 18      | 1       | 1       | 10%     | WARN   |
+
+### Threshold-Based Gating
+
+Two configurable thresholds (defaults from FR-171):
+
+- **10% WARNING** — drift exceeds 10% in any category: raise a WARNING. Story may continue but issue is flagged.
+- **25% BLOCK** — drift exceeds 25% in any category: story completion is BLOCKED and re-review is required.
+
+**Edge case handling:**
+
+- **Empty categories** — if a category has zero tokens referenced, skip it (do not report 0/0 as drift)
+- **N=1 single-token categories** — if a category has only one token and it is drifted, flag with a note "Single-token category — flagged but not auto-blocked (N=1 exception)" instead of blocking. Prevents a single mismatched border-radius from blocking an entire story.
+- **Missing design-tokens.json** — if `design-tokens.json` does not exist at the expected path, skip the fidelity check gracefully with a note: "Fidelity check skipped — design-tokens.json not found at {path}." No crash, no block.
+- **Zero tokens consumed** — if generated code references zero tokens (no `figma:` block consumed or no token patterns found), report "N/A — no tokens consumed" and skip the fidelity check.
+
+### Report Persistence
+
+Save the fidelity report to `{implementation_artifacts}/reviews/{story_key}/fidelity-report.md`. The report includes:
+
+- **Timestamp** — ISO 8601 date of the fidelity check
+- **Story key** — the story_key being checked
+- **Token source file path** — path to the design-tokens.json used as baseline
+- **Per-category breakdown table** (as shown above)
+- **Overall drift percentage** — weighted average across all categories
+- **Verdict** — PASS / WARNING / BLOCKED
+
+After saving the report, write the overall drift percentage to the story file YAML frontmatter:
+
+```yaml
+figma:
+  fidelity_drift_pct: 8.5
+```
+
+The `figma.fidelity_drift_pct` value is the weighted overall drift across all categories.

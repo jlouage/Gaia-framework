@@ -209,13 +209,16 @@ describe("E13-S1: Figma MCP Detection Probe", () => {
   });
 
   // --- File size constraint ---
+  // Limit raised to 500 in E13-S7 (import mode) to accommodate growth —
+  // matches the shell test in tests/skills/test-figma-integration-skill.sh
+  // and the product CLAUDE.md skill-file budget (500 lines).
   describe("File size constraint (FR-133)", () => {
-    it("should be under 300 lines total", () => {
+    it("should be under 500 lines total", () => {
       const content = safeRead(SKILL_FILE);
       expect(content).not.toBeNull();
       const lineCount = content.replace(/\r\n/g, "\n").split("\n").length;
-      expect(lineCount, `File is ${lineCount} lines — exceeds 300-line limit`).toBeLessThanOrEqual(
-        300
+      expect(lineCount, `File is ${lineCount} lines — exceeds 500-line limit`).toBeLessThanOrEqual(
+        500
       );
     });
   });

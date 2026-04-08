@@ -25,6 +25,16 @@
   </action>
   <action>Include an "Architecture Conformance" section in findings with PASS/FAIL per check</action>
 </step>
+<step n="3c" title="Design Fidelity Check">
+  <action>Read story file YAML frontmatter — check if a `figma:` block exists</action>
+  <action if="story_has_figma_block">Load the `figma-integration:fidelity` section JIT from `_gaia/dev/skills/figma-integration.md`</action>
+  <action if="story_has_figma_block">Run the fidelity comparison: extract token references from changed code files, compare against `{planning_artifacts}/design-system/design-tokens.json`, classify as matched/drifted/missing</action>
+  <action if="story_has_figma_block">Calculate per-category drift percentages (color, typography, spacing, borders)</action>
+  <action if="story_has_figma_block">Save fidelity report to `{implementation_artifacts}/reviews/{story_key}/fidelity-report.md`</action>
+  <action if="story_has_figma_block">Write `figma.fidelity_drift_pct` to story file frontmatter</action>
+  <action if="story_has_figma_block">Include fidelity results in code review findings: PASS (0% drift), WARNING (any category exceeds 10%), or BLOCKED (any category exceeds 25%)</action>
+  <action if="no figma block">Skip fidelity check — story does not use Figma design tokens</action>
+</step>
 <step n="4" title="Generate Findings">
   <action>List issues by severity: critical, warning, suggestion</action>
 </step>
