@@ -24,7 +24,10 @@ function parseFrontmatter(content) {
     if (kvMatch) {
       let value = kvMatch[2].trim();
       if (value.startsWith("[") && value.endsWith("]")) {
-        value = value.slice(1, -1).split(",").map((v) => v.trim().replace(/^['"]|['"]$/g, ""));
+        value = value
+          .slice(1, -1)
+          .split(",")
+          .map((v) => v.trim().replace(/^['"]|['"]$/g, ""));
       } else {
         value = value.replace(/^['"]|['"]$/g, "");
       }
@@ -189,8 +192,17 @@ describe("E13-S1: Figma MCP Detection Probe", () => {
       expect(content).not.toBeNull();
       const fm = parseFrontmatter(content);
       expect(fm).not.toBeNull();
-      const agents = Array.isArray(fm.applicable_agents) ? fm.applicable_agents : [fm.applicable_agents];
-      for (const agent of ["typescript-dev", "angular-dev", "flutter-dev", "java-dev", "python-dev", "mobile-dev"]) {
+      const agents = Array.isArray(fm.applicable_agents)
+        ? fm.applicable_agents
+        : [fm.applicable_agents];
+      for (const agent of [
+        "typescript-dev",
+        "angular-dev",
+        "flutter-dev",
+        "java-dev",
+        "python-dev",
+        "mobile-dev",
+      ]) {
         expect(agents, `Missing agent: ${agent}`).toContain(agent);
       }
     });
@@ -202,7 +214,9 @@ describe("E13-S1: Figma MCP Detection Probe", () => {
       const content = safeRead(SKILL_FILE);
       expect(content).not.toBeNull();
       const lineCount = content.replace(/\r\n/g, "\n").split("\n").length;
-      expect(lineCount, `File is ${lineCount} lines — exceeds 300-line limit`).toBeLessThanOrEqual(300);
+      expect(lineCount, `File is ${lineCount} lines — exceeds 300-line limit`).toBeLessThanOrEqual(
+        300
+      );
     });
   });
 
