@@ -24,12 +24,9 @@ const fs = require("fs");
 const PROJECT_ROOT = path.resolve(__dirname, "../../..");
 const INSTRUCTIONS_PATH = path.join(
   PROJECT_ROOT,
-  "_gaia/testing/workflows/ci-setup/instructions.xml",
+  "_gaia/testing/workflows/ci-setup/instructions.xml"
 );
-const PRESETS_PATH = path.join(
-  PROJECT_ROOT,
-  "_gaia/_config/environment-presets.yaml",
-);
+const PRESETS_PATH = path.join(PROJECT_ROOT, "_gaia/_config/environment-presets.yaml");
 
 const PRESET_NAMES = ["solo", "small-team", "standard", "enterprise"];
 
