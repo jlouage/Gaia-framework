@@ -53,3 +53,13 @@ skills:
       - { id: input-validation, line_range: [69, 118], description: "Validation at system boundaries" }
       - { id: secrets-management, line_range: [119, 166], description: "Environment-based secrets" }
       - { id: cors-csrf, line_range: [167, 230], description: "CORS and CSRF configuration, protection" }
+
+  - file: figma-integration.md
+    sections:
+      - { id: detection, line_range: [6, 17], description: "MCP probe, timeout, mode selection" }
+      - { id: tokens, line_range: [19, 31], description: "Design token extraction to W3C DTCG JSON" }
+      - { id: components, line_range: [33, 45], description: "Component spec extraction to YAML" }
+      - { id: frames, line_range: [47, 57], description: "Frame generation (Generate mode)" }
+      - { id: assets, line_range: [59, 70], description: "Asset export (icons, images, multi-density)" }
+      - { id: export, line_range: [72, 86], description: "Per-stack token resolution tables" }
+      - { id: fidelity, line_range: [88, 180], description: "Design-to-implementation fidelity gate" }
