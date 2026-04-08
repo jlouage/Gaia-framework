@@ -1,0 +1,378 @@
+schema_version: "1.0.0"
+
+# Per-stack token resolution table (AC3)
+# Maps abstract design tokens to framework-specific implementations.
+# Each dev agent uses this table to generate native code from design-tokens.json.
+stack_resolution_table:
+  cleo:
+    agent: "Cleo"
+    stack: "TypeScript/React"
+    format: "CSS custom properties"
+    pattern: "--{group}-{token}: {value};"
+    output_file: "tokens.css"
+    example: "--color-primary: #3B82F6;"
+  lena:
+    agent: "Lena"
+    stack: "Angular"
+    format: "SCSS variables + CSS custom properties"
+    pattern: "${group}-{token}: {value};"
+    output_file: "_tokens.scss"
+    example: "$color-primary: #3B82F6;"
+  freya:
+    agent: "Freya"
+    stack: "Flutter/Dart"
+    format: "Dart ThemeData extensions"
+    pattern: "static const {token} = {dart_value};"
+    output_file: "app_tokens.dart"
+    example: "ThemeData(primaryColor: Color(0xFF3B82F6))"
+  hugo:
+    agent: "Hugo"
+    stack: "Java/Spring"
+    format: "Spring properties + Java constants"
+    pattern: "design.{group}.{token}={value}"
+    output_file: "application.properties"
+    example: "design.color.primary=#3B82F6"
+  ravi:
+    agent: "Ravi"
+    stack: "Python"
+    format: "Python dict constants"
+    pattern: "TOKENS['{group}']['{token}'] = '{value}'"
+    output_file: "design_tokens.py"
+    example: "TOKENS = {'color': {'primary': '#3B82F6'}}"
+  talia:
+    agent: "Talia"
+    stack: "Mobile (RN/Swift/Compose)"
+    formats:
+      react_native:
+        format: "React Native StyleSheet"
+        pattern: "{token}: '{value}'"
+        output_file: "tokens.ts"
+        example: "StyleSheet.create({primary: '#3B82F6'})"
+      swift:
+        format: "Swift UIColor extensions"
+        pattern: "static let {token} = UIColor(hex: \"{value}\")"
+        output_file: "DesignTokens.swift"
+        example: "extension UIColor { static let primary = UIColor(hex: \"3B82F6\") }"
+      compose:
+        format: "Kotlin Compose theme objects"
+        pattern: "val {Token} = Color(0xFF{hex})"
+        output_file: "DesignTokens.kt"
+        example: "val Primary = Color(0xFF3B82F6)"
+
+# Per-platform token translation tables (AC6 / FR-172)
+# Maps W3C DTCG token paths to platform-specific equivalents.
+platform_token_translations:
+  flutter:
+    "color.semantic.interactive-primary": "ThemeData.colorScheme.primary"
+    "color.semantic.surface-primary": "ThemeData.colorScheme.surface"
+    "color.semantic.text-primary": "ThemeData.colorScheme.onSurface"
+    "color.semantic.feedback-error": "ThemeData.colorScheme.error"
+    "spacing.4": "EdgeInsets.all(16.0)"
+    "spacing.2": "EdgeInsets.all(8.0)"
+    "typography.body": "ThemeData.textTheme.bodyMedium"
+    "typography.heading-1": "ThemeData.textTheme.headlineLarge"
+    "borderRadius.md": "BorderRadius.circular(8.0)"
+    "shadow.md": "BoxShadow(offset: Offset(0, 4), blurRadius: 6)"
+  swift:
+    "color.semantic.interactive-primary": "UIColor.systemBlue / Color.accentColor"
+    "color.semantic.surface-primary": "UIColor.systemBackground"
+    "color.semantic.text-primary": "UIColor.label"
+    "color.semantic.feedback-error": "UIColor.systemRed"
+    "spacing.4": "CGFloat(16)"
+    "spacing.2": "CGFloat(8)"
+    "typography.body": "UIFont.preferredFont(forTextStyle: .body)"
+    "typography.heading-1": "UIFont.preferredFont(forTextStyle: .largeTitle)"
+    "borderRadius.md": "layer.cornerRadius = 8"
+    "shadow.md": "layer.shadowOffset = CGSize(width: 0, height: 4)"
+  kotlin:
+    "color.semantic.interactive-primary": "MaterialTheme.colorScheme.primary"
+    "color.semantic.surface-primary": "MaterialTheme.colorScheme.surface"
+    "color.semantic.text-primary": "MaterialTheme.colorScheme.onSurface"
+    "color.semantic.feedback-error": "MaterialTheme.colorScheme.error"
+    "spacing.4": "16.dp"
+    "spacing.2": "8.dp"
+    "typography.body": "MaterialTheme.typography.bodyMedium"
+    "typography.heading-1": "MaterialTheme.typography.headlineLarge"
+    "borderRadius.md": "RoundedCornerShape(8.dp)"
+    "shadow.md": "Modifier.shadow(elevation = 4.dp)"
+  angular:
+    "color.semantic.interactive-primary": "$color-interactive-primary (SCSS variable)"
+    "color.semantic.surface-primary": "$color-surface-primary (SCSS variable)"
+    "color.semantic.text-primary": "$color-text-primary (SCSS variable)"
+    "color.semantic.feedback-error": "$color-feedback-error (SCSS variable)"
+    "spacing.4": "$spacing-4 (SCSS variable, 16px)"
+    "spacing.2": "$spacing-2 (SCSS variable, 8px)"
+    "typography.body": "@include typography-body (SCSS mixin)"
+    "typography.heading-1": "@include typography-heading-1 (SCSS mixin)"
+    "borderRadius.md": "$border-radius-md (SCSS variable, 8px)"
+    "shadow.md": "$shadow-md (SCSS variable, box-shadow)"
+  react:
+    "color.semantic.interactive-primary": "var(--color-interactive-primary) / theme.colors.primary"
+    "color.semantic.surface-primary": "var(--color-surface-primary) / theme.colors.surface"
+    "color.semantic.text-primary": "var(--color-text-primary) / theme.colors.text"
+    "color.semantic.feedback-error": "var(--color-feedback-error) / theme.colors.error"
+    "spacing.4": "var(--spacing-4) / theme.spacing(4)"
+    "spacing.2": "var(--spacing-2) / theme.spacing(2)"
+    "typography.body": "var(--typography-body) / theme.typography.body"
+    "typography.heading-1": "var(--typography-heading-1) / theme.typography.h1"
+    "borderRadius.md": "var(--border-radius-md) / theme.radii.md"
+    "shadow.md": "var(--shadow-md) / theme.shadows.md"
+
+# Component specifications (AC2)
+# Technology-agnostic intermediate format for design components.
+# Dev agents translate these to stack-specific implementations.
+components:
+  - name: Button
+    props:
+      label:
+        type: string
+        description: "Button text content"
+      variant:
+        type: enum
+        values: [primary, secondary, ghost, danger]
+        description: "Visual variant"
+      size:
+        type: enum
+        values: [sm, md, lg]
+        description: "Button size"
+      disabled:
+        type: boolean
+        description: "Whether the button is disabled"
+      icon:
+        type: image
+        description: "Optional leading icon"
+      loading:
+        type: boolean
+        description: "Whether the button shows a loading state"
+    layout: row
+    spacing:
+      gap: "{spacing.2}"
+      paddingHorizontal: "{spacing.4}"
+      paddingVertical: "{spacing.2}"
+    states:
+      - default
+      - hover
+      - active
+      - disabled
+      - focused
+    children:
+      - slot: icon
+        type: image
+        optional: true
+        position: leading
+      - slot: label
+        type: text
+        required: true
+    variants:
+      primary:
+        background: "{color.interactive-primary}"
+        textColor: "{color.text-inverse}"
+        borderColor: "transparent"
+      secondary:
+        background: "transparent"
+        textColor: "{color.interactive-primary}"
+        borderColor: "{color.interactive-primary}"
+      ghost:
+        background: "transparent"
+        textColor: "{color.interactive-primary}"
+        borderColor: "transparent"
+      danger:
+        background: "{color.feedback-error}"
+        textColor: "{color.text-inverse}"
+        borderColor: "transparent"
+    responsive_breakpoints:
+      mobile:
+        width: 375
+        fullWidth: true
+        size: md
+      tablet:
+        width: 768
+        fullWidth: false
+        size: md
+      desktop:
+        width: 1280
+        fullWidth: false
+        size: md
+    a11y:
+      role: button
+      label: "{props.label}"
+      contrastRequirements: "WCAG AA (4.5:1 text, 3:1 non-text)"
+      keyboardInteraction: "Enter or Space to activate"
+      focusIndicator: "{shadow.focus-ring}"
+    widget_hints:
+      flutter: "ElevatedButton or OutlinedButton with child Row containing optional Icon and Text widgets, wrapped in SizedBox for sizing"
+      swift: "UIButton with UIButton.Configuration for styling, or SwiftUI Button with HStack for icon+label layout"
+      angular: "button element with [ngClass] for variant switching, mat-button directive for Material integration"
+      react: "button element with className composition, forwardRef for ref forwarding, clsx for conditional variant classes"
+
+  - name: Card
+    props:
+      title:
+        type: string
+        description: "Card title text"
+      subtitle:
+        type: string
+        description: "Optional subtitle text"
+      image:
+        type: image
+        description: "Optional header image"
+      elevated:
+        type: boolean
+        description: "Whether the card uses elevation shadow"
+      clickable:
+        type: boolean
+        description: "Whether the card is interactive"
+    layout: column
+    spacing:
+      gap: "{spacing.3}"
+      padding: "{spacing.4}"
+    states:
+      - default
+      - hover
+      - focused
+      - disabled
+    children:
+      - slot: header
+        type: image
+        optional: true
+        position: top
+      - slot: title
+        type: text
+        required: true
+      - slot: subtitle
+        type: text
+        optional: true
+      - slot: content
+        type: any
+        required: false
+        description: "Arbitrary content area"
+      - slot: actions
+        type: any
+        optional: true
+        position: bottom
+        description: "Action buttons area"
+    variants:
+      elevated:
+        shadow: "{shadow.md}"
+        borderColor: "transparent"
+      outlined:
+        shadow: "none"
+        borderColor: "{color.border-default}"
+      flat:
+        shadow: "none"
+        borderColor: "transparent"
+        background: "{color.surface-secondary}"
+    responsive_breakpoints:
+      mobile:
+        width: 375
+        layout: column
+        imageAspectRatio: "16:9"
+      tablet:
+        width: 768
+        layout: column
+        imageAspectRatio: "16:9"
+      desktop:
+        width: 1280
+        layout: column
+        imageAspectRatio: "2:1"
+    a11y:
+      role: article
+      label: "{props.title}"
+      contrastRequirements: "WCAG AA (4.5:1 text)"
+      keyboardInteraction: "Tab to focus, Enter to activate if clickable"
+    widget_hints:
+      flutter: "Card widget with Column child containing optional Image, Text title, Text subtitle, and action Row, wrapped in InkWell if clickable"
+      swift: "UIView container with UIStackView (vertical axis) for layout, or SwiftUI VStack with .background(RoundedRectangle) modifier"
+      angular: "div with mat-card directive, ng-content for projected slots, [class.elevated] binding for variant"
+      react: "div with role='article', composed children via props.children or named slots, CSS modules for variant styling"
+
+  - name: TextInput
+    props:
+      value:
+        type: string
+        description: "Current input value"
+      placeholder:
+        type: string
+        description: "Placeholder text when empty"
+      label:
+        type: string
+        description: "Form label text"
+      helperText:
+        type: string
+        description: "Helper or error message below the input"
+      error:
+        type: boolean
+        description: "Whether the input is in error state"
+      disabled:
+        type: boolean
+        description: "Whether the input is disabled"
+      type:
+        type: enum
+        values: [text, email, password, number, tel, url]
+        description: "Input type attribute"
+      required:
+        type: boolean
+        description: "Whether the field is required"
+    layout: column
+    spacing:
+      gap: "{spacing.1}"
+      paddingHorizontal: "{spacing.3}"
+      paddingVertical: "{spacing.2}"
+    states:
+      - default
+      - hover
+      - focused
+      - disabled
+      - error
+    children:
+      - slot: label
+        type: text
+        required: true
+        position: top
+      - slot: input
+        type: text
+        required: true
+      - slot: helperText
+        type: text
+        optional: true
+        position: bottom
+      - slot: leadingIcon
+        type: image
+        optional: true
+      - slot: trailingIcon
+        type: image
+        optional: true
+    variants:
+      outlined:
+        borderColor: "{color.border-default}"
+        background: "transparent"
+      filled:
+        borderColor: "transparent"
+        background: "{color.surface-secondary}"
+      error:
+        borderColor: "{color.feedback-error}"
+        helperTextColor: "{color.feedback-error}"
+    responsive_breakpoints:
+      mobile:
+        width: 375
+        fullWidth: true
+      tablet:
+        width: 768
+        fullWidth: true
+      desktop:
+        width: 1280
+        fullWidth: false
+        maxWidth: "400px"
+    a11y:
+      role: textbox
+      label: "{props.label}"
+      contrastRequirements: "WCAG AA (4.5:1 text, 3:1 border)"
+      keyboardInteraction: "Tab to focus, type to input, Escape to clear"
+      ariaDescribedBy: "helperText element ID"
+      ariaRequired: "{props.required}"
+      ariaInvalid: "{props.error}"
+    widget_hints:
+      flutter: "TextField widget with InputDecoration for label, helperText, and error styling, wrapped in Column with optional Text label above"
+      swift: "UITextField with UILabel above, or SwiftUI TextField with .textFieldStyle modifier and Text label in VStack"
+      angular: "mat-form-field with matInput directive, mat-label, mat-hint, and mat-error child elements for full form integration"
+      react: "input element with associated label via htmlFor, aria-describedby for helper text, controlled via value+onChange props"
