@@ -12,15 +12,9 @@ import { readFileSync, existsSync } from "fs";
 import { resolve } from "path";
 import { PROJECT_ROOT } from "../../helpers/project-root.js";
 
-const FIGMA_SKILL = resolve(
-  PROJECT_ROOT,
-  "_gaia/dev/skills/figma-integration.md"
-);
+const FIGMA_SKILL = resolve(PROJECT_ROOT, "_gaia/dev/skills/figma-integration.md");
 
-const SKILL_INDEX = resolve(
-  PROJECT_ROOT,
-  "_gaia/dev/skills/_skill-index.yaml"
-);
+const SKILL_INDEX = resolve(PROJECT_ROOT, "_gaia/dev/skills/_skill-index.yaml");
 
 const CODE_REVIEW_INSTRUCTIONS = resolve(
   PROJECT_ROOT,
@@ -91,9 +85,7 @@ describe("AC2: Per-category drift reporting", () => {
   it("calculates drift percentage per category", () => {
     const content = readFigmaSkill();
     // Must contain the drift formula
-    expect(content).toMatch(
-      /\(drifted\s*\+\s*missing\)\s*\/\s*total\s*[x×]\s*100/i
-    );
+    expect(content).toMatch(/\(drifted\s*\+\s*missing\)\s*\/\s*total\s*[x×]\s*100/i);
   });
 
   it("generates per-category breakdown table", () => {
@@ -128,7 +120,9 @@ describe("AC3: Threshold-based gating", () => {
 
   it("handles missing design-tokens.json gracefully", () => {
     const content = readFigmaSkill();
-    expect(content).toMatch(/design-tokens\.json.*not.*exist|missing.*design-tokens|skip.*graceful/i);
+    expect(content).toMatch(
+      /design-tokens\.json.*not.*exist|missing.*design-tokens|skip.*graceful/i
+    );
   });
 });
 
