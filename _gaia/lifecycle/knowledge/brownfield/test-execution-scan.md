@@ -254,3 +254,16 @@ Format:
 
 {YAML gap entries here}
 ```
+
+## See Also
+
+- [`ci-test-detection.md`](./ci-test-detection.md) — CI pipeline test execution
+  detection. This scan covers **local test runner** detection and execution
+  (Jest, Vitest, pytest, JUnit, Go test, Flutter, BATS); `ci-test-detection.md`
+  is the companion fragment that covers **CI pipeline** test execution
+  detection across GitHub Actions, GitLab CI, CircleCI, Azure Pipelines,
+  Jenkins, and Bitbucket Pipelines. Read both together during brownfield
+  onboarding: the runner scan answers "does this project have tests?" and the
+  CI scan answers "does the pipeline actually run them?".
+- `config-contradiction-scan.md` — configuration contradiction scanning
+- `dead-code-scan.md` — unused code detection
