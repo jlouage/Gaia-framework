@@ -142,6 +142,60 @@
     - If any FAILED:
       <invoke-protocol ref="status-sync" story_key="{story_key}" new_status="in-progress" source_workflow="run-all-reviews" />
       List failed reviews with report links. Report: "Story {story_key} moved to in-progress — fix issues and re-run failed reviews."</action>
+  <action>PROGRESSIVE NUDGE BLOCK (E17-S3 / FR-193 / AC1-AC6): After the review summary file has been written and the status transition (if any) has been invoked, render a Progressive Nudge Block directly in the conversation. The nudge block is additive — it does not replace or block the existing completion output and the review summary template-output above. The nudge block MUST render in all execution modes (both normal and YOLO) — it is unconditional of execution_mode. The block has three parts:
+
+    1. GATE SUMMARY TABLE — render a markdown table with columns (gate name, status, linked report) containing one row per review gate using the six rows previously parsed from the story's Review Gate table. The linked report column uses the resolved report paths resolved earlier in this step (code-review report, qa-tests report, security-review report, test-automation report, test-review report, performance-review report). Format the table as:
+
+    | Gate | Status | Report |
+    |---|---|---|
+    | Code Review | {code_review_status} | [report]({code_review_report_relpath}) |
+    | QA Tests | {qa_tests_status} | [report]({qa_tests_report_relpath}) |
+    | Security Review | {security_review_status} | [report]({security_review_report_relpath}) |
+    | Test Automation | {test_automation_status} | [report]({test_automation_report_relpath}) |
+    | Test Review | {test_review_status} | [report]({test_review_report_relpath}) |
+    | Performance Review | {performance_review_status} | [report]({performance_review_report_relpath}) |
+
+    2. OVERALL OUTCOME LINE — classify the gate results using the same overall_status already computed for the review summary file and render one of three classification strings:
+       - "ALL PASSED" when all 6 rows are PASSED
+       - "N FAILED" when any row is FAILED (substitute N with the actual count of FAILED rows)
+       - "N UNVERIFIED" when no FAILED rows but at least one row is still UNVERIFIED (substitute N with the actual count of UNVERIFIED rows)
+       When both FAILED and UNVERIFIED rows exist, render both classification strings on separate lines (FAILED first) so the developer sees the full picture. Render as: "**Overall:** {classification(s)}".
+
+    3. SUGGESTED NEXT COMMAND — based on the overall outcome, render exactly one "Suggested next:" line using the branching rules below. This is the progressive nudge payload that tells the developer exactly what to do next without re-reading gate documentation:
+
+       ALL PASSED BRANCH (AC2): When all 6 rows are PASSED, render "Suggested next: /gaia-check-review-gate {story_key}" to confirm the advancement to `done`. Substitute {story_key} with the actual story key.
+
+       FAILED BRANCH (AC3): When any row is FAILED, collect the failed gate names into a list and render:
+       "Failed gates: {comma-separated list of failed gate names}"
+       "Suggested next: /gaia-correct-course {story_key} — return to in-progress and fix the failed review(s)"
+
+       UNVERIFIED BRANCH (AC4): When no rows are FAILED but one or more rows are still at UNVERIFIED, collect the unrun (UNVERIFIED, not yet run) gate names and for each, render the individual review command that would run it. The six canonical per-gate commands are:
+         - Code Review → /gaia-code-review {story_key}
+         - QA Tests → /gaia-qa-tests {story_key}
+         - Security Review → /gaia-security-review {story_key}
+         - Test Automation → /gaia-test-automate {story_key}
+         - Test Review → /gaia-test-review {story_key}
+         - Performance Review → /gaia-review-perf {story_key}
+       Render:
+       "Unrun gates ({count}): {comma-separated list of unrun gate names}"
+       "Suggested next: run the following review(s) individually:"
+       followed by a bulleted list of the matching commands above, one per unrun gate.
+
+       MIXED BRANCH: If the run has both FAILED and UNVERIFIED rows, the FAILED branch takes precedence for the "Suggested next:" line (correct-course is more urgent than re-running unrun reviews), but still list the unrun gates under an "Also unrun:" label so the developer can address both.
+
+    NUDGE BLOCK RENDER TEMPLATE — wrap the three parts in a visually distinct block so it is easy to spot in the conversation:
+
+    ```
+    --- Review Gate Nudge ---
+    {gate summary table}
+
+    **Overall:** {classification}
+
+    {suggested next section based on branch}
+    ---
+    ```
+
+    The nudge MUST be rendered regardless of whether the status transition above succeeded — even if the review-gate-check protocol advanced the story to done, the nudge still shows the final gate state and the /gaia-check-review-gate suggestion for transparency. The nudge is additive to existing output — it does not remove, replace, or block the review summary template-output, the status transition, or the review-gate-check protocol invocation.</action>
   <invoke-protocol name="review-gate-check" file="{project-root}/_gaia/core/protocols/review-gate-check.xml" />
 </step>
 </workflow>
