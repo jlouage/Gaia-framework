@@ -286,7 +286,31 @@ The Gap Table must declare its columns in this exact order. A table with columns
 - If `gap_count == 0`, the Executive Summary should contain the phrase `No coverage gaps detected` — absence is an INFO finding.
 - `gap_count` should equal the number of data rows in the Gap Table (excluding the header and separator rows) — mismatch is a WARNING.
 
-**References:** FR-223, ADR-030 §10.22, story E19-S3, test cases TGA-17–20.
+### Generated vs Executed Tracking (E19-S7, FR-226)
+
+Verification-mode outputs must report generated and executed test case
+counts per story and in aggregate. These rules apply only when `mode:
+verification` appears in the frontmatter.
+
+- The Executive Summary must contain a `Generated vs Executed` row in the
+  format `{total_executed}/{total_generated} ({aggregate_exec_ratio}%)`.
+  Missing row is a WARNING.
+- Each Per-Story Detail subsection must declare three fields: `generated`
+  (integer >= 0), `executed` (integer >= 0), and `exec_ratio` (percentage
+  with one decimal place, e.g., `60.0%`). A missing field on a present
+  story subsection is a WARNING.
+- `exec_ratio` must equal `round((executed / generated) * 100, 1)` when
+  `generated > 0`. When `generated == 0`, `exec_ratio` must be `0.0%` and
+  the subsection should include the note `0/0 (no generated tests)` —
+  absence of the note is an INFO finding.
+- Stories with `executed == 0` and `generated > 0` should be flagged as
+  HIGH gap priority — absence of the HIGH flag for such stories is a
+  WARNING.
+- The aggregate row values must be consistent with the sum of per-story
+  counts: `total_generated == sum(story.generated)` and
+  `total_executed == sum(story.executed)` — mismatch is a WARNING.
+
+**References:** FR-223, FR-226, ADR-030 §10.22, stories E19-S3 and E19-S7, test cases TGA-17–20, TGA-30–32.
 <!-- END SECTION -->
 
 <!-- SECTION: two-pass-logic -->

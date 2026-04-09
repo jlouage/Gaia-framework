@@ -95,10 +95,10 @@
 <!-- ================================= -->
 
 <step n="7" title="Scan Generated Test Cases (Verification Mode)">
-  <action>Scan docs/test-artifacts/ for all generated test case files and test plan references</action>
+  <action>Scan docs/test-artifacts/ for all generated test case files matching `{story_key}-*.md` and ATDD files `atdd-{story_key}*.md` (E19-S7 Task 1.1)</action>
   <action>Build a map of generated test cases per story: story_key -> [test_case_id, test_file, test_name]</action>
   <action>Cross-reference generated test cases with story files in docs/implementation-artifacts/</action>
-  <action>Count total generated test cases per story and in aggregate</action>
+  <action>Count total generated test cases per story (`generated` count — E19-S7 Task 1.2) and in aggregate (`total_generated`). The per-story `generated` count is the number of distinct test case IDs (TC IDs) attributed to that story across all scanned test-artifacts files.</action>
 </step>
 
 <step n="8" title="Detect and Parse Execution Results (Verification Mode)">
@@ -118,22 +118,26 @@
 <step n="9" title="Cross-Reference Generated vs Executed (Verification Mode)">
   <action>For each story, cross-reference its generated test cases against the executed tests map</action>
   <action>Classify each generated test case as: EXECUTED (found in results with pass/fail status) or UNEXECUTED (not found in any result file)</action>
-  <action>Calculate per story counts: generated test cases count, executed test cases count</action>
-  <action>Calculate aggregate totals: total generated across all stories, total executed across all stories</action>
-  <action>Flag stories with zero executed tests as HIGH priority gaps — these stories have generated test cases but none have been run</action>
+  <action>Calculate per-story counts: `generated` (count of generated test cases for the story) and `executed` (count of generated test cases found in execution results for the story). Per E19-S7 Task 2.1/2.2, `executed` is sourced from evidence JSON (E17-S10 format) and JUnit XML; Task 2.3 requires deduplication across result sources — a single test case counted in both evidence JSON and JUnit XML is counted once.</action>
+  <action>Deduplicate executed test cases across result sources: if the same test identifier appears in both JUnit XML and evidence JSON, count it exactly once in the per-story `executed` tally. Deduplication key is the canonical test case ID (TC-ID) when present, otherwise the fully-qualified test name (`suite.test_name`).</action>
+  <action>Calculate per-story `exec_ratio = (executed / generated) * 100`, rounded to one decimal place. Division-by-zero handling (E19-S7 Task 3.3): when `generated == 0`, set `exec_ratio = 0.0` and render as `0.0%` with the note `0/0 (no generated tests)`. Never raise a division-by-zero error.</action>
+  <action>Calculate aggregate totals: `total_generated` = sum of per-story `generated` across all stories; `total_executed` = sum of per-story `executed` across all stories. Compute `aggregate_exec_ratio = (total_executed / total_generated) * 100`, rounded to one decimal place. When `total_generated == 0`, set `aggregate_exec_ratio = 0.0`.</action>
+  <action>Flag stories with zero executed tests (where `executed == 0` and `generated &gt; 0`) as HIGH priority gaps — these stories have generated test cases but none have been run. The flag is reflected in the Gap Table row severity (`high`) and in the Per-Story Detail remediation line. Per E19-S7 Task 3.2, the HIGH flag is mandatory whenever `executed count is 0` for a story with at least one generated test.</action>
 </step>
 
 <step n="10" title="Generate Verification Output (FR-226 Schema)">
-  <action>Generate the output artifact at {test_artifacts}/test-gap-analysis-{date}.md in verification mode format</action>
+  <action>Generate the output artifact at {test_artifacts}/test-gap-analysis-{date}.md in verification mode format, using the FR-223 schema template at `_gaia/lifecycle/templates/test-gap-analysis-template.md`.</action>
+  <action>Populate the Executive Summary section with the aggregate **Generated vs Executed** row (E19-S7, AC3) in the exact format `Generated vs Executed: {total_executed}/{total_generated} ({aggregate_exec_ratio}%)`. This row sits alongside `Stories analyzed`, `Gaps detected`, and `Overall coverage rate`. When `total_generated == 0`, render `0/0 (0.0%)`.</action>
+  <action>Populate the Per-Story Detail section for each story with the `generated`, `executed`, and `exec_ratio` fields (E19-S7, AC2, AC5). The `exec_ratio` field is rendered as a percentage with one decimal place (e.g., `60.0%`). When `generated == 0`, render `exec_ratio` as `0.0%` with the inline note `(0/0 — no generated tests)` — this is the canonical division-by-zero rendering.</action>
   <action>Output must include the following FR-226 schema sections:
-    - Summary section with total generated test count, total executed test count, and verification percentage
-    - Per-story generated-vs-executed count table listing each story with its generated count, executed count, and gap priority
-    - Aggregate generated-vs-executed count showing overall totals
+    - Executive Summary with the aggregate `Generated vs Executed: {total_executed}/{total_generated} ({aggregate_exec_ratio}%)` row
+    - Per-story generated-vs-executed count table listing each story with its `generated`, `executed`, and `exec_ratio` fields
+    - Aggregate generated-vs-executed count showing overall totals (`total_generated`, `total_executed`, `aggregate_exec_ratio`)
     - Unverified tests table listing test files with UNVERIFIED status and story key
   </action>
-  <action>For stories with zero executed tests: set gap priority to HIGH in the per-story table</action>
+  <action>For stories where `executed count is 0` (zero executed tests) and `generated &gt; 0`: set gap priority to HIGH in the per-story table (E19-S7, AC4). The HIGH flag MUST also appear as the severity of the corresponding Gap Table row when the workflow emits an `unexecuted` gap for the story.</action>
   <template-output file="{test_artifacts}/test-gap-analysis-{date}.md">
-    Verification mode gap analysis report with per-story and aggregate generated-vs-executed counts, HIGH priority flags for zero-executed stories.
+    Verification mode gap analysis report with per-story and aggregate generated-vs-executed counts, exec_ratio percentages, and HIGH priority flags for zero-executed stories.
   </template-output>
 </step>
 
