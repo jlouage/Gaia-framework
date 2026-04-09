@@ -291,8 +291,8 @@ describe("E10-S2: Document-Specific Validation Rulesets", () => {
       const content = readFileSync(RULESETS_SKILL_PATH, "utf8");
       const sectionStarts = (content.match(/<!-- SECTION: [\w-]+ -->/g) || []).length;
       const sectionEnds = (content.match(/<!-- END SECTION -->/g) || []).length;
-      expect(sectionStarts).toBe(9);
-      expect(sectionEnds).toBe(9);
+      expect(sectionStarts).toBe(10);
+      expect(sectionEnds).toBe(10);
     });
 
     it("is within the 500-line skill limit", () => {
