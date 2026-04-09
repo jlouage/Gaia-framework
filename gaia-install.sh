@@ -622,6 +622,15 @@ cmd_update() {
     "testing/workflows"
     "testing/knowledge"
     "_config/manifest.yaml"
+    "_config/adversarial-triggers.yaml"
+    "_config/environment-presets.yaml"
+    "_config/lifecycle-sequence.yaml"
+    "_config/agent-manifest.csv"
+    "_config/files-manifest.csv"
+    "_config/gaia-help.csv"
+    "_config/skill-manifest.csv"
+    "_config/task-manifest.csv"
+    "_config/workflow-manifest.csv"
   )
 
   # ─── Migrate .customize.yaml files before _gaia/ overwrite (E10-S19, FR-153) ──

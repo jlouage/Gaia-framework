@@ -10,7 +10,7 @@
 </step>
 <step n="2" title="Preset Selection (Promotion Chain)">
   <critical>
-    <mandate>This step configures the ci_cd.promotion_chain block in {project-root}/_gaia/_config/global.yaml. It uses the 4 canonical presets from {project-root}/_gaia/_config/environment-presets.yaml (created by E20-S2) and reuses the E20-S1 promotion-chain schema validator.</mandate>
+    <mandate>This step configures the ci_cd.promotion_chain block in {project-root}/_gaia/_config/global.yaml. It uses the 4 canonical presets from {project-root}/_gaia/_config/environment-presets.yaml and the promotion-chain schema validator at {project-path}/test/validators/promotion-chain-validator.js.</mandate>
   </critical>
 
   <!-- AC5 (Task 1.5): existing ci_cd block — overwrite / skip / edit -->
@@ -19,7 +19,7 @@
     Warn the user: "Existing ci_cd configuration found in global.yaml." and present three options:
       [o]verwrite — replace the existing ci_cd.promotion_chain with a newly selected preset (or custom chain)
       [s]kip — leave the existing ci_cd block unchanged and proceed to Step 3 (no write performed)
-      [e]dit — redirect the user to /gaia-ci-edit (E20-S4) for structured editing of the existing chain
+      [e]dit — redirect the user to /gaia-ci-edit for structured editing of the existing chain
     Respect the user's choice:
       - On [s]kip: jump directly to Step 3 without modifying global.yaml — backward compatible, no-op.
       - On [e]dit: hand off to /gaia-ci-edit and terminate this step.
@@ -27,8 +27,8 @@
   </check>
 
   <!-- AC1 (Task 1.2): load presets from environment-presets.yaml -->
-  <action>Read {project-root}/_gaia/_config/environment-presets.yaml — this file is produced by E20-S2 and contains the four canonical presets (solo, small-team, standard, enterprise). Each preset exposes a `description` field and a `promotion_chain` array.</action>
-  <check if="environment-presets.yaml not found">HALT with error "Environment presets file not found at _gaia/_config/environment-presets.yaml. Run E20-S2 (Environment Presets Definition) before re-running /gaia-ci-setup." — this is the AC10/test-scenario-10 failure mode.</check>
+  <action>Read {project-root}/_gaia/_config/environment-presets.yaml — this framework config file contains the four canonical presets (solo, small-team, standard, enterprise). Each preset exposes a `description` field and a `promotion_chain` array.</action>
+  <check if="environment-presets.yaml not found">HALT with error "Environment presets file not found at _gaia/_config/environment-presets.yaml. This file ships with the GAIA framework — your installation appears to be incomplete or outdated. Re-run the installer to restore missing config files: `gaia-install.sh update` (or `gaia-install.sh install` for a fresh install)." — this is the AC10/test-scenario-10 failure mode.</check>
   <action>Parse the YAML and extract the 4 preset names: solo, small-team, standard, enterprise. For each preset, extract its `description` string to show to the user.</action>
 
   <!-- AC6 (Task 1.4): YOLO mode auto-selects 'standard' -->
@@ -61,7 +61,7 @@
       <action>Prompt for `merge_strategy` — present enum selection: [1] merge [2] squash [3] rebase. Required unless a default is set in ci_cd.default_merge_strategy.</action>
       <action>Prompt for `ci_checks` — optional array of check names (e.g., lint, unit, integration, e2e). Accept empty to skip.</action>
       <ask>Environment {n} defined. Add another environment? [y]es / [n]o (finish)</ask>
-    When the user finishes, assemble the `promotion_chain` array from the collected entries. If the user added zero environments, warn them that the E20-S1 schema validator requires a minimum of one environment and return to the loop.
+    When the user finishes, assemble the `promotion_chain` array from the collected entries. If the user added zero environments, warn them that the promotion chain requires a minimum of one environment and return to the loop.
   </check>
 
   <!-- AC2 (Task 2): apply the chosen preset — write ci_cd.promotion_chain to global.yaml -->
@@ -70,7 +70,7 @@
   <action>Write the updated content back to global.yaml. Do not reformat unrelated sections — emit a minimal diff focused on the ci_cd block.</action>
 
   <!-- AC4 (Task 4): E20-S1 schema validation -->
-  <action>After the write completes, invoke the E20-S1 schema validator at {project-path}/test/validators/promotion-chain-validator.js on the newly written block. The validator enforces: (a) minimum 1 environment (FR-252), (b) no duplicate ids across entries, (c) no duplicate branches across entries, (d) each entry has required fields id/name/branch/ci_provider, (e) ci_provider is one of the enum values, (f) merge_strategy (if set) is one of merge/squash/rebase, (g) id matches slug pattern [a-z0-9-]+.</action>
+  <action>After the write completes, invoke the promotion-chain schema validator at {project-path}/test/validators/promotion-chain-validator.js on the newly written block. The validator enforces: (a) minimum 1 environment (FR-252), (b) no duplicate ids across entries, (c) no duplicate branches across entries, (d) each entry has required fields id/name/branch/ci_provider, (e) ci_provider is one of the enum values, (f) merge_strategy (if set) is one of merge/squash/rebase, (g) id matches slug pattern [a-z0-9-]+.</action>
   <check if="validation fails">
     Display the specific violation(s) returned by the validator — include each violation's field path and reason (e.g., "promotion_chain[1].id duplicates promotion_chain[0].id" or "promotion_chain is empty — minimum 1 environment required"). Prompt the user to correct the failing fields. After corrections, re-run the validator. Repeat this validate→correct loop until the block passes.
   </check>
