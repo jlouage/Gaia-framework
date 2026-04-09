@@ -80,9 +80,17 @@ Any value outside this enum MUST be flagged by Val as CRITICAL.
 - **Stories analyzed:** {story_count}
 - **Gaps detected:** {gap_count}
 - **Overall coverage rate:** {aggregate_coverage_pct}%
+- **Generated vs Executed:** {total_executed}/{total_generated} ({aggregate_exec_ratio}%)
 - **Mode:** {mode}
 
 If `gap_count` is 0, state `No coverage gaps detected.` explicitly.
+
+The **Generated vs Executed** row (E19-S7, FR-226) reports the aggregate
+number of generated test cases vs. the number actually executed across all
+stories. It is rendered as `{total_executed}/{total_generated} ({aggregate_exec_ratio}%)`.
+When `total_generated` is 0, the row renders as `0/0 (0.0%)` — no
+division-by-zero error. The aggregate is computed by summing per-story
+`generated` and `executed` counts from the Per-Story Detail section.
 
 The `Overall coverage rate` is the aggregate `(tested_acs / total_acs) * 100`
 computed across all included epics by the Per-Module Coverage step (E19-S6,
@@ -140,10 +148,20 @@ One subsection per story that has one or more rows in the Gap Table.
 - **Covered ACs:** {count}
 - **Uncovered ACs:** {list of AC identifiers}
 - **Missing tests:** {list of test case IDs or descriptions}
+- **generated:** {count of generated test cases for this story}
+- **executed:** {count of executed test cases for this story}
+- **exec_ratio:** {executed / generated * 100, one decimal}% (E19-S7, FR-226)
 - **Remediation:** {1-2 sentence suggested action}
 
 Stories with zero gaps MAY be omitted from this section to keep the document
 focused. The Gap Table is the canonical list.
+
+The `generated`, `executed`, and `exec_ratio` fields are required on every
+story subsection that reports verification results (E19-S7, FR-226). When
+`generated` is 0, render `exec_ratio` as `0.0%` with a note rather than
+raising a division-by-zero error. When `executed` is 0 and `generated > 0`,
+the story MUST be flagged as `HIGH` gap priority in the Gap Table and in
+the per-story remediation line.
 
 ## Recommendations
 
