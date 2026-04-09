@@ -809,6 +809,43 @@ cmd_update() {
   fi
   echo ""
   info "Run /gaia-build-configs in the Claude Code terminal to regenerate resolved configs."
+
+  # ─── E19-S17: Post-upgrade gap-analysis suggestion (FR-236) ───────────────
+  # When docs/test-artifacts/test-plan.md exists in the target project, suggest
+  # running /gaia-test-gap-analysis after the upgrade. The suggestion is
+  # recommended (NOT required), is logged to stdout only, and is NEVER
+  # auto-executed by the installer. The same suggestion is mirrored as a
+  # 'suggestion' entry in .post-upgrade-hook.yaml under the recommended group
+  # so the Claude Code runtime can offer it during the post-upgrade gate.
+  if [[ "$OPT_DRY_RUN" != true ]]; then
+    local test_plan_file="$TARGET/docs/test-artifacts/test-plan.md"
+    if [[ -f "$test_plan_file" ]]; then
+      echo ""
+      info "[recommended] Run \`/gaia-test-gap-analysis\` to check for new test gaps introduced by the upgrade."
+
+      local hook_file="$TARGET/_gaia/_config/.post-upgrade-hook.yaml"
+      mkdir -p "$(dirname "$hook_file")"
+      if [[ ! -f "$hook_file" ]]; then
+        cat > "$hook_file" <<'YAML'
+schema_version: 1
+status: pending
+recommended: []
+suggestions: []
+YAML
+      fi
+      # Append the gap-analysis suggestion if not already present.
+      if ! grep -q "/gaia-test-gap-analysis" "$hook_file"; then
+        cat >> "$hook_file" <<'YAML'
+  - id: test-gap-analysis-post-upgrade
+    type: suggestion
+    command: /gaia-test-gap-analysis
+    condition: test_plan_exists
+    message: "Run /gaia-test-gap-analysis to check for new test gaps introduced by the upgrade."
+YAML
+      fi
+    fi
+  fi
+
   echo ""
 }
 

@@ -2053,3 +2053,97 @@ YAML
 
   rm -rf "$SRC_DIR"
 }
+
+# ─── E19-S17: Post-upgrade gap-analysis suggestion (FR-236) ──────────────────
+
+@test "E19-S17: post-upgrade suggests /gaia-test-gap-analysis when test-plan.md exists (AC1, AC2, AC3)" {
+  local SRC_DIR="$(mktemp -d)"
+  create_mock_source "$SRC_DIR"
+
+  run bash "$SCRIPT" init --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  mkdir -p "$TEST_DIR/docs/test-artifacts"
+  echo "# Test Plan" > "$TEST_DIR/docs/test-artifacts/test-plan.md"
+
+  run bash "$SCRIPT" update --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  # AC1: suggestion shown
+  echo "$output" | grep -q "/gaia-test-gap-analysis" || { echo "missing /gaia-test-gap-analysis in output: $output"; false; }
+  # AC1: marked recommended
+  echo "$output" | grep -q "\[recommended\]" || { echo "missing [recommended] marker: $output"; false; }
+  # AC3: exact suggestion message
+  echo "$output" | grep -qF "Run \`/gaia-test-gap-analysis\` to check for new test gaps introduced by the upgrade." \
+    || { echo "missing exact suggestion text: $output"; false; }
+
+  rm -rf "$SRC_DIR"
+}
+
+@test "E19-S17: post-upgrade omits suggestion when test-plan.md is missing (AC2)" {
+  local SRC_DIR="$(mktemp -d)"
+  create_mock_source "$SRC_DIR"
+
+  run bash "$SCRIPT" init --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  # No docs/test-artifacts/test-plan.md present
+
+  run bash "$SCRIPT" update --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  # AC2: no suggestion shown
+  if echo "$output" | grep -q "/gaia-test-gap-analysis"; then
+    echo "suggestion appeared when test-plan.md was absent: $output"
+    false
+  fi
+
+  rm -rf "$SRC_DIR"
+}
+
+@test "E19-S17: post-upgrade in YOLO mode logs but does not auto-execute (AC4)" {
+  local SRC_DIR="$(mktemp -d)"
+  create_mock_source "$SRC_DIR"
+
+  run bash "$SCRIPT" init --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  mkdir -p "$TEST_DIR/docs/test-artifacts"
+  echo "# Test Plan" > "$TEST_DIR/docs/test-artifacts/test-plan.md"
+
+  # --yes is the installer's non-interactive (YOLO-equivalent) mode.
+  # Suggestion must be logged but installer must NOT invoke /gaia-* itself.
+  run bash "$SCRIPT" update --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  echo "$output" | grep -q "/gaia-test-gap-analysis" || { echo "suggestion missing: $output"; false; }
+  if echo "$output" | grep -qE "(Running|Executing) /gaia-test-gap-analysis"; then
+    echo "installer auto-executed the suggestion: $output"
+    false
+  fi
+
+  rm -rf "$SRC_DIR"
+}
+
+@test "E19-S17: post-upgrade-hook.yaml contains gap-analysis suggestion entry (AC5)" {
+  local SRC_DIR="$(mktemp -d)"
+  create_mock_source "$SRC_DIR"
+
+  run bash "$SCRIPT" init --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  mkdir -p "$TEST_DIR/docs/test-artifacts"
+  echo "# Test Plan" > "$TEST_DIR/docs/test-artifacts/test-plan.md"
+
+  run bash "$SCRIPT" update --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  local hook_file="$TEST_DIR/_gaia/_config/.post-upgrade-hook.yaml"
+  [ -f "$hook_file" ] || { echo "hook file not created: $hook_file"; false; }
+
+  grep -q "/gaia-test-gap-analysis" "$hook_file" || { echo "hook missing command"; cat "$hook_file"; false; }
+  grep -q "test_plan_exists" "$hook_file"        || { echo "hook missing condition"; cat "$hook_file"; false; }
+  grep -q "type: suggestion" "$hook_file"        || { echo "hook missing type"; cat "$hook_file"; false; }
+
+  rm -rf "$SRC_DIR"
+}
