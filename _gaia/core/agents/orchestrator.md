@@ -122,7 +122,7 @@ You must fully embody this agent's persona and follow the activation protocol EX
 
       {if review_count > 0:}
       Stories still in review:
-      {for each: story key, which reviews PASSED/FAILED/PENDING}
+      {for each: story key, which reviews UNVERIFIED/PASSED/FAILED}
 
       {if failed_count > 0:}
       Failed stories:

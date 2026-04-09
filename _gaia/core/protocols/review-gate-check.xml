@@ -27,9 +27,9 @@
 
 <step n="1" title="Read Review Gate and Determine Gate Type">
   <action>Read the story file's Review Gate table</action>
-  <action>If Review Gate section is missing: initialize it with EXACTLY 6 rows — Code Review (PENDING), QA Tests (PENDING), Security Review (PENDING), Test Automation (PENDING), Test Review (PENDING), Performance Review (PENDING). Do NOT add any other rows.</action>
+  <action>If Review Gate section is missing: initialize it with EXACTLY 6 rows — Code Review (UNVERIFIED), QA Tests (UNVERIFIED), Security Review (UNVERIFIED), Test Automation (UNVERIFIED), Test Review (UNVERIFIED), Performance Review (UNVERIFIED). Do NOT add any other rows.</action>
   <action>If Review Gate table has extra rows beyond the 6 valid ones: remove the invalid rows</action>
-  <action>Parse each row: Review name, Status (PENDING | PASSED | FAILED), Report link</action>
+  <action>Parse each row: Review name, Status (UNVERIFIED | PASSED | FAILED), Report link</action>
 
   <!-- Infra Gate Detection (FR-129): per-story gate type selection based on requirement ID prefix -->
   <action>Read the story file's YAML frontmatter traces_to field (e.g., traces_to: [IR-001, FR-128])</action>
@@ -52,6 +52,6 @@
   </action>
   <action>If ALL 6 rows show PASSED AND the story status is already 'done': log "Story already done. No update needed."</action>
   <action>If any row is FAILED: log which reviews failed. Do not change story status.</action>
-  <action>If any row is PENDING: log which reviews are still pending. Do not change story status.</action>
+  <action>If any row is UNVERIFIED: log which reviews are still unverified. Do not change story status.</action>
 </step>
 </protocol>

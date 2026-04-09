@@ -10,7 +10,7 @@
   <action>Calculate: stories completed, stories invalid, stories carried over, velocity (points delivered vs planned)</action>
   <action>Read ALL story files for this sprint (from sprint-status.yaml story list). For each story extract:
     - Status (done, review, in-progress, invalid)
-    - Review Gate table results (which reviews PASSED/FAILED/PENDING)
+    - Review Gate table results (which reviews UNVERIFIED/PASSED/FAILED)
     - Findings table (count and types of findings)
     - Definition of Done checklist results</action>
   <action>Read {memory_path}/validator-sidecar/decision-log.md — extract all entries for this sprint's stories (validation attempts, findings counts, pass/fail results)</action>

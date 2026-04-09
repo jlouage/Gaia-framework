@@ -9,6 +9,7 @@ validation-target: 'Story validation'
 - [ ] Semantic quality — duplicate detection, ADR cross-references
 - [ ] Dependencies — all declared dependencies exist and resolve
 - [ ] Factual verification — claims verified against filesystem and ground truth
+- [ ] Review Gate vocabulary — all rows in {UNVERIFIED, PASSED, FAILED}
 ## Fix Loop (Step 3)
 - [ ] SM fixes findings, Val re-validates
 - [ ] Hard limit: 3 validation attempts max

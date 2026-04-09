@@ -351,9 +351,9 @@
   <check if="pr_merge_dod_item_unchecked">HALT: Cannot transition {story_key} to `review`: DoD item 'PR merged to {branch}' is not satisfied. Re-run Step 16 (Merge PR) or resolve manually before retrying the status transition.</check>
   <invoke-protocol ref="status-sync" story_key="{story_key}" new_status="review" source_workflow="dev-story" />
   <action>Append files changed list to story file</action>
-  <action>Initialize Review Gate section in story file: set all six rows (Code Review, QA Tests, Security Review, Test Automation, Test Review, Performance Review) to PENDING with report link "—". If Review Gate section already exists, reset all rows to PENDING.</action>
+  <action>Initialize Review Gate section in story file: set all six rows (Code Review, QA Tests, Security Review, Test Automation, Test Review, Performance Review) to UNVERIFIED with report link "—". If Review Gate section already exists, reset all rows to UNVERIFIED.</action>
   <template-output file="{implementation_artifacts}/{story_key}-*.md">
-    Update story file with status change to 'review', list of files changed, and initialized Review Gate table (all 6 rows PENDING).
+    Update story file with status change to 'review', list of files changed, and initialized Review Gate table (all 6 rows UNVERIFIED).
   </template-output>
 </step>
 <step n="19" title="Auto-Run Reviews (YOLO only)">

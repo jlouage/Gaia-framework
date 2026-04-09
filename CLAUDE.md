@@ -140,12 +140,14 @@ backlog → validating → ready-for-dev → in-progress → invalid → review 
 ```
 
 **Review Gate:** A story in `review` requires ALL six reviews to pass before moving to `done`:
-- `/gaia-code-review` — APPROVE or REQUEST_CHANGES
+- `/gaia-code-review` — PASSED or FAILED
 - `/gaia-qa-tests` — PASSED or FAILED
 - `/gaia-security-review` — PASSED or FAILED
 - `/gaia-test-automate` — PASSED or FAILED
 - `/gaia-test-review` — PASSED or FAILED
 - `/gaia-review-perf` — PASSED or FAILED
+
+**Gate status vocabulary** (canonical, enforced by `/gaia-validate-story`): `UNVERIFIED` (default, not yet run) | `PASSED` (review passed) | `FAILED` (review failed). No other values are permitted in the Review Gate table. Code Review uses `APPROVE`/`REQUEST_CHANGES` as its internal verdict keyword in the report body, but writes `PASSED`/`FAILED` to the Review Gate row.
 
 Run `/gaia-run-all-reviews` to execute all six reviews sequentially via subagents — one command instead of six.
 

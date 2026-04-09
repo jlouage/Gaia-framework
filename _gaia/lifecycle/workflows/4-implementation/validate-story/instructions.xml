@@ -56,6 +56,17 @@
         - If origin is non-null, origin_ref must be non-empty (not null, not empty string).
           A non-null origin with empty or null origin_ref is a WARNING finding.
       If origin is null or absent, origin_ref is not validated (orphaned refs are acceptable).
+
+  (h) Review Gate Vocabulary — parse the story's Review Gate table and verify
+      each row's Status column value is one of the canonical three values:
+      UNVERIFIED, PASSED, FAILED. Match is case-sensitive and exact. Any other
+      value (e.g., PENDING, pending, -, blank, APPROVED, REQUEST_CHANGES) is a
+      WARNING finding. Report the field path as "Review Gate > {review name} > Status"
+      and include the found value in the finding description. The canonical set
+      is enforced: UNVERIFIED is the default for reviews that have not yet run,
+      PASSED indicates the review passed, FAILED indicates the review failed.
+      Code Review's internal verdict keywords (APPROVE/REQUEST_CHANGES) belong in
+      the report body and must be mapped to PASSED/FAILED in the gate row.
   </action>
 </step>
 <step n="3" title="Validation Fix Loop">

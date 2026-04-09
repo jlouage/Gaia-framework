@@ -1,6 +1,6 @@
 ---
 template: 'story'
-version: 1.2.0
+version: 1.4.0
 used_by: ['create-story']
 key: "{story_key}"
 title: "{story_title}"
@@ -109,12 +109,12 @@ As a {role}, I want to {action}, so that {benefit}.
 
 | Review | Status | Report |
 |--------|--------|--------|
-| Code Review | PENDING | — |
-| QA Tests | PENDING | — |
-| Security Review | PENDING | — |
-| Test Automation | PENDING | — |
-| Test Review | PENDING | — |
-| Performance Review | PENDING | — |
+| Code Review | UNVERIFIED | — |
+| QA Tests | UNVERIFIED | — |
+| Security Review | UNVERIFIED | — |
+| Test Automation | UNVERIFIED | — |
+| Test Review | UNVERIFIED | — |
+| Performance Review | UNVERIFIED | — |
 
 > Story moves to `done` only when ALL reviews show PASSED.
 
