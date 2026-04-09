@@ -224,3 +224,53 @@ function validate(input) {
 | Parameter count | > 4 | Suggest object parameter |
 | Nesting depth | > 3 levels | Require flattening |
 | Class methods | > 10 public | Suggest decomposition |
+
+<!-- SECTION: review-gate-completion -->
+## Review Gate Completion Requirements
+
+Before a story transitions from `review` to `done`, all 6 individual review reports AND the consolidated review-summary.md must exist in the filesystem. This is a **hard gate** — it is enforced structurally by the `review-gate-check` protocol and is not advisory.
+
+### Required Review Artifacts
+
+| Artifact | Path | Required When |
+|---|---|---|
+| Code review | `docs/implementation-artifacts/{story_key}-review.md` | Always |
+| Security review | `docs/implementation-artifacts/{story_key}-security-review.md` | Always |
+| QA tests | `docs/test-artifacts/{story_key}-qa-tests.md` | Always |
+| Test automation | `docs/test-artifacts/{story_key}-test-automation.md` | Always |
+| Test review | `docs/test-artifacts/{story_key}-test-review.md` | Always |
+| Performance review | `docs/implementation-artifacts/{story_key}-performance-review.md` | Always |
+| **Review summary** | `docs/implementation-artifacts/{story_key}-review-summary.md` | **Always — enforced hard gate** |
+
+### Enforcement Mechanism (Live)
+
+The hard gate is enforced by `_gaia/core/protocols/review-gate-check.xml` — step 2 "Evaluate Gate and Transition". Before invoking `status-sync` to move a story from `review` to `done`, the protocol:
+
+1. Builds the summary file path `{implementation_artifacts}/{story_key}-review-summary.md`
+2. Checks whether the file exists
+3. If missing AND any of the 6 individual review reports exist → HALT with: `Review summary missing for {story_key}. Run /gaia-run-all-reviews {story_key} to generate the summary, or create it manually via /gaia-create-review-summary {story_key}.`
+4. If missing AND all 6 individual review reports are also missing → skip the check (story never entered review)
+5. If present → gate passes, transition proceeds
+
+**This is a live hard gate, not a guidance note.** Stories with missing summaries physically cannot transition to `done` — the protocol will halt.
+
+### Auto-Generation via run-all-reviews
+
+`/gaia-run-all-reviews` auto-generates the review-summary.md as the final step of its 6-review pipeline (see `_gaia/lifecycle/workflows/4-implementation/run-all-reviews/instructions.xml` step 8). The summary aggregates the 6 review verdicts (read from the Review Gate table in the story file and from each review's report) — it does not re-run the reviews.
+
+### Manual Generation
+
+If auto-generation fails or is skipped, create the summary manually by copying the schema in `run-all-reviews/instructions.xml` step 8 and filling in the verdicts from the individual reports.
+
+### Review Summary Schema
+
+```yaml
+---
+story_key: {story_key}
+date: {YYYY-MM-DD}
+overall_status: PASSED | FAILED | INCOMPLETE
+reviewers: [code-review, qa-tests, security-review, test-automate, test-review, review-perf]
+---
+```
+
+Followed by 6 sections (one per review) with verdict + report link + one-line synopsis, then a final aggregate Gate Status table.

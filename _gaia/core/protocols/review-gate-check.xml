@@ -44,10 +44,24 @@
   <critical>
     <mandate>You MUST execute the transition even if the gate was already fully passed before this run. The purpose is to ensure story status matches gate state.</mandate>
     <mandate>Use the status-sync protocol to update story status — this ensures both story file and sprint-status.yaml stay in sync.</mandate>
+    <mandate>HARD GATE (E17-S15 / A-050): A story transitioning from 'review' to 'done' MUST have a {story_key}-review-summary.md file in {implementation_artifacts}/. This is enforced structurally — not advisory. The only exception is when the story has zero individual review reports (i.e., it never actually entered the review process).</mandate>
   </critical>
   <action>Check two things: (1) the Review Gate table rows, (2) the current story status</action>
   <action>If ALL 6 rows show PASSED AND story status is 'review': read the "Definition of Done" section — verify every item is checked (- [x]). If any item is unchecked: log "BLOCKED: DoD incomplete — {unchecked items}". Do NOT transition to done.</action>
-  <action>If ALL 6 rows show PASSED AND all DoD items checked AND story status is 'review':
+  <action>REVIEW SUMMARY HARD GATE (E17-S15 / A-050 / AC1, AC2, AC3): If ALL 6 rows show PASSED AND all DoD items checked AND story status is 'review', perform the review-summary.md existence check BEFORE invoking status-sync:
+    1. Build the summary file path: {implementation_artifacts}/{story_key}-review-summary.md
+    2. Check whether the summary file exists on disk.
+    3. If the summary file EXISTS: the hard gate passes — proceed to invoke status-sync below.
+    4. If the summary file is MISSING: apply the skip-when-never-reviewed exception. Count how many of the 6 individual review reports exist on disk:
+       - {implementation_artifacts}/{story_key}-review.md (Code Review)
+       - {implementation_artifacts}/{story_key}-security-review.md (Security Review)
+       - {test_artifacts}/{story_key}-qa-tests.md (QA Tests)
+       - {test_artifacts}/{story_key}-test-automation.md (Test Automation)
+       - {test_artifacts}/{story_key}-test-review.md (Test Review)
+       - {implementation_artifacts}/{story_key}-performance-review.md (Performance Review)
+       If ALL 6 individual review reports are ALSO missing (count == 0), the story never entered review — the summary is not required for this edge case. Log "Review summary check skipped: story {story_key} has no review reports on disk (story was not actually reviewed)." and proceed to invoke status-sync below.
+       If ANY of the 6 individual review reports exist (count greater than 0) but the summary is missing, the hard gate FAILS. HALT with this exact message and do NOT invoke status-sync: "Review summary missing for {story_key}. Run `/gaia-run-all-reviews {story_key}` to generate the summary, or create it manually via `/gaia-create-review-summary {story_key}`."</action>
+  <action>If ALL 6 rows show PASSED AND all DoD items checked AND story status is 'review' AND the review-summary hard gate passed above:
     <invoke-protocol ref="status-sync" story_key="{story_key}" new_status="done" source_workflow="review-gate-check" />
   </action>
   <action>If ALL 6 rows show PASSED AND the story status is already 'done': log "Story already done. No update needed."</action>

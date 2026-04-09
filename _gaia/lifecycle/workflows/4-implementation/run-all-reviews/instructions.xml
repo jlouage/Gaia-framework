@@ -63,16 +63,85 @@
   <action>When subagent returns: read story file, check Performance Review row status. Log result.</action>
 </step>
 
-<step n="8" title="Review Summary and Status Transition">
-  <action>Read story file — parse full Review Gate table</action>
-  <action>Generate summary table: review name | verdict | report link</action>
-  <action>If ALL 6 PASSED: invoke the review-gate-check protocol to evaluate DoD and transition story to 'done' if appropriate.</action>
-  <action>If any FAILED:
-    <invoke-protocol ref="status-sync" story_key="{story_key}" new_status="in-progress" source_workflow="run-all-reviews" />
-    List failed reviews with report links. Report: "Story {story_key} moved to in-progress — fix issues and re-run failed reviews."</action>
-  <invoke-protocol name="review-gate-check" file="{project-root}/_gaia/core/protocols/review-gate-check.xml" />
+<step n="8" title="Generate Review Summary and Transition Status">
+  <critical>
+    <mandate>This step MUST write the {story_key}-review-summary.md file BEFORE invoking the review-gate-check protocol. The protocol's hard gate (E17-S15 / A-050) checks that the summary exists as a prerequisite for the review→done transition — if the template-output is skipped or ordered after the protocol invocation, every story will HALT at the gate.</mandate>
+    <mandate>The summary file MUST aggregate the 6 review verdicts — do NOT regenerate or re-run the reviews here. Read each review report's Review Gate row and consolidate.</mandate>
+  </critical>
+  <action>Read story file — parse the full Review Gate table. Extract each of the 6 rows: Code Review, QA Tests, Security Review, Test Automation, Test Review, Performance Review — with status (UNVERIFIED / PASSED / FAILED) and report link.</action>
+  <action>Resolve report paths for each review (used in the aggregate summary body):
+    - Code Review: {implementation_artifacts}/{story_key}-review.md
+    - Security Review: {implementation_artifacts}/{story_key}-security-review.md
+    - QA Tests: {test_artifacts}/{story_key}-qa-tests.md
+    - Test Automation: {test_artifacts}/{story_key}-test-automation.md
+    - Test Review: {test_artifacts}/{story_key}-test-review.md
+    - Performance Review: {implementation_artifacts}/{story_key}-performance-review.md</action>
+  <action>Compute overall_status: if ALL 6 rows show PASSED → overall_status = "PASSED". If ANY row shows FAILED → overall_status = "FAILED". If ANY row is still UNVERIFIED → overall_status = "INCOMPLETE".</action>
+  <action>Build the review-summary.md content and aggregate the verdicts using this exact schema (AC5). Frontmatter carries story_key, date, overall_status, and reviewers. The body has one section per review (verdict + report link + one-line synopsis) and a final aggregate Gate Status table:
+    ```
+    ---
+    story_key: {story_key}
+    date: {date}
+    overall_status: {overall_status}
+    reviewers: [code-review, qa-tests, security-review, test-automate, test-review, review-perf]
+    ---
+
+    # Review Summary: {story_key}
+
+    > Aggregate of the 6-review gate for {story_key}. This file does NOT regenerate reviews — it consolidates existing verdicts from the 6 individual review reports.
+
+    ## Code Review
+    **Verdict:** {code_review_status}
+    **Report:** [{code_review_report_relpath}]({code_review_report_relpath})
+    **Synopsis:** {one_line_synopsis_or_"See report for details"}
+
+    ## QA Tests
+    **Verdict:** {qa_tests_status}
+    **Report:** [{qa_tests_report_relpath}]({qa_tests_report_relpath})
+    **Synopsis:** {one_line_synopsis}
+
+    ## Security Review
+    **Verdict:** {security_review_status}
+    **Report:** [{security_review_report_relpath}]({security_review_report_relpath})
+    **Synopsis:** {one_line_synopsis}
+
+    ## Test Automation
+    **Verdict:** {test_automation_status}
+    **Report:** [{test_automation_report_relpath}]({test_automation_report_relpath})
+    **Synopsis:** {one_line_synopsis}
+
+    ## Test Review
+    **Verdict:** {test_review_status}
+    **Report:** [{test_review_report_relpath}]({test_review_report_relpath})
+    **Synopsis:** {one_line_synopsis}
+
+    ## Performance Review
+    **Verdict:** {performance_review_status}
+    **Report:** [{performance_review_report_relpath}]({performance_review_report_relpath})
+    **Synopsis:** {one_line_synopsis}
+
+    ## Aggregate Gate Status
+
+    | Review | Verdict | Report |
+    |---|---|---|
+    | Code Review | {code_review_status} | [link]({code_review_report_relpath}) |
+    | QA Tests | {qa_tests_status} | [link]({qa_tests_report_relpath}) |
+    | Security Review | {security_review_status} | [link]({security_review_report_relpath}) |
+    | Test Automation | {test_automation_status} | [link]({test_automation_report_relpath}) |
+    | Test Review | {test_review_status} | [link]({test_review_report_relpath}) |
+    | Performance Review | {performance_review_status} | [link]({performance_review_report_relpath}) |
+
+    **Overall Status:** {overall_status}
+    ```
+  </action>
   <template-output file="{implementation_artifacts}/{story_key}-review-summary.md">
-    Generate review summary: story key, date, all 6 review verdicts with report links, final story status, and next actions if any reviews failed.
+    Write the aggregated review summary per the schema above. Frontmatter fields: story_key, date, overall_status, reviewers. Body: 6 review sections with verdict + report link + one-line synopsis, plus a final aggregate Gate Status table. This template-output MUST execute before the review-gate-check protocol invocation below so the hard gate can find the summary file.
   </template-output>
+  <action>After the summary file is written, handle the status transition:
+    - If ALL 6 PASSED: invoke the review-gate-check protocol to evaluate DoD and transition story to 'done' if appropriate. The protocol's hard gate will find the summary file we just wrote and pass.
+    - If any FAILED:
+      <invoke-protocol ref="status-sync" story_key="{story_key}" new_status="in-progress" source_workflow="run-all-reviews" />
+      List failed reviews with report links. Report: "Story {story_key} moved to in-progress — fix issues and re-run failed reviews."</action>
+  <invoke-protocol name="review-gate-check" file="{project-root}/_gaia/core/protocols/review-gate-check.xml" />
 </step>
 </workflow>

@@ -39,6 +39,7 @@ skills:
       - { id: review-checklist, line_range: [14, 59], description: "Universal code review checklist" }
       - { id: solid-principles, line_range: [60, 132], description: "SOLID violation detection" }
       - { id: complexity-metrics, line_range: [133, 226], description: "Cyclomatic and cognitive complexity" }
+      - { id: review-gate-completion, line_range: [228, 276], description: "Review gate completion artifacts and review-summary.md hard gate enforcement" }
 
   - file: documentation-standards.md
     sections:
