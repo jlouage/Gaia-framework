@@ -40,6 +40,7 @@ name,displayName,description,module,phase,path,command,agent
 "test-design","Test Design","Create risk-based test plans","testing","anytime","_gaia/testing/workflows/test-design/workflow.yaml","gaia-test-design","test-architect"
 "test-framework","Test Framework","Initialize test framework","testing","anytime","_gaia/testing/workflows/test-framework/workflow.yaml","gaia-test-framework","test-architect"
 "ci-setup","CI Setup","Scaffold CI/CD quality pipeline","testing","anytime","_gaia/testing/workflows/ci-setup/workflow.yaml","gaia-ci-setup","test-architect"
+"ci-edit","CI Edit","Edit ci_cd.promotion_chain in global.yaml (add/remove/edit/reorder environments)","testing","anytime","_gaia/testing/workflows/ci-edit/workflow.yaml","gaia-ci-edit","test-architect"
 "atdd","ATDD","Generate failing acceptance tests","testing","anytime","_gaia/testing/workflows/atdd/workflow.yaml","gaia-atdd","test-architect"
 "test-automation","Test Automation","Expand automated test coverage","testing","anytime","_gaia/testing/workflows/test-automation/workflow.yaml","gaia-test-automate","test-architect"
 "test-review","Test Review","Review test quality","testing","anytime","_gaia/testing/workflows/test-review/workflow.yaml","gaia-test-review","test-architect"

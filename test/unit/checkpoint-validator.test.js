@@ -3,14 +3,14 @@ import { writeFileSync, readFileSync, unlinkSync, mkdirSync, existsSync } from "
 import { join, resolve } from "path";
 import { createHash } from "crypto";
 
-// Module under test — does not exist yet (RED phase)
+// Module under test
 import {
   validateCheckpoint,
   validateFilesTouched,
   compareChecksums,
   detectResumeMode,
   parseCheckpointFile,
-} from "../../lib/checkpoint-validator.js";
+} from "../helpers/checkpoint-validator.js";
 
 const FIXTURES_DIR = resolve(import.meta.dirname, "../fixtures/checkpoints");
 const TMP_DIR = resolve(import.meta.dirname, "../fixtures/tmp");

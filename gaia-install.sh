@@ -77,6 +77,7 @@ OPT_YES=false
 OPT_DRY_RUN=false
 OPT_VERBOSE=false
 OPT_BRANCH=""
+OPT_SKIP_SPRINT_GATE=false
 
 # ─── Utility Functions ──────────────────────────────────────────────────────
 
@@ -195,76 +196,10 @@ copy_with_backup() {
   [[ "$OPT_VERBOSE" == true ]] && detail "Updated (backed up): $dst" || true
 }
 
-# Remove .resolved/*.yaml files from target _gaia/ directory.
-# Called after cp/tar copy to replicate rsync's --exclude behavior.
-# Only .resolved/*.yaml is relevant to the _gaia/ subtree; the other rsync
-# --exclude patterns target _memory/ paths outside _gaia/ and never match.
-clean_resolved_yaml() {
-  local target_gaia="$1"
-  find "$target_gaia" -path '*/.resolved/*.yaml' -delete 2>/dev/null || true
-}
-
-# Copy _gaia/ directory from source to target using a fallback chain:
-#   rsync → cp -rp → tar
-# Tries each tool in order. If a tool is found but fails at runtime (e.g.,
-# broken rsync stub on Windows), falls through to the next tool. Exits with
-# a diagnostic error if all tools fail or none are available.
-#
-# Excludes .resolved/*.yaml files from the final output (rsync handles this
-# natively via --exclude; cp and tar do a post-copy cleanup).
-#
-# Note: No symlinks currently exist in _gaia/. If symlinks are introduced
-# in the future, verify that cp -rp behavior matches rsync -a on all
-# target platforms (ADR-004).
-copy_gaia_files() {
-  local src="$1" dst="$2"
-  local copy_done=false
-
-  # Try rsync first (preferred — handles excludes natively)
-  if command -v rsync >/dev/null 2>&1; then
-    if rsync -a \
-      --exclude='_memory/checkpoints/*.yaml' \
-      --exclude='_memory/checkpoints/completed/*.yaml' \
-      --exclude='.resolved/*.yaml' \
-      --exclude='_memory/*-sidecar/*.md' \
-      --exclude='_memory/*-sidecar/*.yaml' \
-      "$src/_gaia/" "$dst/_gaia/" 2>/dev/null; then
-      detail "Copied framework files using rsync"
-      copy_done=true
-    else
-      detail "rsync found but failed — trying fallback methods"
-    fi
-  fi
-
-  # Fallback: cp -rp (preserves permissions like rsync -a)
-  if [[ "$copy_done" == false ]] && command -v cp >/dev/null 2>&1; then
-    if cp -rp "$src/_gaia/." "$dst/_gaia/" 2>/dev/null; then
-      clean_resolved_yaml "$dst/_gaia"
-      detail "Copied framework files using cp -rp (rsync unavailable)"
-      copy_done=true
-    else
-      error "cp failed to copy framework files — check permissions and disk space"
-      exit 1
-    fi
-  fi
-
-  # Fallback: tar (last resort — available on virtually all POSIX systems)
-  if [[ "$copy_done" == false ]] && command -v tar >/dev/null 2>&1; then
-    if (tar -cf - -C "$src" _gaia | tar -xf - -C "$dst") 2>/dev/null; then
-      clean_resolved_yaml "$dst/_gaia"
-      detail "Copied framework files using tar (rsync and cp unavailable)"
-      copy_done=true
-    else
-      error "tar failed to copy framework files — check permissions and disk space"
-      exit 1
-    fi
-  fi
-
-  if [[ "$copy_done" == false ]]; then
-    error "No suitable copy tool found (tried rsync, cp, tar). Cannot copy framework files."
-    exit 1
-  fi
-}
+# Source extracted copy functions (clean_resolved_yaml, copy_gaia_files)
+# from lib/copy-lib.sh — E3-S11
+# shellcheck source=lib/copy-lib.sh
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib/copy-lib.sh"
 
 append_if_missing() {
   local file="$1" marker="$2" content="$3"
@@ -320,6 +255,53 @@ read_package_version() {
 count_files() {
   local dir="$1" pattern="${2:-*}"
   find "$dir" -name "$pattern" -type f 2>/dev/null | wc -l | tr -d ' '
+}
+
+# ─── Sprint Gate (E18-S1, ADR-029 §10.21.2) ───────────────────────────────
+# Reads sprint-status.yaml and hard-blocks the upgrade if any story has an
+# active status (in-progress, review, or ready-for-dev).
+
+check_sprint_gate() {
+  local target="$1"
+  local sprint_file="$target/docs/implementation-artifacts/sprint-status.yaml"
+
+  # AC3: If no sprint file exists, gate passes silently
+  if [[ ! -f "$sprint_file" ]]; then
+    [[ "$OPT_VERBOSE" == true ]] && detail "No sprint-status.yaml found — sprint gate passes"
+    return 0
+  fi
+
+  # Extract sprint_id (top-level field, unindented)
+  local sprint_id
+  sprint_id="$(extract_yaml_value "$sprint_file" "sprint_id")"
+  [[ -z "$sprint_id" ]] && sprint_id="unknown"
+
+  # Count active stories — match only indented status: lines (story entries)
+  local active_count=0
+  while IFS= read -r line; do
+    local status_val
+    status_val="${line#*status:}"              # strip key
+    status_val="${status_val#"${status_val%%[![:space:]]*}"}"  # trim leading whitespace
+    status_val="${status_val#[\"\']}"           # trim leading quote
+    status_val="${status_val%[\"\']}"           # trim trailing quote
+    case "$status_val" in
+      in-progress|review|ready-for-dev)
+        active_count=$((active_count + 1))
+        ;;
+    esac
+  done < <(grep '^[[:space:]]\{1,\}status:' "$sprint_file")
+
+  # AC3: If no active stories, gate passes
+  if [[ "$active_count" -eq 0 ]]; then
+    [[ "$OPT_VERBOSE" == true ]] && detail "Sprint gate passes — no active stories"
+    return 0
+  fi
+
+  # AC2: Hard block with clear error message
+  local story_word="stories"
+  [[ "$active_count" -eq 1 ]] && story_word="story"
+  error "Upgrade blocked: sprint \`${sprint_id}\` is active (${active_count} ${story_word} in progress). Complete or pause the sprint before upgrading."
+  return 1
 }
 
 # ─── cmd_init ───────────────────────────────────────────────────────────────
@@ -600,6 +582,15 @@ cmd_update() {
     printf "Proceed with update? [y/N]: "
     local confirm; read -r confirm
     [[ "$confirm" =~ ^[Yy] ]] || { info "Aborted."; exit 0; }
+  fi
+
+  # Sprint Gate (E18-S1, ADR-029 §10.21.2): block upgrade if active sprint
+  if [[ "$OPT_SKIP_SPRINT_GATE" == true ]]; then
+    warn "Sprint gate bypassed via --skip-sprint-gate — proceed with caution"
+  else
+    if ! check_sprint_gate "$TARGET"; then
+      exit 1
+    fi
   fi
 
   local timestamp
@@ -995,12 +986,13 @@ ${BOLD}Commands:${RESET}
   status     Show installation info
 
 ${BOLD}Options:${RESET}
-  --source <path>   Local GAIA source (or clones from GitHub if omitted)
-  --branch <name>   Clone from a specific branch
-  --yes             Skip confirmation prompts
-  --dry-run         Show what would be done without making changes
-  --verbose         Show detailed progress
-  --help            Show this help message
+  --source <path>      Local GAIA source (or clones from GitHub if omitted)
+  --branch <name>      Clone from a specific branch
+  --yes                Skip confirmation prompts
+  --dry-run            Show what would be done without making changes
+  --verbose            Show detailed progress
+  --skip-sprint-gate   Bypass the active-sprint upgrade gate (NOT RECOMMENDED)
+  --help               Show this help message
 
 ${BOLD}Examples:${RESET}
   gaia-install.sh init ~/my-new-project
@@ -1068,6 +1060,10 @@ parse_args() {
         ;;
       --verbose)
         OPT_VERBOSE=true
+        shift
+        ;;
+      --skip-sprint-gate)
+        OPT_SKIP_SPRINT_GATE=true
         shift
         ;;
       --branch)

@@ -1,0 +1,16 @@
+# E20-S11 fixture: valid promotion chain (positive case — guard should NOT skip)
+framework_name: "GAIA"
+framework_version: "1.93.0"
+project_name: "fixture-with-promotion-chain"
+project_path: "."
+ci_cd:
+  promotion_chain:
+    - id: dev
+      branch: develop
+      ci_workflow: ci.yml
+    - id: staging
+      branch: staging
+      ci_workflow: ci.yml
+    - id: prod
+      branch: main
+      ci_workflow: ci.yml

@@ -14,7 +14,9 @@ instructions: "{installed_path}/instructions.xml"
 validation: "{installed_path}/checklist.md"
 traces_to:
   - FR-221
+  - FR-222
   - FR-223
+  - FR-226
   - NFR-040
 performance_constraints:
   max_duration_seconds: 60  # NFR-040 — workflow must complete in under 60 seconds

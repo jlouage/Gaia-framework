@@ -17,7 +17,7 @@ import {
   compareChecksums,
   detectResumeMode,
   parseCheckpointFile,
-} from "../../../lib/checkpoint-validator.js";
+} from "../../helpers/checkpoint-validator.js";
 import { PROJECT_ROOT } from "../../helpers/project-root.js";
 const FIXTURES_DIR = join(PROJECT_ROOT, "test", "fixtures", "checkpoints");
 const TMP_CHECKPOINT_DIR = join(PROJECT_ROOT, "test", "fixtures", "tmp", "checkpoints");

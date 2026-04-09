@@ -3,13 +3,19 @@
   <mandate>Scan test-plan.md and story files to identify acceptance criteria gaps — NFR-040 requires completion in under 60 seconds</mandate>
   <mandate>Output must follow the FR-223 schema: summary count, per-story gap table, coverage percentage</mandate>
   <mandate>When no gaps are detected, output must state "No coverage gaps detected" with a summary count of zero</mandate>
+  <mandate>Verification mode must cross-reference generated test cases against execution results from JUnit XML, LCOV, or E17 evidence JSON sources (FR-222, FR-226)</mandate>
 </critical>
 
 <step n="1" title="Determine Mode">
   <action>Check the --mode argument: coverage or verification</action>
   <action>If no mode specified, default to coverage mode</action>
-  <action>If mode is 'verification', skip to verification-mode steps (E19-S2 scope — not implemented yet)</action>
+  <action>If mode is 'coverage', proceed to Step 2 (coverage mode steps)</action>
+  <action>If mode is 'verification', proceed to Step 7 (verification mode steps)</action>
 </step>
+
+<!-- ======================== -->
+<!-- COVERAGE MODE: Steps 2-6 -->
+<!-- ======================== -->
 
 <step n="2" title="Scan Test Plan">
   <action>Read {test_artifacts}/test-plan.md</action>
@@ -46,7 +52,60 @@
   </template-output>
 </step>
 
-<step n="6" title="Performance Validation">
+<step n="6" title="Performance Validation (Coverage Mode)">
+  <action>Verify workflow completed within the NFR-040 constraint of under 60 seconds</action>
+  <action>Log total execution time in the output footer</action>
+</step>
+
+<!-- ================================= -->
+<!-- VERIFICATION MODE: Steps 7-11     -->
+<!-- FR-222, FR-226, ADR-030 §10.22    -->
+<!-- ================================= -->
+
+<step n="7" title="Scan Generated Test Cases (Verification Mode)">
+  <action>Scan docs/test-artifacts/ for all generated test case files and test plan references</action>
+  <action>Build a map of generated test cases per story: story_key -> [test_case_id, test_file, test_name]</action>
+  <action>Cross-reference generated test cases with story files in docs/implementation-artifacts/</action>
+  <action>Count total generated test cases per story and in aggregate</action>
+</step>
+
+<step n="8" title="Detect and Parse Execution Results (Verification Mode)">
+  <action>Scan for available test execution result files in the following formats:
+    1. JUnit XML files — parse test name, status (pass/fail/skip) from XML testcase elements
+    2. LCOV coverage files — parse source file coverage data and hit counts
+    3. E17 evidence JSON files — parse test IDs and execution status per the E17-S10 schema
+  </action>
+  <action>If no execution result files are found in any format (no JUnit XML, no LCOV, no evidence JSON):
+    Log warning: "No test execution results found — verification mode cannot determine executed test counts. Falling back to coverage mode output."
+    Graceful degradation: fallback to coverage mode output and skip remaining verification steps.
+    Proceed to Step 5 (coverage mode output generation) instead.</action>
+  <action>For each detected result format, extract: test identifier, execution status (passed/failed/skipped/unrun), and timestamp if available</action>
+  <action>Build a unified executed tests map: test_id -> {status, source_format, last_run}</action>
+</step>
+
+<step n="9" title="Cross-Reference Generated vs Executed (Verification Mode)">
+  <action>For each story, cross-reference its generated test cases against the executed tests map</action>
+  <action>Classify each generated test case as: EXECUTED (found in results with pass/fail status) or UNEXECUTED (not found in any result file)</action>
+  <action>Calculate per story counts: generated test cases count, executed test cases count</action>
+  <action>Calculate aggregate totals: total generated across all stories, total executed across all stories</action>
+  <action>Flag stories with zero executed tests as HIGH priority gaps — these stories have generated test cases but none have been run</action>
+</step>
+
+<step n="10" title="Generate Verification Output (FR-226 Schema)">
+  <action>Generate the output artifact at {test_artifacts}/test-gap-analysis-{date}.md in verification mode format</action>
+  <action>Output must include the following FR-226 schema sections:
+    - Summary section with total generated test count, total executed test count, and verification percentage
+    - Per-story generated-vs-executed count table listing each story with its generated count, executed count, and gap priority
+    - Aggregate generated-vs-executed count showing overall totals
+    - Unverified tests table listing test files with UNVERIFIED status and story key
+  </action>
+  <action>For stories with zero executed tests: set gap priority to HIGH in the per-story table</action>
+  <template-output file="{test_artifacts}/test-gap-analysis-{date}.md">
+    Verification mode gap analysis report with per-story and aggregate generated-vs-executed counts, HIGH priority flags for zero-executed stories.
+  </template-output>
+</step>
+
+<step n="11" title="Performance Validation (Verification Mode)">
   <action>Verify workflow completed within the NFR-040 constraint of under 60 seconds</action>
   <action>Log total execution time in the output footer</action>
 </step>

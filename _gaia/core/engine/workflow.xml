@@ -51,6 +51,8 @@ execution modes (normal/yolo/planning), checkpoints, and quality gates.
     <action>Resolve {date} to current date</action>
     <action>Ask user for any remaining unresolved variables</action>
 
+    <!-- ci_cd backward-compat tolerance (E20-S11 / NFR-045 / ADR-033) — Config resolution treats a missing or empty ci_cd block as a no-op: no defaults are injected, no warning is emitted, and downstream workflows that depend on ci_cd.promotion_chain MUST consult the canonical chainPresent() predicate in scripts/lib/promotion-chain-guard.js rather than re-implementing the absent-variant check. -->
+
     <!-- Template Resolution (ADR-020, FR-101) — custom/templates/ overrides _gaia/lifecycle/templates/ -->
     <!-- Resolution order for template reads: custom/templates/{filename} > _gaia/lifecycle/templates/{filename} -->
     <!-- Resolution order for template writes: custom/templates/ ONLY — NEVER _gaia/lifecycle/templates/ -->

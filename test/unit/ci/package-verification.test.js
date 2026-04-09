@@ -13,8 +13,10 @@ function readProjectFile(relativePath) {
 
 describe("E4-S3: Package Content Verification", () => {
   // Shared constants — target whitelist per architecture Section 10.6
+  // lib/ added in E3-S11 to ship the extracted copy_gaia_files library (lib/copy-lib.sh)
   const TARGET_WHITELIST = [
     "bin/",
+    "lib/",
     "gaia-install.sh",
     "_gaia/",
     ".claude/",

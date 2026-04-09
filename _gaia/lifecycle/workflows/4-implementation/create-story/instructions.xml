@@ -87,6 +87,10 @@
   <action>Expand acceptance criteria in Given/When/Then format: "Given {context}, when {action}, then {expected result}"</action>
   <action>Add technical notes from architecture context</action>
   <action>Define subtasks for implementation</action>
+
+  <!-- Edge Case Size Gate (E19-S8, FR-227, FR-228) -->
+  <check if="size == 'S'">Skip edge case analysis sub-step — story is small enough that edge case analysis would waste token budget. Log to Dev Notes: "Edge case analysis: skipped (size=S)"</check>
+  <check if="size in ['M', 'L', 'XL']">Edge case analysis sub-step is mandatory for this story size. Proceed with edge case analysis. Log to Dev Notes: "Edge case analysis: completed (size={size})"</check>
 </step>
 <step n="5" title="Definition of Done">
   <action>Append DoD checklist: all AC met, tests pass, code reviewed, docs updated</action>

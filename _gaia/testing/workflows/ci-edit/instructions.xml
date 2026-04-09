@@ -1,0 +1,132 @@
+<workflow name="ci-edit">
+<critical>
+  <mandate>The `ci_cd.promotion_chain` block in global.yaml is the single source of truth for the promotion chain. Every write MUST pass the E20-S1 schema validator before being committed to disk.</mandate>
+  <mandate>The `id` field of every entry is immutable (ADR-033). Edits that attempt to change `id` must be rejected.</mandate>
+  <mandate>Every CRUD operation must be followed by a full chain re-validation. Partial updates are not permitted.</mandate>
+  <mandate>An operation that would leave zero entries in the chain is ALWAYS blocked. The chain must contain at least 1 environment at all times.</mandate>
+  <mandate>Remove and Edit operations must run the safety scan first — checkpoints, stories, test-environment.yaml — and require explicit user confirmation when references are found.</mandate>
+</critical>
+
+<step n="1" title="Load Current Promotion Chain">
+  <action>Read {project-root}/_gaia/_config/global.yaml in full. Preserve all fields and comments — this workflow only modifies the ci_cd.promotion_chain block.</action>
+  <action>Check whether a top-level ci_cd block exists and whether it contains a promotion_chain array.</action>
+  <check if="ci_cd block absent or promotion_chain field missing">
+    Display: "No promotion chain configured. Run /gaia-ci-setup first to create the initial chain, then re-run /gaia-ci-edit." HALT — do not attempt to add a chain from scratch.
+  </check>
+  <action>Invoke the E20-S1 validator at {project-path}/test/validators/promotion-chain-validator.js on the current chain to confirm it is in a valid starting state. If the current chain is already invalid, surface the violations to the user before proceeding.</action>
+  <action>Render the current chain as a formatted table: position | id | branch | environment | merge_strategy | test_tiers | ci_provider. Display this table to the user so they see exactly what they are editing.</action>
+</step>
+
+<step n="2" title="Present Operation Menu">
+  <action>Present the CRUD operation menu:
+    [a] add — insert a new environment into the chain
+    [r] remove — delete an existing environment (with safety scan)
+    [e] edit — modify fields of an existing environment (id is immutable)
+    [o] order — reorder the chain (warns on position 0 change)
+    [v] view — re-render the current chain table and return to the menu
+    [x] exit — close the workflow without writing
+  </action>
+  <ask>Select an operation: [a]dd / [r]emove / [e]dit / [o]rder / [v]iew / [x]it</ask>
+  <action if="[v]">Re-render the chain table and loop back to this menu.</action>
+  <action if="[x]">Write nothing — terminate the workflow cleanly.</action>
+</step>
+
+<step n="3" title="Add Operation" optional="true">
+  <critical>
+    <mandate>This step runs only when the user selected [a]dd.</mandate>
+  </critical>
+  <action>Prompt the user for each required field in order:
+    - id (string, slug format [a-z0-9-]+, must be unique in the chain) — required
+    - name (human-readable label) — required
+    - branch (git branch name, must be unique in the chain) — required
+    - ci_provider — enum: github_actions | gitlab_ci | jenkins | circleci | azure_devops | bitbucket | none
+    - merge_strategy — enum: merge | squash | rebase
+    - test_tiers — optional array of tier names
+    - auto_merge — boolean, default false
+    - approval_required — boolean, default false
+  </action>
+  <ask>Insertion position (0-based index, or leave blank to append to the end):</ask>
+  <action>Call `addEnvironment(currentChain, newEntry, {position})` from {project-path}/test/validators/promotion-chain-editor.js. The helper rejects duplicate id or branch and returns a new chain array.</action>
+  <check if="DuplicateFieldError thrown">Display the specific field and value, prompt the user to enter a unique replacement, and re-run the helper. Repeat until the entry is accepted.</check>
+  <action>Proceed to Step 7 (Validate + Write + Cascade).</action>
+</step>
+
+<step n="4" title="Remove Operation" optional="true">
+  <critical>
+    <mandate>This step runs only when the user selected [r]emove.</mandate>
+  </critical>
+  <action>Prompt the user for the id of the environment to remove.</action>
+  <check if="chain length is 1">
+    HALT the operation: "Cannot remove the last environment — promotion chain must have at least 1 environment. Add a replacement environment first, or use /gaia-ci-setup to reset the chain." Return to Step 2.
+  </check>
+  <action>Run the safety scan via scanReferences() using three source sets:
+    1. Checkpoints: enumerate {project-root}/_memory/checkpoints/ and {project-root}/_memory/checkpoints/completed/ for any dev-story-*.yaml whose `branch` field matches the target environment's branch.
+    2. Stories: glob {project-root}/docs/implementation-artifacts/*.md and grep for the environment id or branch name — collect matching story files.
+    3. test-environment.yaml: read {project-root}/_gaia/_config/test-environment.yaml and find any tier entry whose `environment` field equals the id being removed.
+  </action>
+  <check if="scanReferences returns found==true">
+    Display the list of references grouped by type (checkpoints, stories, test-environment tiers) and the specific detail for each. Present an explicit confirmation prompt:
+      "The environment '{id}' is referenced by {N} location(s) above. Removing it may break downstream workflows. Proceed anyway? [y] Yes, remove and cascade / [n] No, cancel"
+    Only on explicit [y] may the removal proceed.
+  </check>
+  <action>Call `removeEnvironment(currentChain, targetId)` from the editor module. This helper re-checks the minimum-1 rule and throws MinimumChainError if it would leave zero entries.</action>
+  <action>Proceed to Step 7 (Validate + Write + Cascade).</action>
+</step>
+
+<step n="5" title="Edit Operation" optional="true">
+  <critical>
+    <mandate>This step runs only when the user selected [e]dit. The `id` field is immutable per ADR-033 — any attempt to modify it is rejected.</mandate>
+  </critical>
+  <action>Prompt the user for the id of the environment to edit. Display its current field values.</action>
+  <action>Allow the user to modify any of the following fields: branch, name, environment, test_tiers, merge_strategy, auto_merge, approval_required, ci_provider, ci_checks.</action>
+  <check if="user attempts to edit id">
+    Display: "Field 'id' is immutable (ADR-033). To rename the stable key, remove this entry and add a new one with the desired id." Block the edit and return the user to the field selection prompt.
+  </check>
+  <action>Run the safety scan (same three sources as Step 4) BEFORE applying the edit, because an edited branch name has downstream consequences for CI pipelines and checkpoints.</action>
+  <check if="scanReferences returns found==true AND branch is being edited">
+    Warn the user that changing the branch may break active work and require explicit confirmation.
+  </check>
+  <action>Call `editEnvironment(currentChain, targetId, updates)` from the editor module. The helper rejects immutable field changes and duplicate branch values.</action>
+  <action>Proceed to Step 7 (Validate + Write + Cascade).</action>
+</step>
+
+<step n="6" title="Reorder Operation" optional="true">
+  <critical>
+    <mandate>This step runs only when the user selected [o]rder. Changing position 0 changes the PR target for all feature branches — the user must explicitly acknowledge this.</mandate>
+  </critical>
+  <action>Render the current chain as a numbered list and prompt the user to enter the new order as a comma-separated list of ids, e.g., "prod, dev, staging".</action>
+  <check if="reorder would result in empty chain">
+    HALT with MinimumChainError — chain must have at least 1 environment.
+  </check>
+  <action>Call `reorderChain(currentChain, orderList)` from the editor module. The helper rejects unknown ids, rejects incomplete orderings, and returns a new chain array with a `.meta` property describing the position-0 change.</action>
+  <check if="result.meta.position_zero_changed == true">
+    Warn the user: "Reordering position 0 changes the PR target from '{previous_pr_target}' to '{new_pr_target}'. All feature branches will merge into '{new_pr_target}' from this point forward. Continue? [y] Yes / [n] No"
+    Only proceed on explicit [y].
+  </check>
+  <action>Proceed to Step 7 (Validate + Write + Cascade).</action>
+</step>
+
+<step n="7" title="Validate, Write, and Cascade Updates">
+  <action>Invoke the E20-S1 schema validator at {project-path}/test/validators/promotion-chain-validator.js on the modified chain. This enforces: minimum 1 entry, unique ids, unique branches, required fields, valid enum values, id slug pattern.</action>
+  <check if="validator throws">
+    Display the list of violations returned by the validator and return the user to the operation menu without writing to global.yaml. The chain on disk remains unchanged.
+  </check>
+  <action>Write the updated chain back to {project-root}/_gaia/_config/global.yaml. Only the ci_cd.promotion_chain block may be modified — all other fields and comments must be preserved exactly.</action>
+  <action>Cascade updates after the write succeeds:
+    1. If any branch name changed, update the matching trigger in {project-root}/.github/workflows/*.yml (or the equivalent CI config for the configured ci_provider). If no matching trigger exists, log a warning but do not fail.
+    2. If any environment id was removed or renamed, update {project-root}/_gaia/_config/test-environment.yaml tier mappings to drop or rename the affected entries.
+    3. Regenerate {project-root}/docs/test-artifacts/ci-setup.md by re-running the relevant section of /gaia-ci-setup (or noting the change with a manual update marker).
+    4. Run /gaia-build-configs to regenerate the .resolved/ config cache so the new chain is visible to all workflows.
+  </action>
+  <action>On any cascade failure, surface the specific error to the user — do NOT attempt a rollback of global.yaml silently. Instead, report which cascade step failed and point the user at the file to correct manually.</action>
+</step>
+
+<step n="8" title="Summary">
+  <action>Display a summary of what changed: operation performed, entries affected, whether position 0 moved, which cascade steps ran, and any warnings encountered during cascade.</action>
+  <action>Remind the user to commit the updated global.yaml and any cascade targets on a feature branch — this workflow never commits automatically.</action>
+</step>
+
+<next-step source="lifecycle-sequence.yaml">
+  <standalone>This is a standalone workflow. Return to your current lifecycle phase.</standalone>
+</next-step>
+</workflow>

@@ -1,0 +1,6 @@
+# E20-S11 fixture: ci_cd present but an empty mapping
+framework_name: "GAIA"
+framework_version: "1.93.0"
+project_name: "fixture-ci-cd-empty"
+project_path: "."
+ci_cd: {}
