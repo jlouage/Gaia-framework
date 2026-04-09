@@ -57,17 +57,30 @@
   <action if="is_frontend == true">Populate the "## Frontend Dimensions" section of the output template with 6 rows, one per dimension, each row containing (gap_count, coverage_score, top_3_uncovered). The per-dimension coverage_score feeds E19-S6's overall coverage aggregation.</action>
 </step>
 
+<step n="4c" title="Per-Module Coverage Calculation (E19-S6, FR-225)">
+  <action>Group all scanned story files by epic key — parse the `epic:` frontmatter field from each story file. Stories sharing the same epic prefix (e.g., `E19`) are aggregated into a single module row. Story files whose `epic:` field is missing or empty are grouped under a synthetic `ungrouped` module key.</action>
+  <action>For each epic group, count `total_acs` — the sum of acceptance criteria items (`AC1`, `AC2`, ...) across all story files in the group, reusing the story→AC map built in Step 3.</action>
+  <action>For each epic group, count `tested_acs` — the number of acceptance criteria in the group that have at least one matching test case in the test plan map built in Step 2. An AC is considered tested when a test case explicitly references either the story key or the `{story_key}/ACn` identifier.</action>
+  <action>For each epic group, count `gap_count` — the number of ACs in the group classified as `uncovered-ac` by Step 4.</action>
+  <action>Calculate per-epic `coverage_pct` as `(tested_acs / total_acs) * 100`, rounded to one decimal place using standard half-to-even (banker's) rounding. If `total_acs == 0` (the epic has story files but none contain AC items), set `coverage_pct = 0.0` — do NOT raise a division-by-zero error.</action>
+  <action>Exclude epics with zero story files from the per-module table. Count the number excluded and emit a footnote beneath the table: "{N} epics with no story files were excluded." When N is 0, omit the footnote entirely.</action>
+  <action>Calculate the aggregate overall coverage: `aggregate_coverage_pct = (sum_of_tested_acs_across_all_included_epics / sum_of_total_acs_across_all_included_epics) * 100`, rounded to one decimal place. If the aggregate denominator is 0, set `aggregate_coverage_pct = 0.0`. This value replaces the prior Step 4 overall coverage number in the Executive Summary.</action>
+  <action>Determinism requirement (AC5): the computation MUST be deterministic — given identical inputs (same story files, same test plan), the workflow MUST produce byte-identical per-module rows, aggregate percentage, and sort order. Sort the per-module table rows by `coverage_pct` ascending (lowest coverage first); break ties by epic key lexicographical ascending. No randomness, no wall-clock timestamps inside computed fields, no hash-map iteration order dependencies.</action>
+  <action>Populate the "## Per-Module Coverage" section of the output template with one row per included epic, columns: `module`, `total_acs`, `tested_acs`, `coverage_pct`, `gap_count`. The `module` column renders as the epic key (e.g., `E19`). The `coverage_pct` column renders as `{n}.{d}%` (one decimal + percent sign).</action>
+</step>
+
 <step n="5" title="Generate Output (FR-223 Schema)">
   <action>Generate the output artifact at {test_artifacts}/test-gap-analysis-{date}.md</action>
   <action>Output must include the following FR-223 schema sections:
-    - Summary section with total count of stories analyzed, ACs scanned, gaps found, and overall coverage percentage
+    - Summary section with total count of stories analyzed, ACs scanned, gaps found, and overall coverage percentage (from Step 4c `aggregate_coverage_pct`)
+    - Per-module coverage table (from Step 4c) with columns module, total_acs, tested_acs, coverage_pct, gap_count
     - Per-story gap table listing each story, its ACs, and their coverage status
     - Coverage rate breakdown showing covered vs uncovered acceptance criteria
   </action>
   <action>If zero gaps are detected (all ACs have corresponding test cases):
     Output "No coverage gaps detected" in the summary section with a gap count of 0 and coverage rate of 100%</action>
   <template-output file="{test_artifacts}/test-gap-analysis-{date}.md">
-    Gap analysis report following FR-223 schema with summary count, per-story gap table, and coverage percentage.
+    Gap analysis report following FR-223 schema with summary count, per-module coverage table, per-story gap table, and aggregate coverage percentage.
   </template-output>
 </step>
 

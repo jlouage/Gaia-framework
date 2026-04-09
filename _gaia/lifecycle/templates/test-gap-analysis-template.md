@@ -79,10 +79,39 @@ Any value outside this enum MUST be flagged by Val as CRITICAL.
 
 - **Stories analyzed:** {story_count}
 - **Gaps detected:** {gap_count}
-- **Overall coverage rate:** {coverage_percentage}%
+- **Overall coverage rate:** {aggregate_coverage_pct}%
 - **Mode:** {mode}
 
 If `gap_count` is 0, state `No coverage gaps detected.` explicitly.
+
+The `Overall coverage rate` is the aggregate `(tested_acs / total_acs) * 100`
+computed across all included epics by the Per-Module Coverage step (E19-S6,
+FR-225). It replaces any prior per-story averaged figure and is rounded to one
+decimal place.
+
+## Per-Module Coverage
+
+> **Traces to:** FR-225, ADR-030 §10.22
+> **Story:** E19-S6
+>
+> Per-epic coverage percentage calculated as `(tested_acs / total_acs) * 100`,
+> rounded to one decimal place. Rows sorted by `coverage_pct` ascending (lowest
+> coverage first); ties broken by `module` key lexicographical ascending. Epics
+> with zero story files are excluded from the table — a footnote reports how
+> many were excluded when that count is non-zero.
+
+| module | total_acs | tested_acs | coverage_pct | gap_count |
+|--------|-----------|------------|--------------|-----------|
+| E19 | 24 | 18 | 75.0% | 6 |
+| E1  | 12 |  6 | 50.0% | 6 |
+
+> _{N} epics with no story files were excluded._
+
+When every included epic has zero ACs (the workflow finds story files but no
+acceptance criteria items), render a single row reading
+`| — | 0 | 0 | 0.0% | 0 |` and keep the aggregate `aggregate_coverage_pct`
+at `0.0%`. The calculation is deterministic — identical inputs always produce
+byte-identical rows and aggregate values (AC5).
 
 ## Gap Table
 
