@@ -31,6 +31,17 @@
   <action>If Review Gate table has extra rows beyond the 6 valid ones: remove the invalid rows</action>
   <action>Parse each row: Review name, Status (UNVERIFIED | PASSED | FAILED), Report link</action>
 
+  <!-- Legacy Status Normalization (E17-S2 / FR-191 / NFR-035)
+       Stories created before the UNVERIFIED/PASSED/FAILED vocabulary (E17-S1)
+       may carry legacy status values such as a literal dash ("-"), blank cells,
+       or the word "pending". These are treated as "not yet run" and MUST be
+       normalized to UNVERIFIED BEFORE gate evaluation in Step 2 so that Step 2
+       operates on canonical values only. NFR-035 requires this backward
+       compatibility — existing stories must not be broken by the vocabulary
+       change.
+  -->
+  <action>LEGACY NORMALIZATION (E17-S2 / NFR-035): Before evaluating gates, normalize every row's status by converting legacy values to the canonical vocabulary. For each of the 6 rows, if the Status cell is any of: a literal dash character "-", blank (empty cell or whitespace-only), or the word "pending" (case-insensitive), replace it with UNVERIFIED. This normalization happens in-memory during parsing — it does NOT rewrite the story file unless a subsequent review workflow persists its own update. Any other legacy value not in {"-", blank, "pending"} is left as-is and will be flagged by the PASSED/FAILED check in Step 2. The canonical mapping is: "-" → UNVERIFIED, blank → UNVERIFIED, "pending" → UNVERIFIED. After this step every row's in-memory status MUST be one of UNVERIFIED, PASSED, or FAILED.</action>
+
   <!-- Infra Gate Detection (FR-129): per-story gate type selection based on requirement ID prefix -->
   <action>Read the story file's YAML frontmatter traces_to field (e.g., traces_to: [IR-001, FR-128])</action>
   <action>Determine gate_type for this individual story by scanning its traces_to entries:
@@ -65,7 +76,22 @@
     <invoke-protocol ref="status-sync" story_key="{story_key}" new_status="done" source_workflow="review-gate-check" />
   </action>
   <action>If ALL 6 rows show PASSED AND the story status is already 'done': log "Story already done. No update needed."</action>
-  <action>If any row is FAILED: log which reviews failed. Do not change story status.</action>
-  <action>If any row is UNVERIFIED: log which reviews are still unverified. Do not change story status.</action>
+
+  <!-- FAILED Gate Reporting (E17-S2 / FR-191 / AC3)
+       When any gate is FAILED the protocol surfaces which gates failed and
+       returns the story to in-progress so the developer can address the
+       review feedback and re-enter the review cycle.
+  -->
+  <action>FAILED GATE REPORTING (AC3): If any row has Status == FAILED, collect the list of failed gate names into a comma-separated list (e.g., "Code Review, Security Review"). Emit this exact message format: "Review gate FAILED for {story_key}. Failed gates: {list of FAILED gate names}. Story is returned to in-progress so the developer can address the review feedback." Then invoke the status-sync protocol to transition the story from 'review' to 'in-progress' — the story MUST be returned to in-progress when any gate is FAILED:
+    <invoke-protocol ref="status-sync" story_key="{story_key}" new_status="in-progress" source_workflow="review-gate-check" />
+  </action>
+
+  <!-- UNVERIFIED Gate Reporting (E17-S2 / FR-191 / AC4)
+       When any gate is UNVERIFIED the protocol reports the count and the
+       specific gate names of those not yet run. It blocks advancement to
+       done without changing the story status — the story stays in 'review'
+       until the outstanding reviews are executed.
+  -->
+  <action>UNVERIFIED GATE REPORTING (AC4): If no row is FAILED but any row has Status == UNVERIFIED, count the UNVERIFIED rows (N) and collect the list of gate names of the UNVERIFIED rows. Emit this exact message format: "{N} gates not yet run for {story_key}. Outstanding gate names: {list of UNVERIFIED gate names}. Run the corresponding review workflows (/gaia-code-review, /gaia-qa-tests, /gaia-security-review, /gaia-test-automate, /gaia-test-review, /gaia-review-perf) or /gaia-run-all-reviews to complete them." The count N and the names MUST both appear in the emitted message. This blocks advancement to done — do NOT change the story status; the story remains in 'review' until all gates show PASSED.</action>
 </step>
 </protocol>
