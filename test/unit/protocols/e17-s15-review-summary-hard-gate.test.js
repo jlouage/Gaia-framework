@@ -5,22 +5,13 @@ import { execSync } from "child_process";
 import { tmpdir } from "os";
 
 const PROJECT_ROOT = resolve(import.meta.dirname, "../../..");
-const PROTOCOL_PATH = resolve(
-  PROJECT_ROOT,
-  "_gaia/core/protocols/review-gate-check.xml"
-);
+const PROTOCOL_PATH = resolve(PROJECT_ROOT, "_gaia/core/protocols/review-gate-check.xml");
 const RUN_ALL_REVIEWS_PATH = resolve(
   PROJECT_ROOT,
   "_gaia/lifecycle/workflows/4-implementation/run-all-reviews/instructions.xml"
 );
-const SKILL_PATH = resolve(
-  PROJECT_ROOT,
-  "_gaia/dev/skills/code-review-standards.md"
-);
-const BACKFILL_SCRIPT_PATH = resolve(
-  PROJECT_ROOT,
-  "scripts/backfill-review-summaries.sh"
-);
+const SKILL_PATH = resolve(PROJECT_ROOT, "_gaia/dev/skills/code-review-standards.md");
+const BACKFILL_SCRIPT_PATH = resolve(PROJECT_ROOT, "scripts/backfill-review-summaries.sh");
 
 describe("E17-S15: Review Summary Hard Gate (A-050)", () => {
   const protocolXml = readFileSync(PROTOCOL_PATH, "utf8");
@@ -34,9 +25,7 @@ describe("E17-S15: Review Summary Hard Gate (A-050)", () => {
 
     it("protocol checks summary existence before review-to-done transition", () => {
       // Must appear in the evaluation step that handles the transition
-      expect(protocolXml).toMatch(
-        /\{story_key\}-review-summary\.md/
-      );
+      expect(protocolXml).toMatch(/\{story_key\}-review-summary\.md/);
     });
 
     it("protocol references implementation_artifacts as the summary location", () => {
@@ -84,9 +73,7 @@ describe("E17-S15: Review Summary Hard Gate (A-050)", () => {
 
     it("run-all-reviews references all 6 review sections with verdict and link", () => {
       // All 6 review names should appear in the summary generation step
-      const summarySection = runAllReviewsXml.match(
-        /<step n="8"[\s\S]*?<\/step>/
-      )?.[0];
+      const summarySection = runAllReviewsXml.match(/<step n="8"[\s\S]*?<\/step>/)?.[0];
       expect(summarySection).toBeTruthy();
       expect(summarySection).toMatch(/Code Review/i);
       expect(summarySection).toMatch(/QA Tests|QA Review/i);
@@ -147,10 +134,9 @@ describe("E17-S15: Review Summary Hard Gate (A-050)", () => {
 
     it("backfill script runs cleanly in dry-run mode on a fixture sprint", () => {
       // Must not crash when invoked with --dry-run (or equivalent no-op)
-      const output = execSync(
-        `bash ${BACKFILL_SCRIPT_PATH} --dry-run 2>&1 || true`,
-        { cwd: PROJECT_ROOT }
-      ).toString();
+      const output = execSync(`bash ${BACKFILL_SCRIPT_PATH} --dry-run 2>&1 || true`, {
+        cwd: PROJECT_ROOT,
+      }).toString();
       // Should not contain shell syntax errors
       expect(output).not.toMatch(/syntax error|unexpected token/i);
     });
@@ -162,9 +148,7 @@ describe("E17-S15: Review Summary Hard Gate (A-050)", () => {
     it("protocol blocks done transition when summary missing even with all PASSED", () => {
       // The evaluation step contains the summary check inside the
       // ALL-PASSED branch
-      expect(protocolXml).toMatch(
-        /ALL 6 rows show PASSED[\s\S]*review-summary\.md/
-      );
+      expect(protocolXml).toMatch(/ALL 6 rows show PASSED[\s\S]*review-summary\.md/);
     });
   });
 
@@ -189,7 +173,7 @@ describe("E17-S15: Review Summary Hard Gate (A-050)", () => {
       const step8 = runAllReviewsXml.match(/<step n="8"[\s\S]*?<\/step>/)?.[0];
       expect(step8).toBeTruthy();
       const templateOutputTagIdx = step8.indexOf("<template-output");
-      const invokeProtocolTagIdx = step8.indexOf("<invoke-protocol name=\"review-gate-check\"");
+      const invokeProtocolTagIdx = step8.indexOf('<invoke-protocol name="review-gate-check"');
       expect(templateOutputTagIdx).toBeGreaterThan(-1);
       expect(invokeProtocolTagIdx).toBeGreaterThan(-1);
       expect(templateOutputTagIdx).toBeLessThan(invokeProtocolTagIdx);
