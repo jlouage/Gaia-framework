@@ -41,6 +41,17 @@
   <ask>Team velocity estimate (story points)?</ask>
   <ask>Sprint number (for multi-sprint tracking)?</ask>
 </step>
+<step n="3b" title="Gap Analysis Tip">
+  <critical>
+    <mandate>This step implements FR-237 (E19-S18). It surfaces a gap-analysis reminder to the scrum master after the velocity check and before story selection so that testing gaps are visible when prioritizing stories. The tip is advisory only — it never blocks sprint planning.</mandate>
+  </critical>
+  <action>SKIP FLAG CHECK (AC4): Inspect the invocation arguments passed to /gaia-sprint-plan. If the flag `--skip-gap-prompt` is present, skip this step entirely — emit no prompt, no file check, no wait. Proceed directly to Step 4 (Story Selection). This gives the scrum master an explicit opt-out for teams that do not use gap analysis.</action>
+  <action>RESOLVE SPRINT START DATE: Derive {sprint_start_date} as the ISO date (YYYY-MM-DD) the current sprint is starting. Prefer the value from {implementation_artifacts}/sprint-status.yaml if it exists (field: started), otherwise fall back to today's date. This is the date used to locate the gap-analysis file for the current sprint.</action>
+  <action>GAP ANALYSIS FILE CHECK (AC2): Check whether {test_artifacts}/test-gap-analysis-{sprint_start_date}.md exists (this resolves to docs/test-artifacts/test-gap-analysis-{sprint_start_date}.md under the project root). If the file is present, a gap analysis has already been run for this sprint — skip the tip entirely and proceed to Step 4 (the prompt is only shown when the file is absent). If the file does not exist, fall through to the display action below.</action>
+  <action>DISPLAY TIP (AC1): Emit this exact one-line tip to the user: "Tip: Run `/gaia-test-gap-analysis` before selecting stories to identify untested areas." This wording is verbatim from FR-237 / AC1 and must not be paraphrased. The tip is informational — it does NOT gate sprint planning, and the scrum master may continue without running gap analysis.</action>
+  <action>YOLO AUTO-CONTINUE (AC3): In YOLO mode, display the tip and auto-continue after 2 seconds without waiting for user input. In normal mode, display the tip and wait for the user to press continue via the ask below.</action>
+  <ask if="not yolo_mode">Continue to story selection? [continue]</ask>
+</step>
 <step n="4" title="Story Selection">
   <action>Read sizing_map from {project-root}/_gaia/_config/global.yaml. Use these canonical point values for T-shirt sizes (S/M/L/XL → points). Display the mapping to the user before selection.</action>
   <action>Select stories for this sprint based on priority and dependencies — only from stories classified as SELECTABLE in Step 1 (status = 'ready-for-dev').</action>
