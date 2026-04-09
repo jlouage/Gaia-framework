@@ -573,10 +573,12 @@ sequence:
     next:
       standalone: true
       suggestions:
+        - command: /gaia-sprint-plan
+          context: "To schedule remediation stories discovered by the gap analysis"
+        - command: /gaia-trace
+          context: "To update traceability matrix after closing coverage gaps"
         - command: /gaia-test-design
-          context: "To design tests covering newly identified coverage gaps"
-        - command: /gaia-test-automate
-          context: "To automate tests filling the identified gaps"
+          context: "To redesign the test plan based on gap analysis findings"
 
   traceability:
     module: testing
