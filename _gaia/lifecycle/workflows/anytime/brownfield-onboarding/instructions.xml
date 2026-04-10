@@ -105,6 +105,53 @@
   <action>If the subagent failed to write its output file: log a warning and continue — test execution scan failures should not block the overall brownfield workflow.</action>
 </step>
 
+<step n="2.8" title="Auto-Generate test-environment.yaml from Detected Infrastructure">
+  <!--
+    E19-S16 / FR-235 — Aggregates the four brownfield test-infrastructure
+    detectors (E19-S12 test-runner, E19-S13 ci-test, E19-S14 docker-test,
+    E19-S15 browser-matrix) into a single test-environment.yaml file at
+    docs/test-artifacts/test-environment.yaml. The generated file is
+    compatible with the E17-S7 schema consumed by the Test Execution
+    Bridge (ADR-028, FR-196) so that the bridge is immediately usable in
+    brownfield projects without manual authoring.
+
+    This step runs AFTER Step 2.75 so that any runners discovered by the
+    test execution scanner are already known. It is non-blocking for the
+    overall workflow: generation failures are logged as warnings and do
+    NOT halt brownfield onboarding.
+
+    Risk: HIGH. Merge conflict resolution is the critical path — detected
+    values MUST NEVER silently overwrite user customizations. The safe
+    default in YOLO mode is [m]erge, which fills only null / missing
+    fields and preserves every field the user has already set.
+  -->
+  <action>Invoke the four brownfield detectors at {project-path} and collect their results into a single detections object:
+    - testRunners ← detectTestRunners({project-path})  [E19-S12, src/brownfield/test-runner-detector.js]
+    - ciTestExecution ← detectCITestExecution({project-path})  [E19-S13, src/brownfield/ci-test-detector.js]
+    - dockerTestConfig ← detectDockerTestConfig({project-path})  [E19-S14, src/brownfield/docker-test-detector.js]
+    - browserMatrix ← detectBrowserMatrix({project-path})  [E19-S15, src/brownfield/browser-matrix-detector.js]
+    Each detector is best-effort: wrap each call in a try/catch and record null on failure so one detector crashing cannot block the others.</action>
+
+  <action>Call hasDetectedInfrastructure(detections) from src/brownfield/test-environment-generator.js. If it returns false, log "No test infrastructure detected — skipping test-environment.yaml generation (AC6 gate is also skipped)" and proceed to the next step. This keeps pristine greenfield-ish projects from being blocked by a gate they cannot satisfy.</action>
+
+  <action>Otherwise, call generateTestEnvironmentYaml(detections) to build the document. The document contains the six story-required metadata fields — test_runner (from E19-S12), ci_provider (from E19-S13), docker_test_config (from E19-S14), browser_matrix (from E19-S15), generated_by: brownfield, and generated_date — alongside the E17-S7 schema-required `version` and `runners` fields (AC1, AC2).</action>
+
+  <action>Resolve the target path as {project-root}/docs/test-artifacts/test-environment.yaml. Check whether the file already exists at this path (AC3).</action>
+
+  <action if="file does not exist">Call writeTestEnvironmentYaml(targetPath, doc, "merge") — the mode is irrelevant for fresh writes and the helper treats a missing file as a creation. Log "Created test-environment.yaml from detected infrastructure."</action>
+
+  <action if="file exists AND execution_mode == 'yolo'">YOLO mode always uses the safe default: merge. Detected values fill only null or missing fields; every non-null user-supplied field is preserved byte-for-byte. Call writeTestEnvironmentYaml(targetPath, doc, "merge"). Log "Merged detected values into existing test-environment.yaml (YOLO safe default)." This satisfies AC4.</action>
+
+  <action if="file exists AND execution_mode != 'yolo'">Prompt the user: "test-environment.yaml already exists — [m]erge detected values (safe, default) / [s]kip (leave file unchanged) / [o]verwrite (REPLACE entire file — destructive)". Wait for the user to choose one of the three options (AC3).
+    - [m] → writeTestEnvironmentYaml(targetPath, doc, "merge")
+    - [s] → writeTestEnvironmentYaml(targetPath, doc, "skip"); log "Skipped — existing file preserved."
+    - [o] → writeTestEnvironmentYaml(targetPath, doc, "overwrite"); log "Overwritten — previous content discarded."</action>
+
+  <action>After writing, validate the resulting file against the E17-S7 schema by calling validateTestEnvironment(readFileSync(targetPath, 'utf8')) from {project-root}/_gaia/core/validators/test-environment-validator.js (AC5). If the validator returns warnings, log each warning as a WARN-level message listing the specific failing field and continue — the file is still written but the user is notified so they can refine it. Never halt the overall brownfield workflow on schema warnings.</action>
+
+  <action>Record the detection results and the chosen conflict-resolution action in the brownfield onboarding report for traceability: include {generated,merged,skipped,overwritten} action, the count of runners detected, the ci_provider, and whether docker_test_config / browser_matrix were populated.</action>
+</step>
+
 <step n="3" title="NFR Assessment &amp; Performance Test Plan">
   <action>Spawn a subagent — "Analyze the codebase at {project-path} for non-functional requirements. Read {installed_path}/../../templates/nfr-assessment-template.md for the output format. Assess: code quality (linting, complexity, duplication), security posture (dependency vulnerabilities, secrets handling, auth quality — load security-basics skill section vulnerability-scanning if needed), performance (bundle size if frontend, query patterns, caching, resource management), accessibility (ARIA, semantic HTML, keyboard nav if frontend), test coverage (framework, count, coverage %, untested areas, quality), CI/CD (build pipeline, deploy strategy, environments, IaC). Create NFR Baseline Summary Table with measured values (not placeholders). Output to {test_artifacts}/nfr-assessment.md. Then create a performance test plan: load {project-root}/_gaia/testing/knowledge/performance/k6-patterns.md for load testing patterns. If {has_frontend}: also load {project-root}/_gaia/testing/knowledge/performance/lighthouse-ci.md. Define performance budgets (P50/P95/P99) based on NFR baselines, load test scenarios (gradual, spike, soak), backend profiling targets (slow queries, N+1, connection pools), CI performance gates. If {has_frontend}: define Core Web Vitals targets (LCP under 2.5s, INP under 200ms, CLS under 0.1). Output to {test_artifacts}/performance-test-plan-{date}.md"</action>
   <action>When subagent returns: verify both {test_artifacts}/nfr-assessment.md and {test_artifacts}/performance-test-plan-{date}.md exist. If the subagent failed to write files, the orchestrator MUST write them to {test_artifacts}/ as declared in workflow.yaml output.artifacts — do NOT fall back to {planning_artifacts}/.</action>

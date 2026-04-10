@@ -13,6 +13,16 @@ quality_gates:
       on_fail: "HALT: NFR assessment not found at {test_artifacts}/nfr-assessment.md."
     - check: "performance_test_plan_exists"
       on_fail: "HALT: Performance test plan not found at {test_artifacts}/. Run /gaia-perf-testing."
+    # E19-S16 / FR-235 — NFR onboarding gate: when any test infrastructure is
+    # detected during Steps 2.5/2.75 (E19-S12–S15 detectors), the brownfield
+    # workflow MUST emit test-environment.yaml in test-artifacts/ so that the
+    # Test Execution Bridge (E17) is immediately usable. The gate is
+    # CONDITIONAL — a project with no detected test infrastructure is not
+    # blocked by a missing file (AC6). When infrastructure IS detected but
+    # the file is absent, the workflow halts with a clear remediation path.
+    - check: "test_environment_yaml_required_when_infra_detected"
+      description: "If any of E19-S12/S13/S14/S15 detected test infrastructure, docs/test-artifacts/test-environment.yaml must exist (AC6, FR-235)."
+      on_fail: "HALT: Brownfield detected test infrastructure but test-environment.yaml was not generated. Re-run step 2.8 or run /gaia-brownfield again."
 on_error:
   missing_file: "ask_user"
   unresolved_variable: "halt"
