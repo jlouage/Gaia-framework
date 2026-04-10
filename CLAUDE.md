@@ -193,7 +193,12 @@ The Test Execution Bridge (ADR-028, architecture §10.20) orchestrates test runs
 - Layer 2 local execution (`layer-2-local-execution.js`) calls all three guards before `spawn`
 - Layer 2 CI execution (`layer-2-ci-execution.js`) calls the shell-operator guard on the runner command and the CI workflow allowlist guard before `gh workflow run`
 
-**Threat model:** Threats T20–T24 in architecture §10.20.10 cover env misconfiguration, runner discovery failure, execution timeout, subprocess runaway, and CI API unavailability. The scope guards mitigate T23 (subprocess runaway via shell injection); the allowlists mitigate T20–T21 (misconfigured or malicious runner/workflow values).
+**Threat model:** Architecture §10.20.10 enumerates the five bridge threats:
+- **T20** — Environment misconfiguration (runner declared in `test-environment.yaml` does not match project stack). Mitigated by Layer 0 readiness checks and `assertCommandAllowed`.
+- **T21** — Runner discovery failure (Layer 1 cannot match story key to test files). Mitigated by structured Layer 1 failure + `bridge_status: runner_not_found` evidence fallback.
+- **T22** — Execution timeout (subprocess or CI workflow hangs). Mitigated by NFR-033 configurable timeout + SIGTERM/SIGKILL escalation.
+- **T23** — Subprocess runaway via shell injection (chaining/substitution/redirection operators). Mitigated by `assertInScope` scope guard.
+- **T24** — CI API unavailability (`gh` missing, auth expired, network failure). Mitigated by `defaultGhCheck` probe and local fallback + `assertCiWorkflowAllowed` on the fallback workflow.
 
 ## Memory Hygiene
 
