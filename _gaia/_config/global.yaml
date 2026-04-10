@@ -48,3 +48,16 @@ installed_path: "{project-root}/_gaia"
 config_path: "{project-root}/_gaia/_config"
 memory_path: "{project-root}/_memory"
 checkpoint_path: "{project-root}/_memory/checkpoints"
+
+# Test Execution Bridge (ADR-028, FR-202, NFR-035)
+# Opt-in subsystem that runs tests during the post-review phase of applicable workflows.
+# When bridge_enabled is false (the default), ALL bridge layers are completely bypassed
+# with zero behavior change — no log messages, no file reads. This is the safety toggle
+# for the entire bridge subsystem. Existing installations are unaffected by default.
+test_execution_bridge:
+  # Master switch. false = bridge completely inactive (default, opt-in semantics).
+  # Set to true to activate the bridge in applicable workflows.
+  bridge_enabled: false
+  # Maximum wall-clock seconds the bridge will wait for a test run before aborting.
+  # Only consulted when bridge_enabled is true.
+  timeout_seconds: 300
