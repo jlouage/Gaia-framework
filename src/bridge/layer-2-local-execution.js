@@ -1,0 +1,320 @@
+/**
+ * E17-S6: Bridge Layer 2 — Local Execution Mode
+ *
+ * Third layer of the Test Execution Bridge (ADR-028, architecture §10.20).
+ * Layer 2 receives the runner manifest from Layer 1 and executes the
+ * declared test command as a local subprocess. It enforces a hard
+ * timeout (NFR-033, default 300s), captures stdout/stderr/exit code
+ * for Layer 3, and respects the bridge_enabled opt-in (NFR-035).
+ *
+ * Scope constraint (FR-203): Layer 2 only invokes the exact command
+ * supplied in the runner manifest. Shell chaining operators and command
+ * substitution are rejected BEFORE spawn to mitigate threats T22
+ * (execution timeout) and T23 (subprocess runaway).
+ *
+ * Inputs:
+ *   runnerManifest: { runner_name, command, tier }
+ *   config:         { bridge_enabled, mode, timeout_seconds, cwd? }
+ *
+ * Output (executed):
+ *   {
+ *     command,          // the command that was invoked
+ *     exit_code,        // process exit code
+ *     stdout,           // captured stdout (string)
+ *     stderr,           // captured stderr (string)
+ *     timed_out,        // boolean — true if timeout was hit
+ *     timeout_seconds,  // the timeout that was applied
+ *     evidence?         // only present on timeout
+ *   }
+ *
+ * Output (bypassed — bridge_enabled: false):
+ *   { bypassed: true }
+ *
+ * Traces to: FR-197, FR-203, NFR-033, NFR-035, ADR-028
+ * Test cases: TEB-26 to TEB-30
+ */
+
+import { spawn } from "child_process";
+
+// ─── Defaults ──────────────────────────────────────────────────────────────
+
+// NFR-033: local execution must cap at < 5 minutes (300 seconds).
+const DEFAULT_TIMEOUT_SECONDS = 300;
+
+// Grace period between SIGTERM and SIGKILL when the subprocess ignores the
+// initial termination signal. Kept small so orphan processes cannot linger.
+const SIGKILL_GRACE_MS = 2000;
+
+// ─── Scope guard (FR-203) ──────────────────────────────────────────────────
+//
+// Shell metacharacters that enable command chaining, substitution, or
+// redirection outside the intended test runner invocation. Detected and
+// rejected BEFORE the command reaches `spawn` so the subprocess can never
+// run under a compromised command string.
+//
+// Legitimate runner invocations can carry these characters inside quoted
+// arguments (e.g., `node -e "console.log('a'); console.log('b')"`), so the
+// guard tokenises the command and only flags metacharacters that appear
+// OUTSIDE single or double quoted regions. Backticks and $() are always
+// rejected because they trigger command substitution even inside weakly
+// quoted contexts under /bin/sh.
+
+const ALWAYS_FORBIDDEN_SUBSTRINGS = ["`", "$("];
+
+function stripQuotedRegions(command) {
+  // Replace the contents of '...'/"..." runs with a neutral placeholder so
+  // shell operators inside quoted arguments are not misread as chaining.
+  let out = "";
+  let i = 0;
+  while (i < command.length) {
+    const ch = command[i];
+    if (ch === "'" || ch === '"') {
+      const quote = ch;
+      out += quote;
+      i += 1;
+      while (i < command.length && command[i] !== quote) {
+        // Honour backslash escapes inside double quotes so escaped quotes
+        // do not prematurely close the region.
+        if (quote === '"' && command[i] === "\\" && i + 1 < command.length) {
+          i += 2;
+          continue;
+        }
+        i += 1;
+      }
+      out += quote;
+      i += 1; // consume the closing quote (if present)
+      continue;
+    }
+    out += ch;
+    i += 1;
+  }
+  return out;
+}
+
+const UNQUOTED_FORBIDDEN_PATTERNS = [
+  { re: /;/, label: ";" },
+  { re: /&&/, label: "&&" },
+  { re: /\|\|/, label: "||" },
+  { re: /\|/, label: "|" },
+  { re: />/, label: ">" },
+  { re: /</, label: "<" },
+];
+
+function assertInScope(command) {
+  if (typeof command !== "string" || command.trim() === "") {
+    throw new Error("Layer 2 scope violation: runnerManifest.command must be a non-empty string.");
+  }
+
+  // Backticks and $() are rejected everywhere — command substitution is
+  // not safe even inside double-quoted strings under /bin/sh.
+  for (const needle of ALWAYS_FORBIDDEN_SUBSTRINGS) {
+    if (command.includes(needle)) {
+      throw new Error(
+        `Layer 2 scope violation (FR-203): command contains command substitution ("${needle}") — "${command}". ` +
+          "Only plain runner invocations are permitted."
+      );
+    }
+  }
+
+  // Quote-stripped view: replace quoted runs with their quotes only so
+  // chaining/pipe/redirect operators inside quoted args are invisible to
+  // the pattern scan below.
+  const stripped = stripQuotedRegions(command).replace(/"[^"]*"|'[^']*'/g, "");
+
+  for (const { re, label } of UNQUOTED_FORBIDDEN_PATTERNS) {
+    if (re.test(stripped)) {
+      throw new Error(
+        `Layer 2 scope violation (FR-203): command contains a forbidden shell operator ("${label}") — "${command}". ` +
+          "Only plain runner invocations are permitted — no chaining, pipes, or redirection."
+      );
+    }
+  }
+}
+
+// ─── Exit code interpretation ──────────────────────────────────────────────
+
+/**
+ * Interpret a subprocess exit code as a pass/fail signal for Layer 3.
+ *
+ * @param {number} code
+ * @returns {"pass" | "fail"}
+ */
+export function interpretExitCode(code) {
+  return code === 0 ? "pass" : "fail";
+}
+
+// ─── Subprocess runner ─────────────────────────────────────────────────────
+
+/**
+ * Spawn the command inside a shell so the full command string (including
+ * arguments) is honoured, while still enforcing our scope guard above.
+ *
+ * The returned promise resolves with { exit_code, stdout, stderr,
+ * timed_out, termination_signal } and never rejects — subprocess errors
+ * are recorded on stderr and surfaced via a non-zero exit code.
+ */
+function runSubprocess(command, timeoutSeconds, cwd) {
+  return new Promise((resolve) => {
+    const child = spawn(command, {
+      shell: true,
+      cwd: cwd || process.cwd(),
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+
+    let stdout = "";
+    let stderr = "";
+    let timedOut = false;
+    let terminationSignal = null;
+
+    child.stdout.on("data", (chunk) => {
+      stdout += chunk.toString();
+    });
+    child.stderr.on("data", (chunk) => {
+      stderr += chunk.toString();
+    });
+
+    const termTimer = setTimeout(() => {
+      timedOut = true;
+      terminationSignal = "SIGTERM";
+      try {
+        child.kill("SIGTERM");
+      } catch {
+        /* subprocess may have exited between check and kill */
+      }
+
+      // Escalate to SIGKILL if the child ignores SIGTERM within the grace
+      // window — mitigates T23 (subprocess runaway).
+      setTimeout(() => {
+        if (!child.killed && child.exitCode === null) {
+          terminationSignal = "SIGKILL";
+          try {
+            child.kill("SIGKILL");
+          } catch {
+            /* already gone */
+          }
+        }
+      }, SIGKILL_GRACE_MS);
+    }, timeoutSeconds * 1000);
+
+    child.on("error", (err) => {
+      // spawn-level failure (e.g., command not found) — record on stderr.
+      stderr += `\n[layer-2] subprocess error: ${err.message}`;
+    });
+
+    child.on("close", (code, signal) => {
+      clearTimeout(termTimer);
+      // When timed_out was not flagged but the child terminated via a
+      // signal anyway (e.g., external kill), surface the signal name.
+      if (!timedOut && signal) {
+        terminationSignal = signal;
+      }
+      resolve({
+        exit_code: code ?? (signal ? 1 : 0),
+        stdout,
+        stderr,
+        timed_out: timedOut,
+        termination_signal: terminationSignal,
+      });
+    });
+  });
+}
+
+// ─── Public API ────────────────────────────────────────────────────────────
+
+/**
+ * @typedef {Object} RunnerManifestEntry
+ * @property {string} runner_name — e.g., "vitest", "jest", "node"
+ * @property {string} command     — CLI command to invoke
+ * @property {number} [tier]      — optional tier classification
+ */
+
+/**
+ * @typedef {Object} BridgeConfig
+ * @property {boolean} bridge_enabled — NFR-035 opt-in toggle
+ * @property {"local" | "ci"} [mode]  — execution mode (Layer 2 = local only)
+ * @property {number} [timeout_seconds] — NFR-033 timeout, default 300
+ * @property {string} [cwd]           — working directory (default process.cwd())
+ */
+
+/**
+ * @typedef {Object} ExecutionResult
+ * @property {string}  command
+ * @property {number}  exit_code
+ * @property {string}  stdout
+ * @property {string}  stderr
+ * @property {boolean} timed_out
+ * @property {number}  timeout_seconds
+ * @property {object=} evidence — only present on timeout
+ *
+ * @typedef {{ bypassed: true }} BypassResult
+ */
+
+/**
+ * Execute the runner manifest command locally and capture results.
+ *
+ * @param {RunnerManifestEntry} runnerManifest
+ * @param {BridgeConfig} config
+ * @returns {Promise<ExecutionResult | BypassResult>}
+ */
+export async function executeLocal(runnerManifest, config = {}) {
+  // AC7 / NFR-035: bridge_enabled: false → short-circuit before any other
+  // guard, before any spawn. Mode guard is intentionally bypassed here so
+  // callers that have not yet populated `mode` still get a clean bypass.
+  if (config.bridge_enabled === false) {
+    return { bypassed: true };
+  }
+
+  if (!runnerManifest || typeof runnerManifest !== "object") {
+    throw new TypeError(
+      "Layer 2: runnerManifest is required (expected object with runner_name and command)."
+    );
+  }
+
+  const { runner_name, command } = runnerManifest;
+
+  // AC6: mode guard — Layer 2 handles the local path only. CI mode is
+  // served by a separate Layer 2 module (E17-S9) and must not fall through.
+  const mode = config.mode ?? "local";
+  if (mode !== "local") {
+    throw new Error(
+      `Layer 2: invalid mode "${mode}" — local execution requires mode: "local". CI mode is handled by Layer 2 CI (E17-S9).`
+    );
+  }
+
+  // FR-203 scope guard — rejects chaining/substitution/redirection before
+  // any subprocess is spawned.
+  assertInScope(command);
+
+  const timeoutSeconds =
+    typeof config.timeout_seconds === "number" && config.timeout_seconds > 0
+      ? config.timeout_seconds
+      : DEFAULT_TIMEOUT_SECONDS;
+
+  const { exit_code, stdout, stderr, timed_out, termination_signal } = await runSubprocess(
+    command,
+    timeoutSeconds,
+    config.cwd
+  );
+
+  /** @type {ExecutionResult} */
+  const result = {
+    command,
+    exit_code,
+    stdout,
+    stderr,
+    timed_out,
+    timeout_seconds: timeoutSeconds,
+  };
+
+  if (timed_out) {
+    result.evidence = {
+      event: "timeout",
+      timeout_seconds: timeoutSeconds,
+      runner: runner_name,
+      terminated_at: new Date().toISOString(),
+      termination_signal: termination_signal || "graceful",
+    };
+  }
+
+  return result;
+}
