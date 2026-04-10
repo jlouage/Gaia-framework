@@ -131,6 +131,38 @@
   <action>DEV NOTES LOG: Append to the story's Dev Notes section: "Edge case AC append: {count} AC-EC items added (FR-229)". If count is 0, the zero-result fast path above has already logged "No edge cases identified." — do not double-log.</action>
   <action>POST-APPEND PRIMARY AC VERIFICATION (AC4): Re-read the Acceptance Criteria section after the append and compare the first len(primary_acs_snapshot) items against primary_acs_snapshot. They MUST match exactly. If not, HALT with "AC4 violation: primary ACs were modified during AC-EC append." This is the final safety gate before the workflow proceeds to Step 5.</action>
 </step>
+<step n="4d" title="Append Edge Case Results to Test Plan (FR-230)">
+  <critical>
+    <mandate>This sub-step implements FR-230: edge case results captured by Step 4b MUST be appended to {test_artifacts}/test-plan.md as new rows BEFORE Step 6 writes the story file to disk. This ensures edge case scenarios are captured in the test artifact, not only in the story file.</mandate>
+    <mandate>Sub-step failure is NON-BLOCKING (AC4): if test-plan.md does not exist, log a note in the story's Dev Notes and continue without error. Story creation MUST NOT be blocked by a missing test-plan.md.</mandate>
+    <mandate>Idempotency is REQUIRED (AC5): re-running create-story for the same story_key MUST NOT duplicate edge case rows in the test plan. Dedup key = (story_key, scenario).</mandate>
+  </critical>
+  <check if="size == 'S'">Skip this entire step — Step 4's size gate already excluded S-sized stories from edge case analysis. Proceed to Step 5.</check>
+  <action>ZERO-RESULT FAST PATH: If edge_case_results is empty (length == 0) — either because the edge case sub-step returned no results, failed non-blocking, or was skipped — do NOT open or modify test-plan.md. Proceed to Step 5. No-op, no dev note (the AC-EC append step 4c already logged "No edge cases identified.").</action>
+  <action>FILE EXISTENCE CHECK (AC4): Check whether {test_artifacts}/test-plan.md exists. If the file does not exist (file absent, path not found, or the directory is missing), log a note in the story's Dev Notes section — exactly "Edge case test plan append: skipped — test-plan.md not found at {test_artifacts}/test-plan.md (non-blocking)." Do NOT raise an error, do NOT create test-plan.md, do NOT halt. Proceed to Step 5. This is the non-blocking fallback path.</action>
+  <action>READ TEST PLAN: Read {test_artifacts}/test-plan.md into memory. The content is the authoritative target for both the existing-section locate and the highest-TC-ID scan below.</action>
+  <action>LOCATE STORY SECTION (AC1): Search the test-plan.md content for a heading or row that references this story_key. Locate the story's section via any of: (a) a markdown heading containing the story_key (e.g., "### E19-S11 — ..." or "## {story_key}"); (b) an existing table row in the test-plan.md whose trailing cell contains the story_key. If a section is found, remember the insertion point (immediately after the last existing row of that section). If no section is found, the insertion point is the end of the file — a new section will be created.</action>
+  <action>TC ID NUMBERING (AC3): Scan the entire test-plan.md content for the highest existing test case ID. Match the canonical TC ID patterns used by the test plan (e.g., TC-{N}, TGA-{N}, ECI-{N}, and any other prefix already present in the file). For the purposes of this append, find the highest numeric suffix among all IDs sharing the same prefix the story's Dev Notes declares (e.g., ECI-13 for E19-S11 → next is ECI-14). If no prefix is declared in Dev Notes, default to TC-{N} and auto-increment from the highest existing TC-{N}. If no TC IDs exist at all, start at TC-1. The next TC ID assigned to the first new edge case row is (highest + 1), and subsequent edge cases increment sequentially.</action>
+  <action>IDEMPOTENCY / DEDUP CHECK (AC5): Before appending any row, scan the test-plan.md content for existing rows that match this (story_key, scenario) pair. A row is considered a duplicate if its trailing cell contains the story_key AND its scenario cell contains the exact scenario text from the current edge_case_results entry. For each edge case result: if a duplicate row exists, SKIP that entry (do not append); otherwise, mark it for append. Track the count of skipped duplicates and the count of new rows to append. The dedup key is (story_key, scenario) — this makes re-runs of create-story for the same story_key idempotent.</action>
+  <action>FORMAT ROWS (AC2): For each non-duplicate edge case result, format a new test-plan row using the canonical row format:
+    | {tc_id} | {scenario} | edge-case | {severity} | {story_key} |
+    where:
+      - {tc_id} is the auto-incremented test case ID from the numbering step above (e.g., ECI-14, ECI-15).
+      - {scenario} is the scenario field from the edge case result (verbatim from edge_case_results).
+      - edge-case is the literal tag string — never replaced, never translated, never lower/upper-cased differently.
+      - {severity} is derived from the edge case category: boundary/data → medium; error/integration → high; security → high; timing/concurrency → high; environment → low. If category is missing or unmapped, default to medium.
+      - {story_key} is the current story's key (e.g., E19-S11) — this is the dedup key used in AC5.
+    The row columns MUST appear in exactly this order: tc_id | scenario | edge-case | severity | story_key. Never reorder.</action>
+  <action>APPEND ROWS: If the story section was found, append the formatted rows immediately after the last existing row of that section. If no story section was found, append a new section at the end of the test-plan.md file:
+    ### {story_key} — {story_title}
+    | ID | Scenario | Type | Severity | Story |
+    |----|----------|------|----------|-------|
+    {formatted rows}
+    The new section uses the same table header as existing sections so renderers and scanners keep working.</action>
+  <action>WRITE TEST PLAN: Write the updated test-plan.md content back to {test_artifacts}/test-plan.md. Preserve the original file's trailing newline convention and do not touch any content outside the insertion point. If the write fails for any reason (permission denied, disk full, etc.), log a warning to Dev Notes "Edge case test plan append: write failed — {error}. Scenarios preserved in story file only." and proceed non-blockingly.</action>
+  <action>DEV NOTES LOG: Append to the story's Dev Notes section exactly: "Edge case test plan append: {new_count} rows added, {dup_count} duplicates skipped (FR-230)". If both counts are zero (everything was a duplicate on a re-run), the line is still logged so the idempotency path is observable.</action>
+  <action>COMPLETION GATE: Confirm the test plan append step has run to completion (either by appending rows, skipping on missing file, skipping on zero results, or logging a write failure). Only after this confirmation may the workflow proceed to Step 5.</action>
+</step>
 <step n="5" title="Definition of Done">
   <action>Append DoD checklist: all AC met, tests pass, code reviewed, docs updated</action>
 </step>
