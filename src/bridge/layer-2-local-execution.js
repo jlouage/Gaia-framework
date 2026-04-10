@@ -35,6 +35,7 @@
  */
 
 import { spawn } from "child_process";
+import { assertInScope, assertCommandAllowed } from "./bridge-scope-guard.js";
 
 // ─── Defaults ──────────────────────────────────────────────────────────────
 
@@ -45,91 +46,12 @@ const DEFAULT_TIMEOUT_SECONDS = 300;
 // initial termination signal. Kept small so orphan processes cannot linger.
 const SIGKILL_GRACE_MS = 2000;
 
-// ─── Scope guard (FR-203) ──────────────────────────────────────────────────
+// ─── Scope guard (FR-203) — shared module ─────────────────────────────────
 //
-// Shell metacharacters that enable command chaining, substitution, or
-// redirection outside the intended test runner invocation. Detected and
-// rejected BEFORE the command reaches `spawn` so the subprocess can never
-// run under a compromised command string.
-//
-// Legitimate runner invocations can carry these characters inside quoted
-// arguments (e.g., `node -e "console.log('a'); console.log('b')"`), so the
-// guard tokenises the command and only flags metacharacters that appear
-// OUTSIDE single or double quoted regions. Backticks and $() are always
-// rejected because they trigger command substitution even inside weakly
-// quoted contexts under /bin/sh.
-
-const ALWAYS_FORBIDDEN_SUBSTRINGS = ["`", "$("];
-
-function stripQuotedRegions(command) {
-  // Replace the contents of '...'/"..." runs with a neutral placeholder so
-  // shell operators inside quoted arguments are not misread as chaining.
-  let out = "";
-  let i = 0;
-  while (i < command.length) {
-    const ch = command[i];
-    if (ch === "'" || ch === '"') {
-      const quote = ch;
-      out += quote;
-      i += 1;
-      while (i < command.length && command[i] !== quote) {
-        // Honour backslash escapes inside double quotes so escaped quotes
-        // do not prematurely close the region.
-        if (quote === '"' && command[i] === "\\" && i + 1 < command.length) {
-          i += 2;
-          continue;
-        }
-        i += 1;
-      }
-      out += quote;
-      i += 1; // consume the closing quote (if present)
-      continue;
-    }
-    out += ch;
-    i += 1;
-  }
-  return out;
-}
-
-const UNQUOTED_FORBIDDEN_PATTERNS = [
-  { re: /;/, label: ";" },
-  { re: /&&/, label: "&&" },
-  { re: /\|\|/, label: "||" },
-  { re: /\|/, label: "|" },
-  { re: />/, label: ">" },
-  { re: /</, label: "<" },
-];
-
-function assertInScope(command) {
-  if (typeof command !== "string" || command.trim() === "") {
-    throw new Error("Layer 2 scope violation: runnerManifest.command must be a non-empty string.");
-  }
-
-  // Backticks and $() are rejected everywhere — command substitution is
-  // not safe even inside double-quoted strings under /bin/sh.
-  for (const needle of ALWAYS_FORBIDDEN_SUBSTRINGS) {
-    if (command.includes(needle)) {
-      throw new Error(
-        `Layer 2 scope violation (FR-203): command contains command substitution ("${needle}") — "${command}". ` +
-          "Only plain runner invocations are permitted."
-      );
-    }
-  }
-
-  // Quote-stripped view: replace quoted runs with their quotes only so
-  // chaining/pipe/redirect operators inside quoted args are invisible to
-  // the pattern scan below.
-  const stripped = stripQuotedRegions(command).replace(/"[^"]*"|'[^']*'/g, "");
-
-  for (const { re, label } of UNQUOTED_FORBIDDEN_PATTERNS) {
-    if (re.test(stripped)) {
-      throw new Error(
-        `Layer 2 scope violation (FR-203): command contains a forbidden shell operator ("${label}") — "${command}". ` +
-          "Only plain runner invocations are permitted — no chaining, pipes, or redirection."
-      );
-    }
-  }
-}
+// FR-203 scope enforcement lives in src/bridge/bridge-scope-guard.js so
+// Layer 2 local and Layer 2 CI both route through the same policy. This
+// module imports the guards and applies them before any subprocess is
+// spawned — a compromised command string can never reach `spawn`.
 
 // ─── Exit code interpretation ──────────────────────────────────────────────
 
@@ -284,6 +206,15 @@ export async function executeLocal(runnerManifest, config = {}) {
   // FR-203 scope guard — rejects chaining/substitution/redirection before
   // any subprocess is spawned.
   assertInScope(command);
+
+  // E17-S13 / AC2: if the caller supplies an explicit runner allowlist
+  // (sourced from test-environment.yaml or package.json), enforce it.
+  // When allowedCommands is absent the guard is skipped to preserve
+  // backward compatibility with projects that opted into the bridge
+  // before the whitelist was introduced.
+  if (config.allowedCommands !== undefined) {
+    assertCommandAllowed(command, config.allowedCommands);
+  }
 
   const timeoutSeconds =
     typeof config.timeout_seconds === "number" && config.timeout_seconds > 0

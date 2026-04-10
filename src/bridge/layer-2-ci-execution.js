@@ -43,6 +43,7 @@
  */
 
 import { spawn } from "child_process";
+import { assertInScope, assertCiWorkflowAllowed } from "./bridge-scope-guard.js";
 
 // ─── Hard caps ─────────────────────────────────────────────────────────────
 
@@ -242,6 +243,24 @@ export async function executeCi(runnerManifest, config = {}, deps = {}) {
     throw new Error(
       "Layer 2 CI: config.ci_workflow is required (expected the workflow filename, e.g., 'ci.yml')."
     );
+  }
+
+  // E17-S13 / FR-203 — Defence in depth: even before the gh CLI is
+  // invoked, reject runner commands that contain shell operators. The
+  // command is later interpreted in CI logs and occasionally fed back to
+  // local fallbacks (AC4), so it must pass the same scope guard as
+  // Layer 2 local.
+  if (runnerManifest.command !== undefined) {
+    assertInScope(runnerManifest.command);
+  }
+
+  // E17-S13 / AC3 — CI workflow allowlist. When `allowedWorkflows` is
+  // supplied, the ci_workflow value MUST match an entry on the list and
+  // MUST NOT contain shell metacharacters. Missing allowlist preserves
+  // backward compatibility for projects that opted into the bridge
+  // before the whitelist was introduced.
+  if (config.allowedWorkflows !== undefined) {
+    assertCiWorkflowAllowed(config.ci_workflow, config.allowedWorkflows);
   }
 
   const runCli = deps.runCli || defaultRunCli;
