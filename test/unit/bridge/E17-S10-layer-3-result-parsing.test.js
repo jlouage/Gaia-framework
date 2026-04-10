@@ -228,7 +228,7 @@ describe("AC2/AC3: writeEvidence — file writer", () => {
       durationSeconds: 1.23,
       outputDir: tempDir,
     });
-    expect(path).toMatch(/test-results\/E17-S10-execution\.json$/);
+    expect(path).toMatch(/test-results[/\\]E17-S10-execution\.json$/);
     expect(existsSync(path)).toBe(true);
   });
 
