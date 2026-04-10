@@ -8,6 +8,29 @@
   <mandate>All tests must pass before marking complete</mandate>
   <mandate>When reading or running application source code, use {project-path} as the base directory — NOT {project-root}. {project-path} is resolved by the engine from global.yaml.</mandate>
 </critical>
+<!--
+  Test Execution Bridge — Layer 3 integration (E17-S10, FR-194, FR-197, FR-198, NFR-034, ADR-028)
+
+  After the GREEN phase's test run, when test_execution_bridge.bridge_enabled is true in global.yaml, the
+  workflow invokes Bridge Layer 3 (src/bridge/layer-3-result-parsing.js) on the captured Layer 2 output
+  { stdout, stderr, exit_code } to parse results and generate the evidence file. Layer 3 supports Vitest
+  TAP, Jest JSON, and BATS TAP runner outputs; unknown formats fall back to a minimal evidence record with
+  parse_error: true and the first 2KB captured as raw_output_snippet.
+
+  Layer 3 writes the evidence file to docs/test-artifacts/test-results/{story_key}-execution.json using
+  the FR-194 / FR-197 schema: { schema_version, story_key, runner, mode, executed_at, duration_seconds,
+  summary: { total, passed, failed, skipped }, tests: [ { name, status, duration_ms, failure_message? } ],
+  truncated }. When serialized size exceeds 500KB, Layer 3 truncates the tests array (NFR-034 size cap)
+  and sets truncated: true while preserving the summary block intact.
+
+  The evidence file path (returned by writeEvidence) MUST be reported to the user after Layer 3 writes
+  the file, and a linked reference to the evidence file path MUST be added to the story's Review Gate
+  section so downstream review workflows and the review-gate-check protocol can discover the evidence.
+
+  The review-gate-check protocol (§10.20.6) reads this execution.json and derives PASSED / FAILED /
+  UNVERIFIED from the evidence summary. Stories without an execution.json report UNVERIFIED (not FAILED)
+  for backward compatibility with pre-bridge workflows.
+-->
 <step n="1" title="Load Story File">
   <action>Read story .md file, parse YAML frontmatter</action>
   <action>Extract: key, status, acceptance criteria, subtasks, dependencies</action>
