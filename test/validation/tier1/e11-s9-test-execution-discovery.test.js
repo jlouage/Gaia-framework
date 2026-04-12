@@ -42,14 +42,6 @@ const WORKFLOW_YAML_PATH = join(
   "workflow.yaml"
 );
 
-const GAP_SCHEMA_PATH = join(
-  PROJECT_ROOT,
-  "_gaia",
-  "lifecycle",
-  "templates",
-  "gap-entry-schema.md"
-);
-
 describe("E11-S9: Test Execution During Discovery", () => {
   // ── Task 1: Test Runner Auto-Detection (AC2, AC6) ──
 

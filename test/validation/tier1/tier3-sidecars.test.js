@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync, existsSync } from "fs";
-import { resolve, join } from "path";
+import { join } from "path";
 import { PROJECT_ROOT } from "../../helpers/project-root.js";
 
 // Tier 3 agents per ADR-014

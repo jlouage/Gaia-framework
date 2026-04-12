@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync, existsSync } from "fs";
-import { join, basename } from "path";
+import { join } from "path";
 import { PROJECT_ROOT } from "../../helpers/project-root.js";
 
 const DEV_SKILLS_DIR = join(PROJECT_ROOT, "_gaia", "dev", "skills");

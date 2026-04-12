@@ -21,7 +21,7 @@ const TARGET_FILES = [
 ];
 
 describe("E6-S10: Cross-Platform find Replacement Verification", () => {
-  describe.each(TARGET_FILES)("$label", ({ path, label, expectedWalkFilesImport, functions }) => {
+  describe.each(TARGET_FILES)("$label", ({ path, expectedWalkFilesImport, functions }) => {
     const content = readFileSync(path, "utf8");
 
     // AC1/AC2: walkFiles() is imported and used instead of execSync("find ...")

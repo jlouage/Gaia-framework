@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync, existsSync } from "fs";
-import { join, relative, dirname } from "path";
+import { join } from "path";
 import { PROJECT_ROOT } from "../../helpers/project-root.js";
 import { walkFiles } from "../helpers/fs-walk.js";
 const CONFIG_PATH = join(PROJECT_ROOT, "_gaia", "_config");
