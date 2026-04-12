@@ -25,5 +25,7 @@ required-inputs:
 - [ ] If PASSED: Security Review row shows PASSED with report link
 - [ ] If FAILED: Security Review row shows FAILED, story status set to in-progress
 - [ ] Review gate check protocol invoked
+## Bridge Security
+- [ ] Bridge remote executors MUST use argv-array spawn with `shell: false`
 ## Output Verification
 - [ ] Report generated with findings table

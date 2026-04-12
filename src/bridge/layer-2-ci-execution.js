@@ -18,6 +18,8 @@
  *   config:         { bridge_enabled, mode, ci_workflow, timeout_seconds?, poll_interval_seconds? }
  *   deps:           { ghCheck, runCli, sleep, now, executeLocal } — injected
  *                   for testability. Defaults use real gh + child_process.
+ *                   runCli contract: (argv: string[]) => Promise<{exit_code, stdout, stderr}>
+ *                   All commands use argv-array spawn (shell: false) per E17-S19.
  *
  * Output (executed):
  *   {
@@ -57,10 +59,10 @@ const DEFAULT_POLL_INTERVAL_SECONDS = 15;
 
 // ─── Real CLI runner (used when deps.runCli is not injected) ──────────────
 
-function defaultRunCli(command) {
+function defaultRunCli(argv) {
   return new Promise((resolve) => {
-    const child = spawn(command, {
-      shell: true,
+    const child = spawn(argv[0], argv.slice(1), {
+      shell: false,
       stdio: ["ignore", "pipe", "pipe"],
     });
     let stdout = "";
@@ -82,11 +84,11 @@ function defaultRunCli(command) {
 
 // Default gh availability/auth probe — returns { available, authenticated }.
 async function defaultGhCheck(runCli) {
-  const which = await runCli("command -v gh");
+  const which = await runCli(["gh", "--version"]);
   if (which.exit_code !== 0) {
     return { available: false, authenticated: false };
   }
-  const auth = await runCli("gh auth status");
+  const auth = await runCli(["gh", "auth", "status"]);
   return { available: true, authenticated: auth.exit_code === 0 };
 }
 
@@ -120,14 +122,12 @@ function resolvePollInterval(configInterval) {
 
 // Trigger the CI workflow run and discover its run ID.
 async function triggerRun(ciWorkflow, runCli) {
-  const triggerCmd = `gh workflow run ${ciWorkflow}`;
-  const triggerResult = await runCli(triggerCmd);
+  const triggerResult = await runCli(["gh", "workflow", "run", ciWorkflow]);
   if (triggerResult.exit_code !== 0) {
     return { ok: false, stderr: triggerResult.stderr || "gh workflow run failed" };
   }
   // Discover the run ID from the most recent run of this workflow.
-  const listCmd = `gh run list --workflow ${ciWorkflow} --limit 1 --json databaseId,status`;
-  const listResult = await runCli(listCmd);
+  const listResult = await runCli(["gh", "run", "list", "--workflow", ciWorkflow, "--limit", "1", "--json", "databaseId,status"]);
   if (listResult.exit_code !== 0) {
     return { ok: false, stderr: listResult.stderr || "gh run list failed" };
   }
@@ -155,8 +155,7 @@ async function pollUntilComplete(runId, { timeoutMs, intervalMs, runCli, sleep, 
         last_conclusion: lastConclusion,
       };
     }
-    const viewCmd = `gh run view ${runId} --json status,conclusion`;
-    const viewResult = await runCli(viewCmd);
+    const viewResult = await runCli(["gh", "run", "view", String(runId), "--json", "status,conclusion"]);
     if (viewResult.exit_code === 0) {
       const parsed = parseJsonSafe(viewResult.stdout);
       if (parsed) {
@@ -183,7 +182,7 @@ async function pollUntilComplete(runId, { timeoutMs, intervalMs, runCli, sleep, 
 }
 
 async function fetchRunLog(runId, runCli) {
-  const result = await runCli(`gh run view ${runId} --log`);
+  const result = await runCli(["gh", "run", "view", String(runId), "--log"]);
   return {
     stdout: result.stdout || "",
     stderr: result.stderr || "",

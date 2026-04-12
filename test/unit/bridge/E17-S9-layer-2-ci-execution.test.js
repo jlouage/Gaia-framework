@@ -99,7 +99,9 @@ describe("AC1 (TEB-37): Trigger CI workflow run via gh", () => {
       { bridge_enabled: true, mode: "ci", ci_workflow: "ci.yml", timeout_seconds: 300 },
       deps
     );
-    expect(deps.calls[0]).toContain("gh workflow run");
+    expect(deps.calls[0]).toContain("gh");
+    expect(deps.calls[0]).toContain("workflow");
+    expect(deps.calls[0]).toContain("run");
     expect(deps.calls[0]).toContain("ci.yml");
     expect(result.run_id).toBe(12345);
   });
@@ -142,7 +144,9 @@ describe("AC2 (TEB-38): Poll run status at configurable interval", () => {
       deps
     );
     // Three view calls before completion → three polls before log fetch.
-    const viewCalls = deps.calls.filter((c) => c.startsWith("gh run view") && !c.includes("--log"));
+    const viewCalls = deps.calls.filter(
+      (c) => Array.isArray(c) && c.includes("view") && c.includes("--json")
+    );
     expect(viewCalls.length).toBeGreaterThanOrEqual(3);
     expect(result.conclusion).toBe("success");
   });
@@ -203,7 +207,9 @@ describe("AC3 (TEB-39): Retrieve run log on completion", () => {
       { bridge_enabled: true, mode: "ci", ci_workflow: "ci.yml" },
       deps
     );
-    expect(deps.calls.some((c) => c.includes("gh run view") && c.includes("--log"))).toBe(true);
+    expect(
+      deps.calls.some((c) => Array.isArray(c) && c.includes("view") && c.includes("--log"))
+    ).toBe(true);
     expect(result.stdout).toContain("TEST OUTPUT 42");
     expect(result.mode).toBe("ci");
     expect(result.exit_code).toBe(0);
