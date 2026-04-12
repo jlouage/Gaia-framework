@@ -399,6 +399,13 @@ sequence:
       standalone: true
       note: "Return to current lifecycle phase"
 
+  bridge-toggle:
+    module: core
+    command: /gaia-bridge-enable
+    next:
+      standalone: true
+      note: "Run /gaia-build-configs to regenerate resolved configs after toggling"
+
   party-mode:
     module: core
     command: /gaia-party

@@ -1,0 +1,27 @@
+# Bridge Toggle Workflow
+# Enable or disable the Test Execution Bridge via /gaia-bridge-enable or /gaia-bridge-disable.
+# Wraps the manual bridge activation into a single command with idempotency,
+# comment-preserving YAML writes, and a post-toggle summary.
+#
+# Traces: FR-316, ADR-028 §10.20.12
+
+name: bridge-toggle
+display_name: "Bridge Toggle"
+description: "Enable or disable the Test Execution Bridge in global.yaml"
+module: core
+agent: orchestrator
+
+parameters:
+  mode:
+    type: string
+    required: true
+    allowed: [enable, disable]
+    description: "Target state — 'enable' sets bridge_enabled to true, 'disable' sets it to false"
+
+instructions: "{installed_path}/core/workflows/bridge-toggle/instructions.xml"
+validation: "{installed_path}/core/workflows/bridge-toggle/checklist.md"
+
+config_source: "{installed_path}/core/config.yaml"
+
+output:
+  primary: "{project-root}/_gaia/_config/global.yaml"
