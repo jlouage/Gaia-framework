@@ -1,0 +1,56 @@
+<workflow name="bridge-toggle">
+<critical>
+  <mandate>This workflow modifies global.yaml — preserve ALL comments, key ordering, and formatting.</mandate>
+  <mandate>Use regex-based in-place edit targeting ONLY the bridge_enabled line — never regenerate the full file.</mandate>
+  <mandate>Idempotent: if the flag is already in the target state, do NOT write the file.</mandate>
+</critical>
+
+<step n="1" title="Read Current Bridge State">
+  <action>Read {project-root}/_gaia/_config/global.yaml</action>
+  <action>Extract test_execution_bridge.bridge_enabled value</action>
+  <action>If the test_execution_bridge section is missing: treat bridge_enabled as false (AC3)</action>
+  <action>If the section exists but bridge_enabled key is missing: treat as false (AC3)</action>
+  <action>Capture the raw file bytes for idempotency verification</action>
+  <action>Report: "Current bridge state: {state}"</action>
+</step>
+
+<step n="2" title="Idempotency Check">
+  <action>Compare current state against target mode (enable → true, disable → false)</action>
+  <check if="current_state == target_state">
+    Report "Bridge already {enabled|disabled}" and exit with status ok.
+    Do NOT write global.yaml. A byte-level diff must show zero changes.
+  </check>
+</step>
+
+<step n="3" title="Write Updated State">
+  <action>Use regex-based in-place edit to update ONLY the bridge_enabled: line within the test_execution_bridge: section</action>
+  <action>Regex pattern: /^(\s+bridge_enabled:\s*)(true|false)/m — replace capture group 2 with target value</action>
+  <action>This preserves inline comments on the same line and all surrounding YAML content</action>
+  <action>If the test_execution_bridge section is missing: emit error "test_execution_bridge section not found in global.yaml — cannot toggle. Add the section first (see ADR-028 §10.20.7)."</action>
+  <action>Write the updated content back to global.yaml</action>
+</step>
+
+<!-- Step 4: Post-Flip Checks (Enable Mode Only)
+     STUB for E17-S22 — Bridge Enable Post-Flip Checks.
+     E17-S22 will inject test-environment.yaml detection and validation logic here.
+     When E17-S22 lands, this step will:
+       - Check for docs/test-artifacts/test-environment.yaml
+       - If present: validate against FR-201 schema, report detected runners
+       - If absent: prompt user with 3 options (brownfield scan, copy example, skip)
+     For now, this step is a no-op for both enable and disable modes. -->
+<step n="4" title="Post-Flip Checks (Enable Only — E17-S22 Stub)">
+  <action if="mode == disable">Skip — disable mode does not perform post-flip checks (AC7).</action>
+  <action if="mode == enable">Placeholder for E17-S22. No checks performed in this version.</action>
+</step>
+
+<step n="5" title="Post-Toggle Summary">
+  <action>Build and display a structured summary containing:
+    - Previous state (before toggle)
+    - New state (after toggle)
+    - Mode (enable or disable)
+    - Whether a write occurred (changed vs idempotent)
+  </action>
+  <action>Always append the next-step suggestion: "Run `/gaia-build-configs` to regenerate the resolved configs so the bridge_enabled change takes effect."</action>
+  <action if="mode == disable">Summary only confirms new state and reminds about /gaia-build-configs. No post-flip check output (AC7).</action>
+</step>
+</workflow>
