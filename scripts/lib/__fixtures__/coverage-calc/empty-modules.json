@@ -1,0 +1,10 @@
+{
+  "description": "Empty module list — no modules to calculate coverage for",
+  "input": {
+    "modules": []
+  },
+  "expected": {
+    "perModule": {},
+    "overall": 0
+  }
+}

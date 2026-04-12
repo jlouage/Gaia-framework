@@ -1,0 +1,12 @@
+{
+  "description": "Edge case — module with zero total (no divide-by-zero)",
+  "input": {
+    "modules": [
+      { "name": "a", "covered": 0, "total": 0 }
+    ]
+  },
+  "expected": {
+    "perModule": { "a": 0 },
+    "overall": 0
+  }
+}

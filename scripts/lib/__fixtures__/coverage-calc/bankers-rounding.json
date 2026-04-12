@@ -1,0 +1,12 @@
+{
+  "description": "Banker's rounding edge case — 66.65 rounds to 66.6 (even), not 66.7",
+  "input": {
+    "modules": [
+      { "name": "core", "covered": 6665, "total": 10000 }
+    ]
+  },
+  "expected": {
+    "perModule": { "core": 66.6 },
+    "overall": 66.6
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "description": "Multiple modules with mixed coverage percentages",
+  "input": {
+    "modules": [
+      { "name": "a", "covered": 5, "total": 10 },
+      { "name": "b", "covered": 8, "total": 10 }
+    ]
+  },
+  "expected": {
+    "perModule": { "a": 50, "b": 80 },
+    "overall": 65
+  }
+}

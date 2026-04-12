@@ -1,0 +1,12 @@
+{
+  "description": "Single module with full (100%) coverage",
+  "input": {
+    "modules": [
+      { "name": "a", "covered": 10, "total": 10 }
+    ]
+  },
+  "expected": {
+    "perModule": { "a": 100 },
+    "overall": 100
+  }
+}

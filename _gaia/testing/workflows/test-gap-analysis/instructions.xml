@@ -35,7 +35,7 @@
   <action>For each story's acceptance criteria, check if a corresponding test case exists in the test plan</action>
   <action>Flag each AC as covered (has test case) or uncovered-ac (no test case found)</action>
   <action>Calculate coverage rate per story: covered_ACs / total_ACs</action>
-  <action>Calculate overall coverage percentage across all stories</action>
+  <action>Calculate overall coverage percentage across all stories. Note: the authoritative calculation logic lives in `scripts/lib/coverage-calc.js` (E19-S25). Step 4c uses the shared helper for per-module and aggregate percentages.</action>
 </step>
 
 <step n="4b" title="Frontend Dimensions Analysis (conditional)">
@@ -56,10 +56,9 @@
   <action>For each epic group, count `total_acs` — the sum of acceptance criteria items (`AC1`, `AC2`, ...) across all story files in the group, reusing the story→AC map built in Step 3.</action>
   <action>For each epic group, count `tested_acs` — the number of acceptance criteria in the group that have at least one matching test case in the test plan map built in Step 2. An AC is considered tested when a test case explicitly references either the story key or the `{story_key}/ACn` identifier.</action>
   <action>For each epic group, count `gap_count` — the number of ACs in the group classified as `uncovered-ac` by Step 4.</action>
-  <action>Calculate per-epic `coverage_pct` as `(tested_acs / total_acs) * 100`, rounded to one decimal place using standard half-to-even (banker's) rounding. If `total_acs == 0` (the epic has story files but none contain AC items), set `coverage_pct = 0.0` — do NOT raise a division-by-zero error.</action>
+  <action>Calculate per-epic and aggregate coverage percentages using the shared helper `scripts/lib/coverage-calc.js` as the single source of truth (E19-S25). Build the input array with one entry per epic group: `{ name: epicKey, covered: tested_acs, total: total_acs }`. Call `calculateCoverage({ modules })` to obtain `perModule` (per-epic percentages) and `overall` (aggregate percentage). The helper applies banker's rounding to one decimal place and returns 0 for division-by-zero cases. See the module JSDoc for the full contract.</action>
   <action>Exclude epics with zero story files from the per-module table. Count the number excluded and emit a footnote beneath the table: "{N} epics with no story files were excluded." When N is 0, omit the footnote entirely.</action>
-  <action>Calculate the aggregate overall coverage: `aggregate_coverage_pct = (sum_of_tested_acs_across_all_included_epics / sum_of_total_acs_across_all_included_epics) * 100`, rounded to one decimal place. If the aggregate denominator is 0, set `aggregate_coverage_pct = 0.0`. This value replaces the prior Step 4 overall coverage number in the Executive Summary.</action>
-  <action>Determinism requirement (AC5): the computation MUST be deterministic — given identical inputs (same story files, same test plan), the workflow MUST produce byte-identical per-module rows, aggregate percentage, and sort order. Sort the per-module table rows by `coverage_pct` ascending (lowest coverage first); break ties by epic key lexicographical ascending. No randomness, no wall-clock timestamps inside computed fields, no hash-map iteration order dependencies.</action>
+  <action>Determinism requirement (AC5): the computation MUST be deterministic — given identical inputs (same story files, same test plan), the workflow MUST produce byte-identical per-module rows, aggregate percentage, and sort order. The `calculateCoverage` helper guarantees deterministic output (sorted keys, banker's rounding, no side effects). Sort the per-module table rows by `coverage_pct` ascending (lowest coverage first); break ties by epic key lexicographical ascending.</action>
   <action>Populate the "## Per-Module Coverage" section of the output template with one row per included epic, columns: `module`, `total_acs`, `tested_acs`, `coverage_pct`, `gap_count`. The `module` column renders as the epic key (e.g., `E19`). The `coverage_pct` column renders as `{n}.{d}%` (one decimal + percent sign).</action>
 </step>
 
