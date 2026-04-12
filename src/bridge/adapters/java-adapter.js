@@ -73,10 +73,13 @@ function detectBuildTool(projectPath) {
 }
 
 function hasGradleWrapper(projectPath) {
-  // A wrapper requires both ./gradlew and gradle/wrapper/gradle-wrapper.properties,
-  // but for detection purposes we only need the executable script.
-  const scriptName = process.platform === "win32" ? "gradlew.bat" : "gradlew";
-  return existsSync(join(projectPath, scriptName));
+  // A wrapper requires both ./gradlew (POSIX) or gradlew.bat (Windows) and
+  // gradle/wrapper/gradle-wrapper.properties, but for detection purposes we
+  // only need the executable script. Accept either filename on any platform
+  // so POSIX fixtures also work on Windows CI.
+  return (
+    existsSync(join(projectPath, "gradlew")) || existsSync(join(projectPath, "gradlew.bat"))
+  );
 }
 
 function toolAvailable(cmd, execFile) {
