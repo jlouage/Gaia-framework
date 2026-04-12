@@ -1,0 +1,6 @@
+{"protocolVersion":"0.1.1","runnerVersion":"1.24.6","pid":99999,"type":"start","time":0}
+{"suite":{"id":0,"platform":"vm","path":"test/slow_test.dart"},"type":"suite","time":1}
+{"test":{"id":20,"name":"fast test","suiteID":0,"groupIDs":[],"metadata":{"skip":false,"skipReason":null},"line":5,"column":3,"url":"file:///project/test/slow_test.dart"},"type":"testStart","time":10}
+{"testID":20,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":30}
+{"test":{"id":21,"name":"slow hang test","suiteID":0,"groupIDs":[],"metadata":{"skip":false,"skipReason":null},"line":10,"column":3,"url":"file:///project/test/slow_test.dart"},"type":"testStart","time":31}
+{"test":{"id":22,"name":"another hang","suiteID":0,"grou

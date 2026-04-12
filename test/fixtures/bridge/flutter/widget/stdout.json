@@ -1,0 +1,8 @@
+{"protocolVersion":"0.1.1","runnerVersion":"1.24.6","pid":12345,"type":"start","time":0}
+{"suite":{"id":0,"platform":"vm","path":"test/widget_test.dart"},"type":"suite","time":1}
+{"test":{"id":1,"name":"loading screen","suiteID":0,"groupIDs":[],"metadata":{"skip":false,"skipReason":null},"line":5,"column":3,"url":"file:///project/test/widget_test.dart"},"type":"testStart","time":10}
+{"count":1,"time":12,"type":"print","messageType":"print","message":"widget rendered"}
+{"testID":1,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":42}
+{"test":{"id":2,"name":"counter increments","suiteID":0,"groupIDs":[],"metadata":{"skip":false,"skipReason":null},"line":15,"column":3,"url":"file:///project/test/widget_test.dart"},"type":"testStart","time":45}
+{"testID":2,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":88}
+{"success":true,"type":"done","time":100}

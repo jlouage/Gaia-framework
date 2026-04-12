@@ -1,0 +1,11 @@
+{"protocolVersion":"0.1.1","runnerVersion":"1.24.6","pid":54321,"type":"start","time":0}
+{"suite":{"id":0,"platform":"vm","path":"test/calc_test.dart"},"type":"suite","time":1}
+{"group":{"id":1,"suiteID":0,"parentID":null,"name":"calculator","metadata":{"skip":false,"skipReason":null},"testCount":3,"line":3,"column":3,"url":"file:///project/test/calc_test.dart"},"type":"group","time":2}
+{"test":{"id":10,"name":"calculator adds","suiteID":0,"groupIDs":[1],"metadata":{"skip":false,"skipReason":null},"line":5,"column":5,"url":"file:///project/test/calc_test.dart"},"type":"testStart","time":10}
+{"testID":10,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":25}
+{"test":{"id":11,"name":"calculator subtracts","suiteID":0,"groupIDs":[1],"metadata":{"skip":false,"skipReason":null},"line":10,"column":5,"url":"file:///project/test/calc_test.dart"},"type":"testStart","time":26}
+{"testID":11,"error":"Expected: <1>\n  Actual: <2>","stackTrace":"test/calc_test.dart 12:5  main","type":"error","time":48,"isFailure":true}
+{"testID":11,"result":"failure","skipped":false,"hidden":false,"type":"testDone","time":50}
+{"test":{"id":12,"name":"calculator skipped","suiteID":0,"groupIDs":[1],"metadata":{"skip":true,"skipReason":"not ready"},"line":15,"column":5,"url":"file:///project/test/calc_test.dart"},"type":"testStart","time":51}
+{"testID":12,"result":"success","skipped":true,"hidden":false,"type":"testDone","time":52}
+{"success":false,"type":"done","time":60}
