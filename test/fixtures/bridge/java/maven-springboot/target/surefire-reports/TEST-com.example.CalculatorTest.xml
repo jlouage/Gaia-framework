@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.example.CalculatorTest" tests="3" failures="1" errors="0" skipped="1" time="0.456">
+  <testcase classname="com.example.CalculatorTest" name="testAdd" time="0.010"/>
+  <testcase classname="com.example.CalculatorTest" name="testSubtract" time="0.008">
+    <failure message="expected:&lt;3&gt; but was:&lt;2&gt;" type="org.opentest4j.AssertionFailedError">org.opentest4j.AssertionFailedError: expected:&lt;3&gt; but was:&lt;2&gt;
+	at com.example.CalculatorTest.testSubtract(CalculatorTest.java:42)</failure>
+  </testcase>
+  <testcase classname="com.example.CalculatorTest" name="testDivide" time="0.001">
+    <skipped message="not implemented"/>
+  </testcase>
+</testsuite>

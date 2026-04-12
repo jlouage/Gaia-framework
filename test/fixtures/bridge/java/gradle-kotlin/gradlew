@@ -1,0 +1,3 @@
+#!/bin/sh
+# Gradle wrapper stub for fixtures — not executed during tests.
+exec gradle "$@"
