@@ -14,6 +14,7 @@ import { mkdtempSync, writeFileSync, rmSync } from "fs";
 import { tmpdir } from "os";
 
 import { discoverRunners } from "../../../src/bridge/layer-1-test-runner-discovery.js";
+import jsAdapter from "../../../src/bridge/adapters/js-adapter.js";
 
 let tmpRoot;
 
@@ -42,7 +43,7 @@ describe("E17-S5 Layer 1 — Runner Detection (AC1)", () => {
       devDependencies: { vitest: "^1.0.0" },
     });
 
-    const result = await discoverRunners({ projectPath: tmpRoot });
+    const result = await discoverRunners({ projectPath: tmpRoot, adapter: jsAdapter });
 
     expect(result.status).toBe("ok");
     expect(result.primary.runner_name).toBe("vitest");
@@ -61,7 +62,7 @@ describe("E17-S5 Layer 1 — Runner Detection (AC1)", () => {
       name: "fixture",
       devDependencies: { jest: "^29.0.0" },
     });
-    let result = await discoverRunners({ projectPath: tmpRoot });
+    let result = await discoverRunners({ projectPath: tmpRoot, adapter: jsAdapter });
     expect(result.status).toBe("ok");
     expect(result.primary.runner_name).toBe("jest");
 
@@ -69,7 +70,7 @@ describe("E17-S5 Layer 1 — Runner Detection (AC1)", () => {
       name: "fixture",
       devDependencies: { mocha: "^10.0.0" },
     });
-    result = await discoverRunners({ projectPath: tmpRoot });
+    result = await discoverRunners({ projectPath: tmpRoot, adapter: jsAdapter });
     expect(result.status).toBe("ok");
     expect(result.primary.runner_name).toBe("mocha");
   });
@@ -87,7 +88,7 @@ primary_runner: unit
 `
     );
 
-    const result = await discoverRunners({ projectPath: tmpRoot });
+    const result = await discoverRunners({ projectPath: tmpRoot, adapter: jsAdapter });
     expect(result.status).toBe("ok");
     expect(result.primary.source).toBe("test-environment.yaml");
     expect(result.primary.runner_name).toBe("unit");
@@ -115,7 +116,7 @@ primary_runner: unit
 `
     );
 
-    const result = await discoverRunners({ projectPath: tmpRoot });
+    const result = await discoverRunners({ projectPath: tmpRoot, adapter: jsAdapter });
 
     expect(result.status).toBe("ok");
     expect(result.primary.source).toBe("test-environment.yaml");
@@ -129,7 +130,7 @@ primary_runner: unit
       devDependencies: { jest: "^29.0.0", vitest: "^1.0.0" },
     });
 
-    const result = await discoverRunners({ projectPath: tmpRoot });
+    const result = await discoverRunners({ projectPath: tmpRoot, adapter: jsAdapter });
     expect(result.status).toBe("ok");
     expect(result.primary.runner_name).toBe("vitest");
     expect(result.primary.source).toBe("package.json:scripts.test");
@@ -145,7 +146,7 @@ describe("E17-S5 Layer 1 — Disambiguation (AC3)", () => {
       devDependencies: { jest: "^29.0.0", vitest: "^1.0.0" },
     });
 
-    const result = await discoverRunners({ projectPath: tmpRoot });
+    const result = await discoverRunners({ projectPath: tmpRoot, adapter: jsAdapter });
 
     expect(result.status).toBe("disambiguation");
     expect(result.candidates).toBeInstanceOf(Array);
@@ -170,7 +171,7 @@ primary_runner: vitest
 `
     );
 
-    const result = await discoverRunners({ projectPath: tmpRoot });
+    const result = await discoverRunners({ projectPath: tmpRoot, adapter: jsAdapter });
     expect(result.status).toBe("ok");
     expect(result.primary.runner_name).toBe("vitest");
   });
@@ -182,7 +183,7 @@ describe("E17-S5 Layer 1 — No Runner Detected (AC4)", () => {
   it("TEB-24: halts with error when no runner is detected", async () => {
     writePkg(tmpRoot, { name: "fixture" }); // no deps, no scripts
 
-    const result = await discoverRunners({ projectPath: tmpRoot });
+    const result = await discoverRunners({ projectPath: tmpRoot, adapter: jsAdapter });
 
     expect(result.status).toBe("error");
     expect(result.message).toMatch(/no test runner/i);
@@ -190,7 +191,7 @@ describe("E17-S5 Layer 1 — No Runner Detected (AC4)", () => {
   });
 
   it("halts when package.json is absent and no test-environment.yaml", async () => {
-    const result = await discoverRunners({ projectPath: tmpRoot });
+    const result = await discoverRunners({ projectPath: tmpRoot, adapter: jsAdapter });
     expect(result.status).toBe("error");
     expect(result.message).toMatch(/no test runner/i);
   });
@@ -219,7 +220,7 @@ tiers:
 `
     );
 
-    const result = await discoverRunners({ projectPath: tmpRoot });
+    const result = await discoverRunners({ projectPath: tmpRoot, adapter: jsAdapter });
     expect(result.status).toBe("ok");
     expect(result.manifest).toBeDefined();
     expect(result.manifest.primary_runner).toBeDefined();
@@ -250,7 +251,7 @@ describe("E17-S5 Layer 1 — Read-only (no execution)", () => {
 
     // If Layer 1 executed the test script this would throw or the process
     // would exit non-zero — the discovery call must return normally.
-    const result = await discoverRunners({ projectPath: tmpRoot });
+    const result = await discoverRunners({ projectPath: tmpRoot, adapter: jsAdapter });
     expect(result.status).toBe("ok");
   });
 });

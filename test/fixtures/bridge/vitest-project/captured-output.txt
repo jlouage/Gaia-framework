@@ -1,0 +1,6 @@
+ok 1 - basic addition works
+ok 2 - basic subtraction works
+not ok 3 - division by zero throws
+  ---
+  expected error to be thrown
+  ...

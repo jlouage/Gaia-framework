@@ -1,0 +1,21 @@
+{
+  "summary": {
+    "total": 2,
+    "passed": 1,
+    "failed": 1,
+    "skipped": 0
+  },
+  "tests": [
+    {
+      "name": "basic setup works",
+      "status": "passed",
+      "duration_ms": 0
+    },
+    {
+      "name": "config file missing fails",
+      "status": "failed",
+      "duration_ms": 0,
+      "failure_message": "config.yaml not found"
+    }
+  ]
+}

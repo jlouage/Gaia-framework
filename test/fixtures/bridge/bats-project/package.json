@@ -1,0 +1,10 @@
+{
+  "name": "bats-fixture",
+  "version": "1.0.0",
+  "scripts": {
+    "test": "bats test/"
+  },
+  "devDependencies": {
+    "bats": "^1.0.0"
+  }
+}

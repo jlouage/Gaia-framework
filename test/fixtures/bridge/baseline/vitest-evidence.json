@@ -1,0 +1,26 @@
+{
+  "summary": {
+    "total": 3,
+    "passed": 2,
+    "failed": 1,
+    "skipped": 0
+  },
+  "tests": [
+    {
+      "name": "basic addition works",
+      "status": "passed",
+      "duration_ms": 0
+    },
+    {
+      "name": "basic subtraction works",
+      "status": "passed",
+      "duration_ms": 0
+    },
+    {
+      "name": "division by zero throws",
+      "status": "failed",
+      "duration_ms": 0,
+      "failure_message": "expected error to be thrown"
+    }
+  ]
+}

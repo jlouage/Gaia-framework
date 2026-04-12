@@ -23,6 +23,16 @@ const __dirname = dirname(__filename);
 const LAYER3_REL = "../../../src/bridge/layer-3-result-parsing.js";
 const LAYER3_PATH = join(__dirname, LAYER3_REL);
 
+// E25-S5: Layer 3 now delegates parsing to the adapter. Import jsAdapter for tests.
+import jsAdapter from "../../../src/bridge/adapters/js-adapter.js";
+
+// Wrapper: Layer 3 parseResults now requires an adapter as second argument.
+// Wrap calls so existing tests pass the JS adapter by default.
+async function parseResultsWithAdapter(execution) {
+  const { parseResults } = await import(LAYER3_REL);
+  return parseResults(execution, jsAdapter);
+}
+
 // ─── Sample fixtures ───────────────────────────────────────────────────────
 
 const VITEST_TAP_OUTPUT = `TAP version 13
@@ -103,8 +113,7 @@ describe("Layer 3 module exists", () => {
 
 describe("AC1: parseResults — Vitest TAP output", () => {
   it("extracts total/passed/failed/skipped counts from Vitest TAP", async () => {
-    const { parseResults } = await import(LAYER3_REL);
-    const parsed = parseResults({
+    const parsed = await parseResultsWithAdapter({
       stdout: VITEST_TAP_OUTPUT,
       stderr: "",
       exit_code: 1,
@@ -117,8 +126,7 @@ describe("AC1: parseResults — Vitest TAP output", () => {
   });
 
   it("extracts test names and failure messages", async () => {
-    const { parseResults } = await import(LAYER3_REL);
-    const parsed = parseResults({
+    const parsed = await parseResultsWithAdapter({
       stdout: VITEST_TAP_OUTPUT,
       stderr: "",
       exit_code: 1,
@@ -136,8 +144,7 @@ describe("AC1: parseResults — Vitest TAP output", () => {
 
 describe("AC1/AC3: parseResults — Jest JSON output", () => {
   it("extracts counts from Jest JSON reporter", async () => {
-    const { parseResults } = await import(LAYER3_REL);
-    const parsed = parseResults({
+    const parsed = await parseResultsWithAdapter({
       stdout: JEST_JSON_OUTPUT,
       stderr: "",
       exit_code: 1,
@@ -150,8 +157,7 @@ describe("AC1/AC3: parseResults — Jest JSON output", () => {
   });
 
   it("extracts failure_message and duration_ms from Jest JSON", async () => {
-    const { parseResults } = await import(LAYER3_REL);
-    const parsed = parseResults({
+    const parsed = await parseResultsWithAdapter({
       stdout: JEST_JSON_OUTPUT,
       stderr: "",
       exit_code: 1,
@@ -167,8 +173,7 @@ describe("AC1/AC3: parseResults — Jest JSON output", () => {
 
 describe("AC1: parseResults — BATS TAP output", () => {
   it("extracts counts from BATS TAP", async () => {
-    const { parseResults } = await import(LAYER3_REL);
-    const parsed = parseResults({
+    const parsed = await parseResultsWithAdapter({
       stdout: BATS_TAP_OUTPUT,
       stderr: "",
       exit_code: 1,
@@ -184,8 +189,7 @@ describe("AC1: parseResults — BATS TAP output", () => {
 
 describe("AC5: parseResults — unknown format fallback", () => {
   it("sets parse_error and raw_output_snippet for unknown output", async () => {
-    const { parseResults } = await import(LAYER3_REL);
-    const parsed = parseResults({
+    const parsed = await parseResultsWithAdapter({
       stdout: UNKNOWN_OUTPUT,
       stderr: "",
       exit_code: 1,
@@ -198,9 +202,8 @@ describe("AC5: parseResults — unknown format fallback", () => {
   });
 
   it("truncates raw_output_snippet at 2KB", async () => {
-    const { parseResults } = await import(LAYER3_REL);
     const huge = "x".repeat(10000);
-    const parsed = parseResults({
+    const parsed = await parseResultsWithAdapter({
       stdout: huge,
       stderr: "",
       exit_code: 1,
@@ -340,8 +343,8 @@ describe("AC4/NFR-034: writeEvidence — 500KB cap with truncated flag", () => {
 
 describe("AC5: writeEvidence — parse_error minimal evidence", () => {
   it("writes parse_error: true and raw_output_snippet for unknown runner output", async () => {
-    const { parseResults, writeEvidence } = await import(LAYER3_REL);
-    const parsed = parseResults({
+    const { writeEvidence } = await import(LAYER3_REL);
+    const parsed = await parseResultsWithAdapter({
       stdout: "totally unknown\n",
       stderr: "",
       exit_code: 1,

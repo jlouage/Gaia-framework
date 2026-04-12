@@ -1,0 +1,3 @@
+ok 1 - basic setup works
+not ok 2 - config file missing fails
+# config.yaml not found

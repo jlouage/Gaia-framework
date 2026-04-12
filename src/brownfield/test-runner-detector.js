@@ -14,7 +14,7 @@ import { join, resolve } from "path";
 
 // ─── Known test runner dependencies (package.json devDependencies) ──────────
 
-const KNOWN_JS_RUNNERS = ["jest", "vitest", "mocha", "jasmine"];
+const SUPPORTED_RUNNERS = ["jest", "vitest", "mocha", "jasmine"];
 
 // ─── Known test runner script references ────────────────────────────────────
 
@@ -149,7 +149,7 @@ function scanDirectory(dir) {
   const pkg = readJsonSafe(join(dir, "package.json"));
   if (pkg) {
     const devDeps = pkg.devDependencies || {};
-    for (const runner of KNOWN_JS_RUNNERS) {
+    for (const runner of SUPPORTED_RUNNERS) {
       if (runner in devDeps) {
         runners.add(runner);
       }

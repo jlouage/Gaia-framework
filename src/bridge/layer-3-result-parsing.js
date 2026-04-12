@@ -1,215 +1,33 @@
 /**
- * E17-S10: Bridge Layer 3 — Result Parsing and Evidence Generation
+ * E17-S10 / E25-S5: Bridge Layer 3 — Result Parsing and Evidence Generation
  *
  * Fourth layer of the Test Execution Bridge (ADR-028, architecture §10.20).
  * Layer 3 receives the { stdout, stderr, exit_code } output from Layer 2
  * (local mode, E17-S6) or Layer 2 CI (E17-S9), parses the runner output
  * into a structured result set, and writes a machine-readable evidence
  * file at `test-results/{story_key}-execution.json` per the FR-194 /
- * FR-197 evidence schema. The Review Gate protocol (§10.20.6) reads this
- * evidence file and reports PASSED / FAILED / UNVERIFIED.
+ * FR-197 evidence schema.
  *
- * Supported runner formats (Task 1):
- *   - Vitest TAP       (ok / not ok lines, `# tests/pass/fail/skip` summary)
- *   - Jest JSON        (--json reporter output)
- *   - BATS TAP         (ok / not ok lines, same TAP protocol)
- *   - Unknown fallback (parse_error: true, raw_output_snippet captured)
+ * E25-S5 refactor: all stack-specific parsing logic (TAP, Jest JSON, Mocha,
+ * BATS) has been moved to per-stack adapters (src/bridge/adapters/).
+ * Layer 3 now delegates to adapter.parseOutput() for format-specific parsing
+ * while retaining the evidence file generation and verdict derivation logic
+ * which are stack-agnostic.
  *
- * Evidence schema fields (FR-194 / FR-197, schema_version "1.0"):
- *   {
- *     schema_version,      // "1.0"
- *     story_key,           // e.g. "E17-S10"
- *     runner,              // e.g. "vitest"
- *     mode,                // "local" or "ci"
- *     executed_at,         // ISO 8601 UTC timestamp
- *     duration_seconds,    // wall-clock seconds
- *     summary: {
- *       total, passed, failed, skipped
- *     },
- *     tests: [
- *       { name, status, duration_ms, failure_message? }
- *     ],
- *     truncated,           // true when the tests array was trimmed to fit
- *     parse_error?,        // true on unknown-runner fallback (AC5)
- *     raw_output_snippet?  // first 2KB of stdout+stderr on parse failure
- *   }
- *
- * NFR-034 size cap: the serialized evidence file must not exceed 500KB.
- * When the tests array would blow that budget, Layer 3 truncates the
- * array and sets `truncated: true` while leaving `summary` intact.
- *
- * Evidence path reporting (AC6): writeEvidence returns the absolute path
- * of the written file so the caller can display it to the user and
- * add a linked reference to the story's Review Gate section.
- *
- * Traces to: FR-194, FR-197, FR-198, NFR-034, ADR-028
+ * Traces to: FR-194, FR-197, FR-198, FR-307, NFR-034, ADR-028, ADR-038
  * Test cases: TEB-40
  */
 
 import { mkdirSync, writeFileSync } from "fs";
-import { dirname, join } from "path";
+import { join } from "path";
 import { normaliseTierName } from "./layer-2-tier-selection.js";
 
 // ─── Constants ─────────────────────────────────────────────────────────────
 
 export const EVIDENCE_SCHEMA_VERSION = "1.0";
 
-// NFR-034: evidence file size cap (500KB). When the serialized JSON
-// exceeds this limit, the tests array is truncated and `truncated: true`
-// is set on the evidence record so reviewers know data was dropped.
-export const MAX_EVIDENCE_BYTES = 500 * 1024; // 500KB (500,000-ish, exact: 512000)
-
-// AC5: first 2KB of stdout+stderr are captured verbatim in
-// raw_output_snippet when the parser falls through to the unknown-runner
-// path so post-mortem debugging is possible without re-running the test.
-const RAW_OUTPUT_SNIPPET_MAX = 2048;
-
-// ─── TAP parser (Vitest + BATS) ────────────────────────────────────────────
-
-/**
- * Parse a TAP stream into { summary, tests }. Recognises the common
- * subset of TAP 13 used by Vitest and BATS: numbered `ok` / `not ok`
- * lines with optional `# SKIP` directives and free-form failure message
- * blocks following a `not ok` line.
- *
- * @param {string} output — raw stdout captured by Layer 2
- * @returns {{ summary: object, tests: Array }|null}
- *   — returns null when no TAP lines were found (so the caller can
- *     fall through to another format).
- */
-function parseTap(output) {
-  const lines = output.split(/\r?\n/);
-  const tests = [];
-  let sawAny = false;
-  let currentFailure = null;
-
-  for (let i = 0; i < lines.length; i += 1) {
-    const line = lines[i];
-    const m = /^(ok|not ok)\s+(\d+)\s*-?\s*(.*?)(?:\s*#\s*(SKIP|TODO)\b.*)?$/.exec(line);
-    if (m) {
-      sawAny = true;
-      const [, status, , rawName, directive] = m;
-      const name = rawName.trim();
-      let entry;
-      if (directive === "SKIP") {
-        entry = { name, status: "skipped", duration_ms: 0 };
-      } else if (status === "ok") {
-        entry = { name, status: "passed", duration_ms: 0 };
-      } else {
-        entry = { name, status: "failed", duration_ms: 0 };
-        currentFailure = entry;
-      }
-      tests.push(entry);
-      continue;
-    }
-
-    // Failure message capture: YAML-ish block between `---` and `...`
-    // that TAP uses to attach diagnostics to a `not ok` line.
-    if (currentFailure && /^\s*---\s*$/.test(line)) {
-      const msgLines = [];
-      i += 1;
-      while (i < lines.length && !/^\s*\.\.\.\s*$/.test(lines[i])) {
-        msgLines.push(lines[i].replace(/^\s*/, ""));
-        i += 1;
-      }
-      currentFailure.failure_message = msgLines.join("\n").trim();
-      currentFailure = null;
-      continue;
-    }
-
-    // BATS-style diagnostic comments directly under a `not ok` line
-    // (no YAML block) — capture the first `#` comment line as the
-    // failure message.
-    if (currentFailure && /^#\s+/.test(line) && !currentFailure.failure_message) {
-      currentFailure.failure_message = line.replace(/^#\s*/, "").trim();
-      continue;
-    }
-  }
-
-  if (!sawAny) return null;
-
-  const summary = summarise(tests);
-  return { summary, tests };
-}
-
-// ─── Jest JSON parser ──────────────────────────────────────────────────────
-
-/**
- * Parse the Jest `--json` reporter format into { summary, tests }.
- * Returns null when the input is not valid JSON or does not look like a
- * Jest test report.
- */
-function parseJestJson(output) {
-  let doc;
-  try {
-    doc = JSON.parse(output);
-  } catch {
-    return null;
-  }
-  if (!doc || typeof doc !== "object" || !Array.isArray(doc.testResults)) {
-    return null;
-  }
-
-  const tests = [];
-  for (const suite of doc.testResults) {
-    if (!suite || !Array.isArray(suite.testResults)) continue;
-    for (const t of suite.testResults) {
-      /** @type {{ name: string, status: string, duration_ms: number, failure_message?: string }} */
-      const entry = {
-        name: t.fullName || t.title || "unnamed",
-        status: normaliseJestStatus(t.status),
-        duration_ms: typeof t.duration === "number" ? t.duration : 0,
-      };
-      if (Array.isArray(t.failureMessages) && t.failureMessages.length > 0) {
-        entry.failure_message = t.failureMessages.join("\n").trim();
-      }
-      tests.push(entry);
-    }
-  }
-
-  // Prefer Jest's own aggregate counters when present — they are the
-  // authoritative summary — otherwise derive from the flattened tests
-  // list. Either way the `tests` array carries the per-test records
-  // required by FR-198 (AC→test mapping).
-  const summary = {
-    total: typeof doc.numTotalTests === "number" ? doc.numTotalTests : tests.length,
-    passed:
-      typeof doc.numPassedTests === "number"
-        ? doc.numPassedTests
-        : tests.filter((t) => t.status === "passed").length,
-    failed:
-      typeof doc.numFailedTests === "number"
-        ? doc.numFailedTests
-        : tests.filter((t) => t.status === "failed").length,
-    skipped:
-      typeof doc.numPendingTests === "number"
-        ? doc.numPendingTests
-        : tests.filter((t) => t.status === "skipped").length,
-  };
-
-  return { summary, tests };
-}
-
-function normaliseJestStatus(status) {
-  if (status === "passed") return "passed";
-  if (status === "failed") return "failed";
-  if (status === "pending" || status === "skipped" || status === "todo") return "skipped";
-  return "failed";
-}
-
-// ─── Summarisation helper ──────────────────────────────────────────────────
-
-function summarise(tests) {
-  let passed = 0;
-  let failed = 0;
-  let skipped = 0;
-  for (const t of tests) {
-    if (t.status === "passed") passed += 1;
-    else if (t.status === "failed") failed += 1;
-    else if (t.status === "skipped") skipped += 1;
-  }
-  return { total: tests.length, passed, failed, skipped };
-}
+// NFR-034: evidence file size cap (500KB).
+export const MAX_EVIDENCE_BYTES = 500 * 1024;
 
 // ─── Public API: parseResults ──────────────────────────────────────────────
 
@@ -230,37 +48,26 @@ function summarise(tests) {
  */
 
 /**
- * Parse Layer 2 execution output into a structured result object.
- *
- * Parsing strategy (Task 1):
- *   1. If `runner` hints jest (or output starts with `{`), try Jest JSON.
- *   2. Try TAP (Vitest / BATS) — same protocol, same parser.
- *   3. Fallback: emit parse_error with raw_output_snippet (first 2KB).
+ * Parse Layer 2 execution output by delegating to the adapter.
  *
  * @param {Layer2ExecutionOutput} execution
+ * @param {object} [adapter] — the stack adapter resolved by Layer 0. When
+ *   provided, delegates to adapter.parseOutput(). When absent, falls back
+ *   to a generic parse_error result for backward compatibility.
  * @returns {ParsedResult}
  */
-export function parseResults(execution) {
+export function parseResults(execution, adapter) {
   const stdout = typeof execution?.stdout === "string" ? execution.stdout : "";
   const stderr = typeof execution?.stderr === "string" ? execution.stderr : "";
-  const runnerHint = (execution?.runner || "").toLowerCase();
+  const exitCode = typeof execution?.exit_code === "number" ? execution.exit_code : 1;
 
-  // Jest JSON — try first when the runner hint says jest OR when the
-  // stdout looks like a JSON document.
-  if (runnerHint === "jest" || /^\s*\{/.test(stdout)) {
-    const jest = parseJestJson(stdout);
-    if (jest) return jest;
+  if (adapter && typeof adapter.parseOutput === "function") {
+    return adapter.parseOutput(stdout, stderr, exitCode);
   }
 
-  // TAP — covers Vitest and BATS with the same protocol.
-  const tap = parseTap(stdout);
-  if (tap) return tap;
-
-  // AC5: parse-failure fallback. Capture the first 2KB of combined
-  // stdout+stderr so reviewers can inspect what the runner actually
-  // emitted. parse_error is surfaced on the evidence record verbatim.
+  // No adapter available — return parse_error fallback
   const combined = `${stdout}\n${stderr}`;
-  const raw_output_snippet = combined.slice(0, RAW_OUTPUT_SNIPPET_MAX);
+  const raw_output_snippet = combined.slice(0, 2048);
   return {
     parse_error: true,
     raw_output_snippet,
@@ -279,31 +86,13 @@ export function parseResults(execution) {
  * @property {string} mode           — "local" or "ci"
  * @property {number} durationSeconds — wall-clock execution time
  * @property {string} outputDir      — base directory for test-results/
- *                                     (typically docs/test-artifacts)
- * @property {string} [executedAt]   — optional ISO 8601 timestamp; defaults to now
+ * @property {string} [executedAt]   — optional ISO 8601 timestamp
  * @property {"unit" | "integration" | "e2e" | 1 | 2 | 3 | null} [tier]
- *   — optional tier that was executed for this run (E17-S11 / FR-195).
- *     Accepts canonical names or numeric ids (1/2/3); normalised to a
- *     canonical name on write. Defaults to null when omitted so
- *     pre-E17-S11 callers continue to emit a valid evidence record.
  */
 
 /**
  * Serialize a parsed result to the FR-194 / FR-197 evidence schema and
  * write it to `{outputDir}/test-results/{storyKey}-execution.json`.
- *
- * Size cap behaviour (NFR-034 / AC4):
- *   - If the first serialization ≤ MAX_EVIDENCE_BYTES (500KB): write as-is
- *     with `truncated: false`.
- *   - Otherwise: binary-search the largest `tests` prefix that fits under
- *     the cap, set `truncated: true`, and rewrite. The `summary` block is
- *     left intact so totals remain correct even when per-test detail is
- *     dropped. This guarantees the evidence file is machine-readable and
- *     under 500KB for downstream review gate consumption.
- *
- * Returns the absolute path of the written file. AC6: callers use this
- * path to report the evidence file location to the user and to write a
- * linked reference into the story's Review Gate section.
  *
  * @param {WriteEvidenceOptions} opts
  * @returns {string} absolute path to the written evidence file
@@ -321,10 +110,6 @@ export function writeEvidence(opts) {
     throw new TypeError("writeEvidence: parsed result is required (object)");
   }
 
-  // E17-S11 / FR-195 — normalise the optional tier field to its canonical
-  // name (unit / integration / e2e). Unknown or missing values become null
-  // so the evidence record stays valid for projects that have not adopted
-  // the three-tier model.
   const normalisedTier = tier === undefined || tier === null ? null : normaliseTierName(tier);
 
   /** @type {Record<string, any>} */
@@ -341,23 +126,13 @@ export function writeEvidence(opts) {
     truncated: false,
   };
 
-  // AC5: propagate parse_error + raw_output_snippet when the parser fell
-  // through to the unknown-runner path. These fields are intentionally
-  // additive — consumers that do not understand them can ignore them.
   if (parsed.parse_error) {
     base.parse_error = true;
     base.raw_output_snippet = parsed.raw_output_snippet || "";
   }
 
-  // First attempt: serialize the full record. If it fits under the cap
-  // we write it verbatim (the common case — most test suites produce
-  // far less than 500KB of output).
   let json = JSON.stringify(base, null, 2);
   if (Buffer.byteLength(json, "utf-8") > MAX_EVIDENCE_BYTES) {
-    // AC4: binary-search the largest prefix of the tests array that
-    // keeps the serialized document under 500KB. The summary block is
-    // always preserved so the totals are trustworthy even when the
-    // per-test detail has been dropped.
     base.truncated = true;
     const allTests = base.tests;
     let lo = 0;
@@ -388,15 +163,7 @@ export function writeEvidence(opts) {
 // ─── Public API: deriveVerdict ─────────────────────────────────────────────
 
 /**
- * Derive the review-gate verdict from a parsed result. The review gate
- * protocol (§10.20.6) reads this verdict to decide PASSED / FAILED /
- * UNVERIFIED for the story's test-execution gate row.
- *
- * Rules (§10.20.5 field notes):
- *   - parse_error → UNVERIFIED
- *   - failed > 0  → FAILED
- *   - passed > 0 AND failed == 0 → PASSED
- *   - otherwise (no tests at all) → UNVERIFIED
+ * Derive the review-gate verdict from a parsed result.
  *
  * @param {ParsedResult} parsed
  * @returns {"PASSED" | "FAILED" | "UNVERIFIED"}

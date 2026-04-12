@@ -106,12 +106,14 @@ describe("E17-S4 Layer 0 — Readiness report (AC2)", () => {
 
 describe("E17-S4 Layer 0 — Remediation messages (AC3)", () => {
   it("TEB-18: returns remediation when package.json is missing", () => {
-    // empty dir — no package.json
+    // empty dir — no package.json → no adapter matches → not ready
     const result = checkEnvironmentReadiness({ projectPath: tmpRoot });
 
     expect(result.ready).toBe(false);
-    const pkgCheck = result.checks.find((c) => c.name === "package-json-exists");
-    expect(pkgCheck.passed).toBe(false);
+    // Post E25-S5 refactor: when no adapter matches (no package.json → js adapter
+    // doesn't match), layer-0 returns a "no adapter found" remediation instead of
+    // running stack-specific checks.
+    expect(result.adapter).toBeNull();
     expect(result.remediations.length).toBeGreaterThan(0);
     expect(result.remediations.join(" ")).toMatch(/package\.json/i);
   });
