@@ -1,0 +1,85 @@
+<workflow name="fill-test-gaps">
+<critical>
+  <mandate>Read the latest gap analysis report, triage gaps by severity and story, and produce a remediation action table — ADR-039 §10.22.8</mandate>
+  <mandate>Action proposal rules MUST be applied from scripts/lib/gap-triage-rules.js — the single source of truth for the §10.22.8.2 rule table</mandate>
+  <mandate>Sub-workflow invocation and remediation-report emission are OUT OF SCOPE (E19-S27) — this workflow stops at the triage template-output</mandate>
+</critical>
+
+<!-- ============================== -->
+<!-- Step 1: Load Gap Report (AC2)  -->
+<!-- ============================== -->
+
+<step n="1" title="Load Gap Report">
+  <action>Glob {test_artifacts}/test-gap-analysis-*.md to find all gap analysis reports</action>
+  <action>Sort glob results deterministically (lexicographic on filename) before processing</action>
+  <action>For each matched file, parse the YAML frontmatter and extract the `date` field</action>
+  <action>If a file has missing or malformed frontmatter, HALT with error: "Parse error in {filepath} — malformed or missing frontmatter. Fix the file or regenerate with /gaia-test-gap-analysis" (EC3)</action>
+  <action>Select the file with the most recent `date` value (ISO date string comparison)</action>
+  <action>If multiple files share the same most-recent date, tie-break on filename (lexicographic ascending — pick the last), and log a warning: "Multiple gap reports share date {date} — using {filename}" (EC2)</action>
+  <action>If zero files match the glob, HALT with message: "No gap analysis report found — run `/gaia-test-gap-analysis` first" (EC1)</action>
+  <action>Parse the selected report's markdown body to extract the gap table rows. Each row has at minimum: story_key, gap_type, severity, and description</action>
+  <action>Store the loaded gaps list and report metadata (filepath, date, total gap count) in workflow context</action>
+</step>
+
+<!-- ============================== -->
+<!-- Step 2: Severity Filter (AC3)  -->
+<!-- ============================== -->
+
+<step n="2" title="Severity Filter">
+  <action>Default severity filter: critical + high</action>
+  <action>In YOLO mode: apply the default filter without prompting</action>
+  <action>In normal mode: present the default filter and prompt the user to adjust (options: critical-only, critical+high, critical+high+medium, all). If the user selects "none", ABORT with message: "No severities selected — nothing to triage" (EC6)</action>
+  <action>Apply the selected filter to the gap list</action>
+  <action>Record `filtered_out_count` = (total gaps) - (filtered gaps) in the triage header context</action>
+  <action>If 0 gaps remain after filtering (EC7): continue to Step 3 with an empty list — the triage table will render with a header note "No gaps match the selected severity filter" and still emit the template-output</action>
+  <action>If filtered gap count exceeds 50 (EC8): record an INFO note in the triage header: "Report size {N} exceeds 50-gap perf budget — expect >30s runtime"</action>
+</step>
+
+<!-- ============================================ -->
+<!-- Step 3: Group by story_key (AC4)             -->
+<!-- ============================================ -->
+
+<step n="3" title="Group by story_key">
+  <action>Build a triage map from the filtered gap list, keyed by story_key</action>
+  <action>Each triage row contains: story_key, gap_count, gap_types (deduplicated array), proposed_action (empty — filled in Step 4), status (pending)</action>
+  <action>Stories with multiple gap types collapse into a single triage row with all gap types aggregated</action>
+  <action>Sort the triage map deterministically by story_key (lexicographic ascending)</action>
+</step>
+
+<!-- ============================================== -->
+<!-- Step 4: Action Proposal Rules (AC5)            -->
+<!-- ============================================== -->
+
+<step n="4" title="Action Proposal">
+  <action>For each triage row, resolve the story's current status:
+    1. First, try to read the story file at {implementation_artifacts}/{story_key}-*.md and parse its frontmatter `status` field (source of truth per CLAUDE.md Sprint-Status Write Safety)
+    2. If the story file does not exist, fall back to sprint-status.yaml and log a warning: "Story file not found for {story_key} — falling back to sprint-status.yaml"
+    3. If neither source has the story, mark the row as `skip` with reason `story_not_found` (EC4) and continue to next row</action>
+  <action>Import and invoke the `proposeAction` function from {project-path}/scripts/lib/gap-triage-rules.js for each gap in the row</action>
+  <action>The rule table (§10.22.8.2):
+    - uncovered-ac + backlog/ready-for-dev → action: append_ac, sub_workflow: /gaia-add-stories
+    - missing-test + done → action: new_story, sub_workflow: /gaia-triage-findings
+    - missing-edge-case + backlog/ready-for-dev → action: append_edge_case, sub_workflow: /gaia-add-stories
+    - unexecuted + any status → action: expand_automation, sub_workflow: /gaia-test-automate
+    - any gap + in-progress/review/blocked → action: skip, skip_reason: "story is {status} — defer remediation"
+    - unknown gap_type → action: skip, skip_reason: "unknown_gap_type" (EC5)</action>
+  <action>If a row has multiple gap types, apply the rules to each gap individually and collect all proposed actions for the row. The row's proposed_action becomes the highest-priority non-skip action (or skip if all gaps resolve to skip)</action>
+  <action>Mark each row's status as `proposed` (or `skip` if all actions are skip)</action>
+</step>
+
+<!-- ================================================ -->
+<!-- Step 5: Triage Table Template-Output (AC6)       -->
+<!-- ================================================ -->
+
+<step n="5" title="Triage Table Output">
+  <action>Render the triage map as a markdown table with columns: story_key | gap_count | gap_types | proposed_action | sub_workflow | status | skip_reason</action>
+  <action>Add a triage header containing: report source file, report date, severity filter applied, total gaps, filtered gaps, filtered_out_count, and any INFO notes (perf budget, empty filter, etc.)</action>
+  <action>Save the rendered triage table to {test_artifacts}/fill-test-gaps-triage-{date}.md</action>
+  <action>In normal mode: present the triage table for user review — the user can approve or modify per-row actions before the file is finalized</action>
+  <action>In YOLO mode: auto-accept the default proposals and save immediately</action>
+  <!-- NOTE: Sub-workflow invocation (executing the proposed actions) and remediation-report
+       emission are E19-S27 scope. This step is the hard boundary of E19-S26. -->
+  <template-output path="{test_artifacts}/fill-test-gaps-triage-{date}.md" />
+</step>
+
+</workflow>

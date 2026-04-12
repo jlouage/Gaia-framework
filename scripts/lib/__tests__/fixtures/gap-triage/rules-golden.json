@@ -1,0 +1,87 @@
+[
+  {
+    "description": "uncovered-ac + backlog → append_ac via /gaia-add-stories",
+    "input": { "gap_type": "uncovered-ac", "story_status": "backlog" },
+    "expected": { "action_type": "append_ac", "sub_workflow": "/gaia-add-stories", "skip_reason": null }
+  },
+  {
+    "description": "uncovered-ac + ready-for-dev → append_ac via /gaia-add-stories",
+    "input": { "gap_type": "uncovered-ac", "story_status": "ready-for-dev" },
+    "expected": { "action_type": "append_ac", "sub_workflow": "/gaia-add-stories", "skip_reason": null }
+  },
+  {
+    "description": "uncovered-ac + done → skip (no matching rule)",
+    "input": { "gap_type": "uncovered-ac", "story_status": "done" },
+    "expected": { "action_type": "skip", "sub_workflow": null, "skip_reason": "uncovered-ac on done story — no matching rule" }
+  },
+  {
+    "description": "missing-test + done → new_story via /gaia-triage-findings",
+    "input": { "gap_type": "missing-test", "story_status": "done" },
+    "expected": { "action_type": "new_story", "sub_workflow": "/gaia-triage-findings", "skip_reason": null }
+  },
+  {
+    "description": "missing-test + backlog → skip (no matching rule)",
+    "input": { "gap_type": "missing-test", "story_status": "backlog" },
+    "expected": { "action_type": "skip", "sub_workflow": null, "skip_reason": "missing-test on backlog story — no matching rule" }
+  },
+  {
+    "description": "missing-edge-case + backlog → append_edge_case via /gaia-add-stories",
+    "input": { "gap_type": "missing-edge-case", "story_status": "backlog" },
+    "expected": { "action_type": "append_edge_case", "sub_workflow": "/gaia-add-stories", "skip_reason": null }
+  },
+  {
+    "description": "missing-edge-case + ready-for-dev → append_edge_case via /gaia-add-stories",
+    "input": { "gap_type": "missing-edge-case", "story_status": "ready-for-dev" },
+    "expected": { "action_type": "append_edge_case", "sub_workflow": "/gaia-add-stories", "skip_reason": null }
+  },
+  {
+    "description": "missing-edge-case + done → skip (no matching rule)",
+    "input": { "gap_type": "missing-edge-case", "story_status": "done" },
+    "expected": { "action_type": "skip", "sub_workflow": null, "skip_reason": "missing-edge-case on done story — no matching rule" }
+  },
+  {
+    "description": "unexecuted + backlog → expand_automation via /gaia-test-automate",
+    "input": { "gap_type": "unexecuted", "story_status": "backlog" },
+    "expected": { "action_type": "expand_automation", "sub_workflow": "/gaia-test-automate", "skip_reason": null }
+  },
+  {
+    "description": "unexecuted + done → expand_automation via /gaia-test-automate",
+    "input": { "gap_type": "unexecuted", "story_status": "done" },
+    "expected": { "action_type": "expand_automation", "sub_workflow": "/gaia-test-automate", "skip_reason": null }
+  },
+  {
+    "description": "unexecuted + ready-for-dev → expand_automation via /gaia-test-automate",
+    "input": { "gap_type": "unexecuted", "story_status": "ready-for-dev" },
+    "expected": { "action_type": "expand_automation", "sub_workflow": "/gaia-test-automate", "skip_reason": null }
+  },
+  {
+    "description": "uncovered-ac + in-progress → skip (defer remediation)",
+    "input": { "gap_type": "uncovered-ac", "story_status": "in-progress" },
+    "expected": { "action_type": "skip", "sub_workflow": null, "skip_reason": "story is in-progress — defer remediation" }
+  },
+  {
+    "description": "missing-test + review → skip (defer remediation)",
+    "input": { "gap_type": "missing-test", "story_status": "review" },
+    "expected": { "action_type": "skip", "sub_workflow": null, "skip_reason": "story is review — defer remediation" }
+  },
+  {
+    "description": "missing-edge-case + blocked → skip (defer remediation)",
+    "input": { "gap_type": "missing-edge-case", "story_status": "blocked" },
+    "expected": { "action_type": "skip", "sub_workflow": null, "skip_reason": "story is blocked — defer remediation" }
+  },
+  {
+    "description": "unexecuted + in-progress → skip (defer remediation — skip status overrides unexecuted any-status rule)",
+    "input": { "gap_type": "unexecuted", "story_status": "in-progress" },
+    "expected": { "action_type": "skip", "sub_workflow": null, "skip_reason": "story is in-progress — defer remediation" }
+  },
+  {
+    "description": "unknown gap_type (future-gap-type) + backlog → skip (unknown_gap_type)",
+    "input": { "gap_type": "future-gap-type", "story_status": "backlog" },
+    "expected": { "action_type": "skip", "sub_workflow": null, "skip_reason": "unknown_gap_type" }
+  },
+  {
+    "description": "unknown gap_type + done → skip (unknown_gap_type)",
+    "input": { "gap_type": "something-new", "story_status": "done" },
+    "expected": { "action_type": "skip", "sub_workflow": null, "skip_reason": "unknown_gap_type" }
+  }
+]

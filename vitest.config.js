@@ -12,6 +12,7 @@ export default defineConfig({
       "test/validation/tier1/**/*.test.js",
       "test/validation/atdd/**/*.test.js",
       "test/shell/**/*.test.js",
+      "scripts/lib/__tests__/**/*.test.js",
     ],
     coverage: {
       provider: "v8",
