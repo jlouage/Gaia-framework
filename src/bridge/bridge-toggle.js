@@ -13,10 +13,8 @@ import { readFileSync, writeFileSync } from "fs";
 
 // Shared regex patterns for test_execution_bridge section parsing
 const SECTION_EXISTS_RE = /^test_execution_bridge:/m;
-const BRIDGE_VALUE_RE =
-  /^test_execution_bridge:[\s\S]*?^\s+bridge_enabled:\s*(true|false)/m;
-const BRIDGE_KEY_RE =
-  /^(test_execution_bridge:[\s\S]*?)(^\s+bridge_enabled:\s*)(true|false)(.*)/m;
+const BRIDGE_VALUE_RE = /^test_execution_bridge:[\s\S]*?^\s+bridge_enabled:\s*(true|false)/m;
+const BRIDGE_KEY_RE = /^(test_execution_bridge:[\s\S]*?)(^\s+bridge_enabled:\s*)(true|false)(.*)/m;
 const BRIDGE_LINE_RE = /^(\s+bridge_enabled:\s*)(true|false)/m;
 
 /**

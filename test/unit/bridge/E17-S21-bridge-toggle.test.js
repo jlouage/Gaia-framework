@@ -17,11 +17,7 @@ import { join } from "path";
 import { mkdtempSync, writeFileSync, readFileSync, rmSync, mkdirSync } from "fs";
 import { tmpdir } from "os";
 
-import {
-  readBridgeState,
-  toggleBridge,
-  buildSummary,
-} from "../../../src/bridge/bridge-toggle.js";
+import { readBridgeState, toggleBridge, buildSummary } from "../../../src/bridge/bridge-toggle.js";
 
 // ─── Fixtures ────────────────────────────────────────────────────────────────
 
@@ -254,9 +250,7 @@ describe("E17-S21: Bridge Toggle", () => {
 
     it("toggleBridge throws when section is missing", () => {
       const yamlPath = writeGlobalYaml(YAML_NO_BRIDGE_SECTION);
-      expect(() => toggleBridge(yamlPath, "enable")).toThrow(
-        /test_execution_bridge.*missing/i
-      );
+      expect(() => toggleBridge(yamlPath, "enable")).toThrow(/test_execution_bridge.*missing/i);
     });
   });
 
@@ -271,9 +265,7 @@ describe("E17-S21: Bridge Toggle", () => {
 
     it("toggleBridge throws when bridge_enabled key is absent", () => {
       const yamlPath = writeGlobalYaml(YAML_SECTION_NO_KEY);
-      expect(() => toggleBridge(yamlPath, "enable")).toThrow(
-        /bridge_enabled.*not found/i
-      );
+      expect(() => toggleBridge(yamlPath, "enable")).toThrow(/bridge_enabled.*not found/i);
     });
   });
 });
