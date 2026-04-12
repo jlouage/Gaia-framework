@@ -43,18 +43,15 @@ describe("AC1: adapters/ directory structure", () => {
     expect(existsSync(JS_ADAPTER_PATH)).toBe(true);
   });
 
-  it("adapters/ contains exactly two .js files in this story (index.js and js-adapter.js)", () => {
+  it("adapters/ contains at minimum index.js and js-adapter.js (E25-S1+ may add more)", () => {
     const jsFiles = readdirSync(ADAPTERS_DIR).filter((f) => f.endsWith(".js"));
-    expect(jsFiles.sort()).toEqual(["index.js", "js-adapter.js"]);
+    expect(jsFiles).toEqual(expect.arrayContaining(["index.js", "js-adapter.js"]));
   });
 
-  it("python-adapter.js, java-adapter.js, go-adapter.js, flutter-adapter.js do NOT exist in this story", () => {
-    const forbiddenAdapters = [
-      "python-adapter.js",
-      "java-adapter.js",
-      "go-adapter.js",
-      "flutter-adapter.js",
-    ];
+  it("java-adapter.js, go-adapter.js, flutter-adapter.js do NOT exist yet (E25-S2..E25-S4 pending)", () => {
+    // E25-S1 has landed — python-adapter.js is expected to exist. The remaining
+    // stack adapters below are still forbidden until their respective stories land.
+    const forbiddenAdapters = ["java-adapter.js", "go-adapter.js", "flutter-adapter.js"];
     for (const file of forbiddenAdapters) {
       expect(existsSync(join(ADAPTERS_DIR, file))).toBe(false);
     }

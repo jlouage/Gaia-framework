@@ -17,6 +17,7 @@
 import { existsSync } from "fs";
 import { join } from "path";
 import jsAdapter from "./js-adapter.js";
+import pythonAdapter from "./python-adapter.js";
 
 // ─── StackAdapter contract typedef ──────────────────────────────────────────
 
@@ -32,7 +33,13 @@ import jsAdapter from "./js-adapter.js";
 
 // ─── Contract validation (AC7) ──────────────────────────────────────────────
 
-const REQUIRED_FIELDS = ["name", "detectionPatterns", "readinessCheck", "discoverRunners", "parseOutput"];
+const REQUIRED_FIELDS = [
+  "name",
+  "detectionPatterns",
+  "readinessCheck",
+  "discoverRunners",
+  "parseOutput",
+];
 
 /**
  * Validate that an adapter satisfies the StackAdapter contract.
@@ -44,15 +51,11 @@ const REQUIRED_FIELDS = ["name", "detectionPatterns", "readinessCheck", "discove
  */
 export function validateAdapter(adapter, modulePath) {
   if (!adapter || typeof adapter !== "object") {
-    throw new Error(
-      `Adapter contract violation in ${modulePath}: adapter is not an object`
-    );
+    throw new Error(`Adapter contract violation in ${modulePath}: adapter is not an object`);
   }
   for (const field of REQUIRED_FIELDS) {
     if (adapter[field] === undefined || adapter[field] === null) {
-      throw new Error(
-        `Adapter contract violation in ${modulePath}: missing field: ${field}`
-      );
+      throw new Error(`Adapter contract violation in ${modulePath}: missing field: ${field}`);
     }
   }
 }
@@ -62,14 +65,15 @@ export function validateAdapter(adapter, modulePath) {
 // Validate all imported adapters at module top-level so contract violations
 // fail at import time (AC7). No silent skips, no partial registration.
 validateAdapter(jsAdapter, "./js-adapter.js");
+validateAdapter(pythonAdapter, "./python-adapter.js");
 
 /**
- * Built-in adapters in deterministic priority order.
- * JavaScript is first (only adapter in this story).
- * E25-S1..E25-S4 will extend this array.
+ * Built-in adapters in deterministic priority order (§10.20.11.2).
+ * Order: javascript → python → java → go → flutter.
+ * E25-S2..E25-S4 will extend this array.
  * @type {StackAdapter[]}
  */
-const ADAPTERS = [jsAdapter];
+const ADAPTERS = [jsAdapter, pythonAdapter];
 
 // ─── Public API ─────────────────────────────────────────────────────────────
 
@@ -91,10 +95,18 @@ export function listAdapters() {
  */
 export function getAdapter(projectPath) {
   for (const adapter of ADAPTERS) {
-    const allMatch = adapter.detectionPatterns.every((pattern) =>
-      existsSync(join(projectPath, pattern))
-    );
-    if (allMatch) return adapter;
+    // Per-adapter detection semantics: default is ALL (every pattern must
+    // match) which preserves js-adapter behavior. Adapters with
+    // detectionMode === "any" match if ANY pattern exists — required for
+    // pytest where pyproject.toml / pytest.ini / setup.cfg / setup.py are
+    // OR'd per E25-S1 Dev Notes.
+    const mode = adapter.detectionMode === "any" ? "any" : "all";
+    const matcher = (pattern) => existsSync(join(projectPath, pattern));
+    const matched =
+      mode === "any"
+        ? adapter.detectionPatterns.some(matcher)
+        : adapter.detectionPatterns.every(matcher);
+    if (matched) return adapter;
   }
   return null;
 }
