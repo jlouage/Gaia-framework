@@ -5,19 +5,18 @@
  * All imports are static ES modules — no dynamic loading, no runtime plugin
  * discovery. This is architecture §10.20.11.4's "trust boundary" requirement.
  *
- * In this story only the JavaScript adapter ships. E25-S1..E25-S4 will add:
- *   import pythonAdapter from './python-adapter.js';
- *   import javaAdapter from './java-adapter.js';
- *   import goAdapter from './go-adapter.js';
- *   import flutterAdapter from './flutter-adapter.js';
+ * Built-in adapters (priority order per §10.20.11.2):
+ *   javascript → python → java → go → flutter
+ * E25-S3..E25-S4 will add go and flutter adapters.
  *
- * Traces to: FR-307, NFR-047, ADR-028, ADR-038, T37
+ * Traces to: FR-307, FR-309, NFR-047, ADR-028, ADR-038, T37
  */
 
 import { existsSync } from "fs";
 import { join } from "path";
 import jsAdapter from "./js-adapter.js";
 import pythonAdapter from "./python-adapter.js";
+import javaAdapter from "./java-adapter.js";
 
 // ─── StackAdapter contract typedef ──────────────────────────────────────────
 
@@ -66,14 +65,15 @@ export function validateAdapter(adapter, modulePath) {
 // fail at import time (AC7). No silent skips, no partial registration.
 validateAdapter(jsAdapter, "./js-adapter.js");
 validateAdapter(pythonAdapter, "./python-adapter.js");
+validateAdapter(javaAdapter, "./java-adapter.js");
 
 /**
  * Built-in adapters in deterministic priority order (§10.20.11.2).
  * Order: javascript → python → java → go → flutter.
- * E25-S2..E25-S4 will extend this array.
+ * E25-S3..E25-S4 will extend this array.
  * @type {StackAdapter[]}
  */
-const ADAPTERS = [jsAdapter, pythonAdapter];
+const ADAPTERS = [jsAdapter, pythonAdapter, javaAdapter];
 
 // ─── Public API ─────────────────────────────────────────────────────────────
 

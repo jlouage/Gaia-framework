@@ -48,10 +48,11 @@ describe("AC1: adapters/ directory structure", () => {
     expect(jsFiles).toEqual(expect.arrayContaining(["index.js", "js-adapter.js"]));
   });
 
-  it("java-adapter.js, go-adapter.js, flutter-adapter.js do NOT exist yet (E25-S2..E25-S4 pending)", () => {
-    // E25-S1 has landed — python-adapter.js is expected to exist. The remaining
-    // stack adapters below are still forbidden until their respective stories land.
-    const forbiddenAdapters = ["java-adapter.js", "go-adapter.js", "flutter-adapter.js"];
+  it("go-adapter.js, flutter-adapter.js do NOT exist yet (E25-S3..E25-S4 pending)", () => {
+    // E25-S1 (python-adapter.js) and E25-S2 (java-adapter.js) have landed.
+    // The remaining stack adapters below are still forbidden until their
+    // respective stories land.
+    const forbiddenAdapters = ["go-adapter.js", "flutter-adapter.js"];
     for (const file of forbiddenAdapters) {
       expect(existsSync(join(ADAPTERS_DIR, file))).toBe(false);
     }
