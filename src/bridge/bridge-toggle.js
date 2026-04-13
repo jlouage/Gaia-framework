@@ -107,11 +107,20 @@ export function toggleBridge(yamlPath, mode) {
 /**
  * Build a human-readable post-toggle summary.
  *
- * @param {{ previousState: boolean, newState: boolean, mode: string, changed: boolean }} result
+ * @param {object} result
+ * @param {boolean} result.previousState
+ * @param {boolean} result.newState
+ * @param {string}  result.mode
+ * @param {boolean} result.changed
+ * @param {object}  [result.postFlipResult] — E17-S22 Step 4 output. One of:
+ *   { kind: "skipped",         reason: string }
+ *   { kind: "present_valid",   runners: Array<{name,tier?}> }
+ *   { kind: "present_invalid", errors: string[] }
+ *   { kind: "absent",          choice: "a"|"b"|"c", options?, yoloAutoSkipped? }
  * @returns {string} formatted summary
  */
 export function buildSummary(result) {
-  const { previousState, newState, mode, changed } = result;
+  const { previousState, newState, mode, changed, postFlipResult } = result;
 
   if (!changed) {
     const stateWord = mode === "enable" ? "enabled" : "disabled";
@@ -138,14 +147,15 @@ export function buildSummary(result) {
     `| Mode | ${mode} |`,
   ];
 
-  // Step 4 placeholder: enable mode only (E17-S22 will fill this in)
-  if (mode === "enable") {
+  // E17-S22: render the post-flip-check result in enable mode. On disable,
+  // Step 4 is skipped entirely (AC7) and we emit no post-flip-check output.
+  if (mode === "enable" && postFlipResult && postFlipResult.kind !== "skipped") {
     lines.push("");
-    lines.push(
-      "**Post-flip checks:** _Stub — E17-S22 will add test-environment.yaml validation here._"
-    );
+    lines.push(...renderPostFlipSection(postFlipResult));
   }
 
+  // AC6: summary always ends with the /gaia-build-configs next-step suggestion,
+  // regardless of which branch Step 4 took.
   lines.push("");
   lines.push("**Next steps:**");
   lines.push(
@@ -153,4 +163,103 @@ export function buildSummary(result) {
   );
 
   return lines.join("\n");
+}
+
+/**
+ * Render the post-flip-check section of the summary based on the E17-S22
+ * structured result shape. Pattern-matches on `kind`.
+ */
+function renderPostFlipSection(postFlipResult) {
+  const out = ["**Post-flip checks:**"];
+
+  switch (postFlipResult.kind) {
+    case "present_valid": {
+      const runners = postFlipResult.runners || [];
+      out.push("");
+      out.push(
+        `test-environment.yaml validated successfully — ${runners.length} runner(s) detected:`
+      );
+      out.push("");
+      out.push("| Runner | Tier |");
+      out.push("|--------|------|");
+      for (const r of runners) {
+        out.push(`| ${r.name ?? "?"} | ${r.tier ?? "—"} |`);
+      }
+      break;
+    }
+
+    case "present_invalid": {
+      const errors = postFlipResult.errors || [];
+      out.push("");
+      out.push(
+        `WARNING: test-environment.yaml exists but failed schema validation (${errors.length} issue(s)).`
+      );
+      out.push(
+        "The bridge_enabled flag was NOT rolled back — fix the manifest and re-run `/gaia-build-configs`."
+      );
+      out.push("");
+      for (const e of errors) {
+        out.push(`- ${e}`);
+      }
+      break;
+    }
+
+    case "absent": {
+      out.push("");
+      out.push(
+        "`docs/test-artifacts/test-environment.yaml` was not found. The bridge is enabled, but Layer 1 will fail-fast at invocation time until the manifest is created."
+      );
+
+      if (postFlipResult.yoloAutoSkipped) {
+        out.push("");
+        out.push(
+          "YOLO mode auto-selected option (c) **Skip** — bridge is enabled but the manifest is missing."
+        );
+      }
+
+      if (postFlipResult.choice) {
+        out.push("");
+        out.push("**Selected option:**");
+        switch (postFlipResult.choice) {
+          case "a":
+            out.push(
+              "- [a] Run `/gaia-brownfield` in your next turn to auto-generate test-environment.yaml."
+            );
+            break;
+          case "b":
+            out.push(
+              "- [b] Copy `docs/test-artifacts/test-environment.yaml.example` to `docs/test-artifacts/test-environment.yaml` and customize."
+            );
+            break;
+          case "c":
+            out.push(
+              "- [c] Skip — bridge enabled without manifest. Layer 1 will fail-fast until the file is created."
+            );
+            break;
+        }
+      } else {
+        // No choice captured — emit the 3-option prompt body so the engine
+        // can render it verbatim via its template-output / ask machinery.
+        out.push("");
+        out.push("**Options:**");
+        out.push(
+          "- [a] Run `/gaia-brownfield` to auto-generate test-environment.yaml (next-step suggestion — not auto-invoked)"
+        );
+        out.push(
+          "- [b] Copy `docs/test-artifacts/test-environment.yaml.example` to `docs/test-artifacts/test-environment.yaml` and customize"
+        );
+        out.push(
+          "- [c] Skip — bridge is enabled but will fail-fast at Layer 1 with a clear error message until the manifest is created"
+        );
+      }
+      break;
+    }
+
+    default:
+      // Unknown kind — emit nothing beyond the header.
+      out.push("");
+      out.push(`_Unrecognised post-flip result kind: ${postFlipResult.kind}_`);
+  }
+
+  return out;
 }

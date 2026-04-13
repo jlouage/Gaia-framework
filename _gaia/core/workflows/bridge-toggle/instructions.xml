@@ -30,27 +30,40 @@
   <action>Write the updated content back to global.yaml</action>
 </step>
 
-<!-- Step 4: Post-Flip Checks (Enable Mode Only)
-     STUB for E17-S22 — Bridge Enable Post-Flip Checks.
-     E17-S22 will inject test-environment.yaml detection and validation logic here.
-     When E17-S22 lands, this step will:
-       - Check for docs/test-artifacts/test-environment.yaml
-       - If present: validate against FR-201 schema, report detected runners
-       - If absent: prompt user with 3 options (brownfield scan, copy example, skip)
-     For now, this step is a no-op for both enable and disable modes. -->
-<step n="4" title="Post-Flip Checks (Enable Only — E17-S22 Stub)">
-  <action if="mode == disable">Skip — disable mode does not perform post-flip checks (AC7).</action>
-  <action if="mode == enable">Placeholder for E17-S22. No checks performed in this version.</action>
+<!-- Step 4: Post-Flip Checks (Enable Mode Only) — E17-S22
+     Delivered by E17-S22. After the flag flip in Step 3, detect and validate
+     docs/test-artifacts/test-environment.yaml and produce a structured
+     `post_flip_result` object for Step 5's summary composer. This step is
+     skipped on disable mode (AC7) and when Step 3 was an idempotent no-op
+     (Test Scenario #6 — no state transition means no post-flip checks). -->
+<step n="4" title="Post-Flip Checks (Enable Only)">
+  <action if="mode == disable">Skip — disable mode does not perform post-flip checks (AC7). Set post_flip_result = {kind: "skipped", reason: "disable-mode"} and proceed to Step 5.</action>
+  <action if="mode == enable and not changed">Skip — no state transition occurred (bridge was already enabled). Set post_flip_result = {kind: "skipped", reason: "idempotent"} and proceed to Step 5.</action>
+  <action if="mode == enable and changed">Invoke runPostFlipChecks from {project-path}/src/bridge/bridge-post-flip-checks.js with {projectRoot, mode: "enable", changed: true, yolo: {yolo_mode}}. This module performs the filesystem stat of docs/test-artifacts/test-environment.yaml (resolved relative to {project-root}, NOT {project-path} — per AC) and calls into the existing E17-S7 validator at Gaia-framework/_gaia/core/validators/test-environment-validator.js. Capture its return value as post_flip_result.</action>
+  <action if="post_flip_result.kind == 'present_valid'">Collect post_flip_result.runners[] (name + tier) for inclusion in Step 5's summary. No prompt is shown. Proceed to Step 5.</action>
+  <action if="post_flip_result.kind == 'present_invalid'">Collect post_flip_result.errors[] as warnings for inclusion in Step 5's summary. Per AC5, do NOT roll back the bridge_enabled flag flip — the user can manually repair the manifest and re-run /gaia-build-configs. Proceed to Step 5.</action>
+  <action if="post_flip_result.kind == 'absent' and not yolo_mode">Render the 3-option prompt — options payload is available as post_flip_result.options (POST_FLIP_ABSENT_OPTIONS from bridge-post-flip-checks.js). Path A (ADR-028 §10.20.12.3): none of the options auto-invoke any sub-workflow. Present the three options exactly as written in the options list and ask the user to select one.</action>
+  <ask if="post_flip_result.kind == 'absent' and not yolo_mode">
+    `docs/test-artifacts/test-environment.yaml` was not found. The bridge is enabled, but Layer 1 will fail-fast at invocation time until the manifest is created. Select a next-step suggestion:
+
+    [a] Run `/gaia-brownfield` to auto-generate test-environment.yaml (next-step suggestion — NOT auto-invoked)
+    [b] Copy `docs/test-artifacts/test-environment.yaml.example` to `docs/test-artifacts/test-environment.yaml` and customize
+    [c] Skip — bridge is enabled but will fail-fast at Layer 1 with a clear error message until the manifest is created
+
+    Choose [a/b/c]:
+  </ask>
+  <action if="post_flip_result.kind == 'absent' and not yolo_mode">Record the user's selection as post_flip_result.choice (one of "a", "b", "c"). Per AC4, do NOT invoke any sub-workflow regardless of choice. Selection (a) does NOT run /gaia-brownfield; selection (b) does NOT copy the example file. Both are next-step suggestions the user must act on in the next conversation turn. Proceed to Step 5.</action>
+  <action if="post_flip_result.kind == 'absent' and yolo_mode">YOLO mode auto-selects option (c) Skip. runPostFlipChecks has already set post_flip_result.choice = "c" and post_flip_result.yoloAutoSkipped = true. Log a warning: "Bridge is enabled but docs/test-artifacts/test-environment.yaml is missing — Layer 1 will fail-fast until the manifest is created." Proceed to Step 5.</action>
+  <action>Pass post_flip_result to Step 5's summary composer (buildSummary receives it as the `postFlipResult` field).</action>
 </step>
 
 <step n="5" title="Post-Toggle Summary">
-  <action>Build and display a structured summary containing:
-    - Previous state (before toggle)
-    - New state (after toggle)
-    - Mode (enable or disable)
-    - Whether a write occurred (changed vs idempotent)
-  </action>
-  <action>Always append the next-step suggestion: "Run `/gaia-build-configs` to regenerate the resolved configs so the bridge_enabled change takes effect."</action>
-  <action if="mode == disable">Summary only confirms new state and reminds about /gaia-build-configs. No post-flip check output (AC7).</action>
+  <action>Invoke buildSummary from {project-path}/src/bridge/bridge-toggle.js with {previousState, newState, mode, changed, postFlipResult} — the postFlipResult field is the structured object captured by Step 4 (or {kind: "skipped", ...} on disable / idempotent paths).</action>
+  <action>Display the returned summary. It always includes: previous state, new state, mode, and whether a write occurred.</action>
+  <action if="mode == enable and post_flip_result.kind == 'present_valid'">Summary includes the detected runners table (name + tier) produced by Step 4.</action>
+  <action if="mode == enable and post_flip_result.kind == 'present_invalid'">Summary includes the schema validation errors as warnings. The bridge_enabled flag is NOT rolled back (AC5).</action>
+  <action if="mode == enable and post_flip_result.kind == 'absent'">Summary includes the user's selected option (a/b/c) from Step 4, or — in YOLO mode — the auto-selected skip warning.</action>
+  <action>AC6: the summary always ends with the next-step suggestion "Run `/gaia-build-configs` to regenerate the resolved configs so the bridge_enabled change takes effect." — regardless of which Step 4 branch ran (present_valid, present_invalid, absent with any choice, skipped, or idempotent).</action>
+  <action if="mode == disable">Summary only confirms new state and reminds about /gaia-build-configs. No post-flip check output (AC7 — Step 4 was skipped).</action>
 </step>
 </workflow>
