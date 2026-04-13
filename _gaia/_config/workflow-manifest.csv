@@ -48,7 +48,7 @@ name,displayName,description,module,phase,path,command,agent
 "nfr-assessment","NFR Assessment","Assess non-functional requirements","testing","anytime","_gaia/testing/workflows/nfr-assessment/workflow.yaml","gaia-nfr","test-architect"
 "traceability","Traceability","Generate traceability matrix","testing","anytime","_gaia/testing/workflows/traceability/workflow.yaml","gaia-trace","test-architect"
 "test-gap-analysis","Test Gap Analysis","Scan test suite against requirements to identify coverage gaps","testing","anytime","_gaia/testing/workflows/test-gap-analysis/workflow.yaml","gaia-test-gap-analysis","test-architect"
-"fill-test-gaps","Fill Test Gaps","Read gap report, triage by severity and story, propose remediation actions","testing","anytime","_gaia/testing/workflows/fill-test-gaps/workflow.yaml","gaia-fill-test-gaps","test-architect"
+"fill-test-gaps","Fill Test Gaps","End-to-end remediation for test-gap-analysis findings (sub-workflow composition)","testing","4-implementation","_gaia/testing/workflows/fill-test-gaps/workflow.yaml","gaia-fill-test-gaps","test-architect"
 "security-threat-model","Security Threat Model","Create STRIDE/DREAD threat model","lifecycle","3-solutioning","_gaia/lifecycle/workflows/3-solutioning/security-threat-model/workflow.yaml","gaia-threat-model","security"
 "security-review","Security Review","Pre-merge OWASP security review","lifecycle","4-implementation","_gaia/lifecycle/workflows/4-implementation/security-review/workflow.yaml","gaia-security-review","security"
 "infrastructure-design","Infrastructure Design","Design deployment topology and IaC","lifecycle","3-solutioning","_gaia/lifecycle/workflows/3-solutioning/infrastructure-design/workflow.yaml","gaia-infra-design","devops"
