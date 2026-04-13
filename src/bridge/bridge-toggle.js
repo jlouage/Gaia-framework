@@ -49,26 +49,59 @@ export function readBridgeState(yamlPath) {
 }
 
 /**
+ * Canonical test_execution_bridge block appended when the section is absent
+ * and the user runs /gaia-bridge-enable. Kept intentionally minimal — matches
+ * the structure documented in ADR-028 §10.20 without inventing extra keys.
+ */
+const CANONICAL_BRIDGE_BLOCK = `
+# Test Execution Bridge (ADR-028, FR-202, NFR-035)
+# Opt-in subsystem that runs tests during the post-review phase.
+test_execution_bridge:
+  # Master switch. false = bridge completely inactive.
+  bridge_enabled: true
+`;
+
+/**
  * Toggle the bridge_enabled flag in global.yaml.
  *
  * Uses regex-based in-place edit targeting only the bridge_enabled: line
  * within the test_execution_bridge: parent scope. This preserves all YAML
  * comments, key ordering, and formatting (js-yaml strips comments on round-trip).
  *
+ * When the test_execution_bridge section is absent:
+ *   - enable mode appends the canonical block and reports changed=true, created=true
+ *   - disable mode is a no-op (bridge is logically disabled) and returns changed=false
+ *
  * @param {string} yamlPath — absolute path to global.yaml
  * @param {"enable"|"disable"} mode — target mode
- * @returns {{ changed: boolean, previousState: boolean, newState: boolean }}
+ * @returns {{ changed: boolean, previousState: boolean, newState: boolean, created?: boolean }}
  */
 export function toggleBridge(yamlPath, mode) {
   const targetValue = mode === "enable";
   const content = readFileSync(yamlPath, "utf8");
 
   if (!hasBridgeSection(content)) {
-    throw new Error(
-      "test_execution_bridge section is missing from global.yaml. " +
-        "The section must exist before toggling. Run /gaia-bridge-enable after " +
-        "adding the test_execution_bridge block (see ADR-028 §10.20.7)."
-    );
+    // Section absent: Step 1 treats this as bridge_enabled=false (AC3 default).
+    if (mode === "disable") {
+      // Already logically disabled — zero-byte no-op.
+      return {
+        changed: false,
+        previousState: false,
+        newState: false,
+        absent: true,
+      };
+    }
+
+    // enable + absent: append the canonical block.
+    const needsLeadingNewline = content.length > 0 && !content.endsWith("\n");
+    const updated = content + (needsLeadingNewline ? "\n" : "") + CANONICAL_BRIDGE_BLOCK;
+    writeFileSync(yamlPath, updated, "utf8");
+    return {
+      changed: true,
+      previousState: false,
+      newState: true,
+      created: true,
+    };
   }
 
   const match = content.match(BRIDGE_KEY_RE);
@@ -120,10 +153,13 @@ export function toggleBridge(yamlPath, mode) {
  * @returns {string} formatted summary
  */
 export function buildSummary(result) {
-  const { previousState, newState, mode, changed, postFlipResult } = result;
+  const { previousState, newState, mode, changed, created, absent, postFlipResult } = result;
 
   if (!changed) {
     const stateWord = mode === "enable" ? "enabled" : "disabled";
+    if (mode === "disable" && absent) {
+      return "Bridge is already disabled — no changes made.";
+    }
     return [
       `Bridge already ${stateWord}.`,
       "",
@@ -137,8 +173,12 @@ export function buildSummary(result) {
     ].join("\n");
   }
 
+  const headline = created
+    ? "Created test_execution_bridge section with bridge_enabled: true."
+    : `Bridge ${mode}d successfully.`;
+
   const lines = [
-    `Bridge ${mode}d successfully.`,
+    headline,
     "",
     `| Field | Value |`,
     `|-------|-------|`,
