@@ -249,7 +249,7 @@ async function discoverRunners(projectPath /*, manifest */) {
     };
     const tier3 = {
       runner_name: "flutter-test-integration",
-      command: `${FLUTTER_COMMAND.replace(" --machine", "")} integration_test/`,
+      command: `${FLUTTER_COMMAND} integration_test/`,
       source: "pubspec.yaml",
       tier_mapping: { tier: "e2e", gates: [] },
       tier: "e2e",

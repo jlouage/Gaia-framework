@@ -347,6 +347,10 @@ describe("E25-S4 AC6/AC7: tier mapping based on integration_test/ presence", () 
     expect(tiers).toContain("unit");
     expect(tiers).toContain("e2e");
     expect(tiers).not.toContain("integration");
+    // C1 regression: Tier 3 runner must include --machine flag so parseOutput
+    // can consume JSON output instead of hitting the parse_error branch.
+    expect(result.manifest.runners[0].command).toBe("flutter test --machine test/");
+    expect(result.manifest.runners[1].command).toBe("flutter test --machine integration_test/");
   });
 
   it("Flutter project without integration_test/ collapses to single all-tier with fallback log", async () => {
