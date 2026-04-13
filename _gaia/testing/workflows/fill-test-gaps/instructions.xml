@@ -2,7 +2,15 @@
 <critical>
   <mandate>Read the latest gap analysis report, triage gaps by severity and story, and produce a remediation action table — ADR-039 §10.22.8</mandate>
   <mandate>Action proposal rules MUST be applied from scripts/lib/gap-triage-rules.js — the single source of truth for the §10.22.8.2 rule table</mandate>
-  <mandate>Sub-workflow invocation and remediation-report emission are OUT OF SCOPE (E19-S27) — this workflow stops at the triage template-output</mandate>
+  <mandate>Execute each approved remediation action by invoking the appropriate bundled sub-workflow (/gaia-add-stories, /gaia-triage-findings, /gaia-test-automate) via &lt;invoke-workflow&gt; with mode="yolo" — ADR-039 §10.22.8.3 / FR-314</mandate>
+  <mandate>Logs-and-continues error handling: a single sub-workflow failure MUST NOT halt the parent workflow — FR-314</mandate>
+  <mandate>Emit a remediation report at {test_artifacts}/gap-remediation-report-{date}.md conforming to the §10.22.8.3 schema after all approved actions complete</mandate>
+  <mandate>Retry-only-failed semantics: before building the triage table, consult the most recent prior remediation report for this gap report (within 24 hours) and skip rows whose story_key previously succeeded — AC6, AC7</mandate>
+  <!-- Dev Note (E19-S27): the bridging ADR-037 adapter in scripts/lib/adr037-return-adapter.js
+       normalizes sub-workflow returns while /gaia-add-stories, /gaia-triage-findings, and
+       /gaia-test-automate remain pre-E24. Update the adapter in lockstep whenever one of
+       those sub-workflows migrates to return ADR-037 natively. See ADR-039 Consequences
+       (architecture.md §5347) and story dev notes on E24 soft dependency (§10.22.8.5). -->
 </critical>
 
 <!-- ============================== -->
@@ -44,6 +52,8 @@
   <action>Each triage row contains: story_key, gap_count, gap_types (deduplicated array), proposed_action (empty — filled in Step 4), status (pending)</action>
   <action>Stories with multiple gap types collapse into a single triage row with all gap types aggregated</action>
   <action>Sort the triage map deterministically by story_key (lexicographic ascending)</action>
+  <action>Retry-only-failed preload (AC6, AC7): import loadPrior from {project-path}/scripts/lib/prior-remediation-loader.js. Call loadPrior with sourceGapReportPath = selected gap report path (from Step 1) and testArtifactsDir = {test_artifacts}. If a non-null prior is returned, store prior.skipMap in workflow context as prior_succeeded_map. If null is returned (no prior or >24h stale), set prior_succeeded_map = {} — every row will be presented fresh.</action>
+  <action>For each row in the triage map, if row.story_key exists in prior_succeeded_map, mark the row status = "skip_prior_success", set skip_reason = "succeeded in prior remediation report {prior.reportPath}", and exclude it from the Step 4 rule application (but keep it in the triage table header note so the user sees why it is missing)</action>
 </step>
 
 <!-- ============================================== -->
@@ -77,9 +87,42 @@
   <action>Save the rendered triage table to {test_artifacts}/fill-test-gaps-triage-{date}.md</action>
   <action>In normal mode: present the triage table for user review — the user can approve or modify per-row actions before the file is finalized</action>
   <action>In YOLO mode: auto-accept the default proposals and save immediately</action>
-  <!-- NOTE: Sub-workflow invocation (executing the proposed actions) and remediation-report
-       emission are E19-S27 scope. This step is the hard boundary of E19-S26. -->
   <template-output path="{test_artifacts}/fill-test-gaps-triage-{date}.md" />
+</step>
+
+<!-- ================================================ -->
+<!-- Step 6: Execute Approved Actions (AC1..AC4)      -->
+<!-- ================================================ -->
+
+<step n="6" title="Execute Approved Actions">
+  <action>Initialize an in-memory tracking map as an empty array — rows are appended in Step 6 execution order and consumed by Step 7</action>
+  <action>Import normalizeReturn from {project-path}/scripts/lib/adr037-return-adapter.js. Define the allowed bundled refs as the constant array ['add-stories', 'triage-findings', 'test-automate']</action>
+  <action>For each triage row where the user approved the proposed action (approved: true in the triage table saved by Step 5):
+    1. If action_type is "skip" or the row was marked skip_prior_success in Step 3, append { story_key, action_type, sub_workflow, status: "skipped", artifacts: [], error: null } to the tracking map and continue to the next row — do NOT invoke any sub-workflow for skipped rows
+    2. Resolve the bundled ref by stripping the leading "/gaia-" from row.sub_workflow (e.g., "/gaia-add-stories" → "add-stories")
+    3. Runtime assertion (AC2): if the resolved ref is not in the allowed bundled refs array, HALT with a workflow-author error: "invoke-workflow ref='{row.sub_workflow}' is not one of the 3 bundled framework sub-workflows (add-stories, triage-findings, test-automate). This is a workflow-author error — the rule table must not propose other refs."
+    4. Build structured params from the triage row: for add-stories pass { story_key, appended_ac } (AC/edge-case text derived from the gap row); for triage-findings pass { finding, story_key }; for test-automate pass { story_key, tier }
+    5. Emit &lt;invoke-workflow ref="{resolved_ref}" mode="yolo" params="{built_params}" /&gt; — the engine binds the return to a local variable unique to this iteration
+    6. Call normalizeReturn(raw_return, resolved_ref) to coerce the return into the ADR-037 schema { status, summary, artifacts, findings, next }
+    7. Branch on normalized.status (AC3):
+         - "ok"          → append row with status: "succeeded", artifacts: normalized.artifacts, error: null
+         - "error"       → append row with status: "failed", error: normalized.summary (AC4 — logs-and-continues: DO NOT halt, proceed to next row)
+         - "halted"      → append row with status: "failed", error: "sub-workflow halted: {normalized.summary}"
+         - "needs_user"  → append row with status: "failed", error: "sub-workflow requested user input despite mode=yolo (unexpected)"; log a warning
+  </action>
+  <action>At the end of the loop, log the execution summary: "{succeeded_count} succeeded, {failed_count} failed, {skipped_count} skipped"</action>
+</step>
+
+<!-- ================================================ -->
+<!-- Step 7: Emit Remediation Report (AC5)            -->
+<!-- ================================================ -->
+
+<step n="7" title="Emit Remediation Report">
+  <action>Import writeReport from {project-path}/scripts/lib/gap-remediation-report-writer.js</action>
+  <action>Call writeReport({ trackingMap: (from Step 6), sourceGapReport: (selected gap report path from Step 1), sourceFeatureId: (null unless a feature origin was supplied by caller), outputDir: {test_artifacts}, executionDate: {date} })</action>
+  <action>The writer emits {test_artifacts}/gap-remediation-report-{date}.md with frontmatter fields source_gap_report, execution_date, total_actions, succeeded, failed, skipped, source_feature_id and a per-action detail table conforming to architecture §10.22.8.3</action>
+  <action>If writeReport throws, HALT with the error message — the report must always be written so retry-only-failed semantics (AC6) can operate on the next run</action>
+  <template-output path="{test_artifacts}/gap-remediation-report-{date}.md" />
 </step>
 
 </workflow>
