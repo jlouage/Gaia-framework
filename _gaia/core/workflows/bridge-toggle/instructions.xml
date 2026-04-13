@@ -23,11 +23,9 @@
 </step>
 
 <step n="3" title="Write Updated State">
-  <action>Use regex-based in-place edit to update ONLY the bridge_enabled: line within the test_execution_bridge: section</action>
-  <action>Regex pattern: /^(\s+bridge_enabled:\s*)(true|false)/m — replace capture group 2 with target value</action>
-  <action>This preserves inline comments on the same line and all surrounding YAML content</action>
-  <action>If the test_execution_bridge section is missing: emit error "test_execution_bridge section not found in global.yaml — cannot toggle. Add the section first (see ADR-028 §10.20.7)."</action>
-  <action>Write the updated content back to global.yaml</action>
+  <action if="section present">Use regex-based in-place edit to update ONLY the bridge_enabled: line within the test_execution_bridge: section. Regex pattern: /^(\s+bridge_enabled:\s*)(true|false)/m — replace capture group 2 with target value. This preserves inline comments on the same line and all surrounding YAML content. Write the updated content back to global.yaml.</action>
+  <action if="mode == enable and section absent">Append a canonical test_execution_bridge block to the end of global.yaml with bridge_enabled: true. Write the updated content back to global.yaml. Report: "Created test_execution_bridge section with bridge_enabled: true."</action>
+  <action if="mode == disable and section absent">Report: "Bridge is already disabled — no changes made." Exit with status ok. Do NOT write global.yaml.</action>
 </step>
 
 <!-- Step 4: Post-Flip Checks (Enable Mode Only) — E17-S22

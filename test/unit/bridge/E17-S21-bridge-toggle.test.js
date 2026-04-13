@@ -239,18 +239,104 @@ describe("E17-S21: Bridge Toggle", () => {
     });
   });
 
-  // ─── Missing section ─────────────────────────────────────────────────────
+  // ─── Missing section — E17-S24 ───────────────────────────────────────────
 
-  describe("Missing section handling", () => {
+  describe("E17-S24: Missing section handling", () => {
     it("readBridgeState returns false when section is missing (AC3 default)", () => {
       const yamlPath = writeGlobalYaml(YAML_NO_BRIDGE_SECTION);
       const state = readBridgeState(yamlPath);
       expect(state).toBe(false);
     });
 
-    it("toggleBridge throws when section is missing", () => {
+    it("AC1: enable with absent section creates the canonical block", () => {
       const yamlPath = writeGlobalYaml(YAML_NO_BRIDGE_SECTION);
-      expect(() => toggleBridge(yamlPath, "enable")).toThrow(/test_execution_bridge.*missing/i);
+      const result = toggleBridge(yamlPath, "enable");
+      expect(result.changed).toBe(true);
+      expect(result.created).toBe(true);
+      expect(result.previousState).toBe(false);
+      expect(result.newState).toBe(true);
+
+      const after = readFileSync(yamlPath, "utf8");
+      expect(after).toMatch(/^test_execution_bridge:/m);
+      expect(after).toMatch(/^\s+bridge_enabled:\s*true/m);
+      // readBridgeState should now reflect the new state
+      expect(readBridgeState(yamlPath)).toBe(true);
+      // Pre-existing content is preserved
+      expect(after).toContain('framework_name: "GAIA"');
+    });
+
+    it("AC1: enable summary reports 'Created test_execution_bridge section'", () => {
+      const summary = buildSummary({
+        previousState: false,
+        newState: true,
+        mode: "enable",
+        changed: true,
+        created: true,
+      });
+      expect(summary).toContain("Created test_execution_bridge section with bridge_enabled: true.");
+      expect(summary).toContain("/gaia-build-configs");
+    });
+
+    it("AC2: disable with absent section is a zero-byte no-op", () => {
+      const yamlPath = writeGlobalYaml(YAML_NO_BRIDGE_SECTION);
+      const before = readFileSync(yamlPath, "utf8");
+      const result = toggleBridge(yamlPath, "disable");
+      expect(result.changed).toBe(false);
+      expect(result.absent).toBe(true);
+      const after = readFileSync(yamlPath, "utf8");
+      expect(after).toBe(before);
+    });
+
+    it("AC2: disable summary reports 'already disabled — no changes made'", () => {
+      const summary = buildSummary({
+        previousState: false,
+        newState: false,
+        mode: "disable",
+        changed: false,
+        absent: true,
+      });
+      expect(summary).toBe("Bridge is already disabled — no changes made.");
+    });
+
+    it("AC3: no user-facing output references ADR-028 §10.20.7", () => {
+      // Running every branch of toggleBridge and buildSummary must not produce
+      // the legacy ADR pointer string anywhere.
+      const outputs = [];
+      const yamlPath1 = writeGlobalYaml(YAML_NO_BRIDGE_SECTION);
+      outputs.push(JSON.stringify(toggleBridge(yamlPath1, "enable")));
+      const yamlPath2 = writeGlobalYaml(YAML_NO_BRIDGE_SECTION);
+      outputs.push(JSON.stringify(toggleBridge(yamlPath2, "disable")));
+      outputs.push(
+        buildSummary({
+          previousState: false,
+          newState: true,
+          mode: "enable",
+          changed: true,
+          created: true,
+        })
+      );
+      outputs.push(
+        buildSummary({
+          previousState: false,
+          newState: false,
+          mode: "disable",
+          changed: false,
+          absent: true,
+        })
+      );
+      for (const out of outputs) {
+        expect(out).not.toMatch(/10\.20\.7/);
+      }
+    });
+
+    it("AC4: enable on present section (false→true) still uses regex-replace and preserves comments", () => {
+      const yamlPath = writeGlobalYaml(YAML_WITH_COMMENTS);
+      const result = toggleBridge(yamlPath, "enable");
+      expect(result.changed).toBe(true);
+      expect(result.created).toBeUndefined();
+      const after = readFileSync(yamlPath, "utf8");
+      expect(after).toContain("# inline comment: toggle me");
+      expect(after).toMatch(/bridge_enabled:\s*true/);
     });
   });
 
