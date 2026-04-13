@@ -6,12 +6,13 @@
  */
 
 import { describe, it, expect } from "vitest";
+import { basename, join } from "node:path";
 import {
   loadPrior,
   FRESHNESS_WINDOW_MS,
 } from "../prior-remediation-loader.js";
 
-const DIR = "/test-artifacts";
+const DIR = join("/", "test-artifacts");
 const SOURCE = "docs/test-artifacts/test-gap-analysis-2026-04-10.md";
 
 function makeReport({ sourceGapReport = SOURCE, date = "2026-04-11", rows }) {
@@ -41,19 +42,19 @@ function makeReport({ sourceGapReport = SOURCE, date = "2026-04-11", rows }) {
   return frontmatter;
 }
 
-function makeFs({ files, now }) {
+function makeFs({ files }) {
   return {
     readdirSync: (dir) => {
       if (dir !== DIR) throw new Error("ENOENT: " + dir);
       return Object.keys(files);
     },
     readFileSync: (path) => {
-      const name = path.replace(`${DIR}/`, "");
+      const name = basename(path);
       if (!(name in files)) throw new Error("ENOENT: " + path);
       return files[name].content;
     },
     statSync: (path) => {
-      const name = path.replace(`${DIR}/`, "");
+      const name = basename(path);
       if (!(name in files)) throw new Error("ENOENT: " + path);
       return { mtimeMs: files[name].mtimeMs };
     },

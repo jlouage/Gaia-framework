@@ -6,6 +6,7 @@
  */
 
 import { describe, it, expect, vi } from "vitest";
+import { join } from "node:path";
 import {
   renderReport,
   writeReport,
@@ -154,19 +155,20 @@ describe("writeReport — filesystem adapter", () => {
     const writeFileSync = vi.fn();
     const mkdirSync = vi.fn();
 
+    const outDir = join("/", "tmp", "test-artifacts");
     const path = writeReport(
       {
         trackingMap: sampleTracking,
         sourceGapReport: "gr.md",
         sourceFeatureId: null,
-        outputDir: "/tmp/test-artifacts",
+        outputDir: outDir,
         executionDate: FIXED_DATE,
       },
       { writeFileSync, mkdirSync },
     );
 
-    expect(path).toBe(`/tmp/test-artifacts/gap-remediation-report-${FIXED_DATE}.md`);
-    expect(mkdirSync).toHaveBeenCalledWith("/tmp/test-artifacts", { recursive: true });
+    expect(path).toBe(join(outDir, `gap-remediation-report-${FIXED_DATE}.md`));
+    expect(mkdirSync).toHaveBeenCalledWith(outDir, { recursive: true });
     expect(writeFileSync).toHaveBeenCalledOnce();
     const [writePath, content] = writeFileSync.mock.calls[0];
     expect(writePath).toBe(path);
