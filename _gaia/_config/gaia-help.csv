@@ -52,6 +52,7 @@ module,phase,name,code,command,required,agent-name,description,output-location
 "testing","anytime","nfr-assessment","nfr","gaia-nfr","false","test-architect","Assess non-functional requirements","docs/test-artifacts"
 "testing","anytime","traceability","trace","gaia-trace","false","test-architect","Generate traceability matrix","docs/test-artifacts"
 "testing","anytime","test-gap-analysis","test-gap-analysis","gaia-test-gap-analysis","false","test-architect","Scan test suite against requirements to identify coverage gaps","docs/test-artifacts"
+"testing","4-implementation","fill-test-gaps","fill-test-gaps","gaia-fill-test-gaps","false","test-architect","End-to-end remediation for test-gap-analysis findings (sub-workflow composition)","docs/test-artifacts"
 "lifecycle","3-solutioning","security-threat-model","threat-model","gaia-threat-model","false","security","Create STRIDE/DREAD threat model","docs/planning-artifacts"
 "lifecycle","4-implementation","security-review","security-review","gaia-security-review","false","security","Pre-merge OWASP security review","docs/implementation-artifacts"
 "lifecycle","3-solutioning","infrastructure-design","infra-design","gaia-infra-design","false","devops","Design deployment topology and IaC","docs/planning-artifacts"
