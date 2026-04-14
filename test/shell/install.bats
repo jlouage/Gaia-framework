@@ -74,6 +74,15 @@ YAML
   echo "README" > "$src/custom/templates/README.md"
   mkdir -p "$src/custom/stakeholders"
   echo "README" > "$src/custom/stakeholders/README.md"
+  # E17-S25: test-environment.yaml.example (required by validate_source)
+  mkdir -p "$src/docs/test-artifacts"
+  cat > "$src/docs/test-artifacts/test-environment.yaml.example" <<'YAML'
+# Example test-environment.yaml — copy and customize for your project
+runners:
+  - name: vitest
+    command: npx vitest run
+    tier: 1
+YAML
 }
 
 # Expected Tier 1+2 sidecar directories (subset check)
@@ -2144,6 +2153,77 @@ YAML
   grep -q "/gaia-test-gap-analysis" "$hook_file" || { echo "hook missing command"; cat "$hook_file"; false; }
   grep -q "test_plan_exists" "$hook_file"        || { echo "hook missing condition"; cat "$hook_file"; false; }
   grep -q "type: suggestion" "$hook_file"        || { echo "hook missing type"; cat "$hook_file"; false; }
+
+  rm -rf "$SRC_DIR"
+}
+
+# ─── E17-S25: test-environment.yaml.example install tests ─────────────────
+
+@test "E17-S25 AC4: fresh init copies test-environment.yaml.example" {
+  local SRC_DIR="$(mktemp -d)"
+  create_mock_source "$SRC_DIR"
+
+  run bash "$SCRIPT" init --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  [ -f "$TEST_DIR/docs/test-artifacts/test-environment.yaml.example" ]
+  [ -s "$TEST_DIR/docs/test-artifacts/test-environment.yaml.example" ]
+
+  rm -rf "$SRC_DIR"
+}
+
+@test "E17-S25 AC5: update with absent target creates example file" {
+  local SRC_DIR="$(mktemp -d)"
+  create_mock_source "$SRC_DIR"
+
+  # First init, then remove the example file, then update
+  run bash "$SCRIPT" init --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+  rm -f "$TEST_DIR/docs/test-artifacts/test-environment.yaml.example"
+  [ ! -f "$TEST_DIR/docs/test-artifacts/test-environment.yaml.example" ]
+
+  run bash "$SCRIPT" update --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  [ -f "$TEST_DIR/docs/test-artifacts/test-environment.yaml.example" ]
+
+  rm -rf "$SRC_DIR"
+}
+
+@test "E17-S25 AC6: update preserves user-edited example file byte-identical" {
+  local SRC_DIR="$(mktemp -d)"
+  create_mock_source "$SRC_DIR"
+
+  # Init first
+  run bash "$SCRIPT" init --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  # Write sentinel user-edited content
+  echo "# USER EDIT MARKER — do not overwrite" > "$TEST_DIR/docs/test-artifacts/test-environment.yaml.example"
+  local pre_sha
+  pre_sha="$(shasum -a 256 "$TEST_DIR/docs/test-artifacts/test-environment.yaml.example" | awk '{print $1}')"
+
+  # Update should preserve user-edited file
+  run bash "$SCRIPT" update --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -eq 0 ]
+
+  local post_sha
+  post_sha="$(shasum -a 256 "$TEST_DIR/docs/test-artifacts/test-environment.yaml.example" | awk '{print $1}')"
+  [ "$pre_sha" = "$post_sha" ]
+
+  rm -rf "$SRC_DIR"
+}
+
+@test "E17-S25 AC7: missing source example file fails validate_source" {
+  local SRC_DIR="$(mktemp -d)"
+  create_mock_source "$SRC_DIR"
+
+  # Remove the example file from source
+  rm -f "$SRC_DIR/docs/test-artifacts/test-environment.yaml.example"
+
+  run bash "$SCRIPT" init --source "$SRC_DIR" --yes "$TEST_DIR"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"test-environment.yaml.example"* ]]
 
   rm -rf "$SRC_DIR"
 }

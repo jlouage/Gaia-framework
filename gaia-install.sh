@@ -149,6 +149,12 @@ validate_source() {
     error "Expected $MANIFEST_REL but it was not found."
     exit 1
   fi
+  # E17-S25: verify test-environment.yaml.example is present in source tree
+  local example_rel="docs/test-artifacts/test-environment.yaml.example"
+  if [[ ! -f "$src/$example_rel" ]]; then
+    error "Missing required source file: $example_rel"
+    exit 1
+  fi
 }
 
 copy_if_missing() {
@@ -344,6 +350,16 @@ cmd_init() {
       mkdir -p "$TARGET/docs/$dir"
     fi
   done
+
+  # Step 1b: Copy test-environment.yaml.example unconditionally (E17-S25, FR-316)
+  local example_src="$source/docs/test-artifacts/test-environment.yaml.example"
+  local example_dst="$TARGET/docs/test-artifacts/test-environment.yaml.example"
+  if [[ "$OPT_DRY_RUN" == true ]]; then
+    detail "[dry-run] Would copy: docs/test-artifacts/test-environment.yaml.example"
+  else
+    cp "$example_src" "$example_dst"
+    [[ "$OPT_VERBOSE" == true ]] && detail "Copied: docs/test-artifacts/test-environment.yaml.example" || true
+  fi
 
   # Step 2: Copy _gaia/ recursively (excluding checkpoints and .resolved/*.yaml)
   # Uses rsync if available, falls back to cp -rp, then tar (ADR-004: Windows best-effort)
@@ -661,6 +677,12 @@ cmd_update() {
   if [[ "$migrated" -gt 0 ]]; then
     detail "Migrated $migrated customize.yaml file(s) to custom/skills/"
   fi
+
+  # ─── Copy test-environment.yaml.example if absent (E17-S25, FR-316) ──
+  # Copy-if-absent semantics: preserves user-edited versions byte-identical.
+  copy_if_missing \
+    "$source/docs/test-artifacts/test-environment.yaml.example" \
+    "$TARGET/docs/test-artifacts/test-environment.yaml.example"
 
   step "Updating framework files..."
   local updated=0 skipped=0 changed=0
