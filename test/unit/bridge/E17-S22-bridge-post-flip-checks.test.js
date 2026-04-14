@@ -6,7 +6,7 @@
  * post-toggle summary. Produces a structured `post_flip_result` object:
  *   - { kind: "present_valid",   runners: [...] }
  *   - { kind: "present_invalid", errors:  [...] }
- *   - { kind: "absent",          choice: "a"|"b"|"c" }
+ *   - { kind: "absent",          choice: "a"|"b"|"c"|"d" }
  *
  * buildSummary is extended to render this result into the post-toggle summary
  * instead of the E17-S21 stub placeholder. The 3-option prompt itself is
@@ -16,7 +16,7 @@
  * Traces: FR-317, FR-201, ADR-028 §10.20.12.2, ADR-028 §10.20.12.3 (Path A)
  * Risk: low | Epic: E17 — Review Gate Enhancement & Test Execution Bridge
  *
- * Test IDs: BTG-01 (present+valid), BTG-03 (absent 3-option branches),
+ * Test IDs: BTG-01 (present+valid), BTG-03 (absent 4-option branches),
  *           BTG-05 (present+invalid), disable-skip, YOLO auto-skip.
  */
 
@@ -142,9 +142,9 @@ describe("E17-S22: Bridge Post-Flip Checks", () => {
     });
   });
 
-  // ─── BTG-03: Absent + 3-option prompt ──────────────────────────────────────
+  // ─── BTG-03: Absent + 4-option prompt ──────────────────────────────────────
 
-  describe("BTG-03: manifest absent — 3-option prompt", () => {
+  describe("BTG-03: manifest absent — 4-option prompt", () => {
     it("returns kind=absent with options list when manifest is missing", () => {
       // no manifest written
       const result = runPostFlipChecks({
@@ -154,13 +154,13 @@ describe("E17-S22: Bridge Post-Flip Checks", () => {
       });
       expect(result.kind).toBe("absent");
       expect(Array.isArray(result.options)).toBe(true);
-      expect(result.options.length).toBe(3);
-      expect(result.options.map((o) => o.key)).toEqual(["a", "b", "c"]);
+      expect(result.options.length).toBe(4);
+      expect(result.options.map((o) => o.key)).toEqual(["a", "b", "c", "d"]);
     });
 
-    it("POST_FLIP_ABSENT_OPTIONS exports three next-step suggestions (Path A, no auto-invoke)", () => {
-      expect(POST_FLIP_ABSENT_OPTIONS).toHaveLength(3);
-      const [a, b, c] = POST_FLIP_ABSENT_OPTIONS;
+    it("POST_FLIP_ABSENT_OPTIONS exports four next-step suggestions (Path A, no auto-invoke)", () => {
+      expect(POST_FLIP_ABSENT_OPTIONS).toHaveLength(4);
+      const [a, b, c, d] = POST_FLIP_ABSENT_OPTIONS;
       expect(a.key).toBe("a");
       expect(a.label).toMatch(/gaia-brownfield/);
       expect(a.autoInvoke).toBe(false);
@@ -168,8 +168,11 @@ describe("E17-S22: Bridge Post-Flip Checks", () => {
       expect(b.label).toMatch(/test-environment\.yaml\.example/);
       expect(b.autoInvoke).toBe(false);
       expect(c.key).toBe("c");
-      expect(c.label).toMatch(/skip/i);
+      expect(c.label).toMatch(/manually|manual/i);
       expect(c.autoInvoke).toBe(false);
+      expect(d.key).toBe("d");
+      expect(d.label).toMatch(/skip/i);
+      expect(d.autoInvoke).toBe(false);
     });
 
     it("buildSummary with choice=a renders brownfield suggestion", () => {
@@ -196,7 +199,7 @@ describe("E17-S22: Bridge Post-Flip Checks", () => {
       expect(summary).toContain("/gaia-build-configs");
     });
 
-    it("buildSummary with choice=c renders skip warning", () => {
+    it("buildSummary with choice=c renders manual-creation text", () => {
       const summary = buildSummary({
         previousState: false,
         newState: true,
@@ -204,12 +207,24 @@ describe("E17-S22: Bridge Post-Flip Checks", () => {
         changed: true,
         postFlipResult: { kind: "absent", choice: "c", options: POST_FLIP_ABSENT_OPTIONS },
       });
+      expect(summary).toMatch(/manually|manual/i);
+      expect(summary).toContain("/gaia-build-configs");
+    });
+
+    it("buildSummary with choice=d renders skip warning", () => {
+      const summary = buildSummary({
+        previousState: false,
+        newState: true,
+        mode: "enable",
+        changed: true,
+        postFlipResult: { kind: "absent", choice: "d", options: POST_FLIP_ABSENT_OPTIONS },
+      });
       expect(summary).toMatch(/skip/i);
       expect(summary).toMatch(/fail-fast|layer 1/i);
       expect(summary).toContain("/gaia-build-configs");
     });
 
-    it("YOLO mode auto-selects choice=c with a warning", () => {
+    it("YOLO mode auto-selects choice=d with a warning", () => {
       const result = runPostFlipChecks({
         projectRoot: tmpRoot,
         mode: "enable",
@@ -217,7 +232,7 @@ describe("E17-S22: Bridge Post-Flip Checks", () => {
         yolo: true,
       });
       expect(result.kind).toBe("absent");
-      expect(result.choice).toBe("c");
+      expect(result.choice).toBe("d");
       expect(result.yoloAutoSkipped).toBe(true);
     });
   });

@@ -44,19 +44,26 @@ const MANIFEST_RELATIVE_PATH = join("docs", "test-artifacts", "test-environment.
 export const POST_FLIP_ABSENT_OPTIONS = Object.freeze([
   Object.freeze({
     key: "a",
-    label: "Run `/gaia-brownfield` to auto-generate test-environment.yaml",
+    label:
+      "Run `/gaia-brownfield` — auto-generates test-environment.yaml from your detected stack. Recommended for ongoing projects that haven't run brownfield yet. Run `/gaia-build-configs` before invoking.",
     autoInvoke: false,
   }),
   Object.freeze({
     key: "b",
     label:
-      "Copy `docs/test-artifacts/test-environment.yaml.example` to `docs/test-artifacts/test-environment.yaml` and customize",
+      "Copy `docs/test-artifacts/test-environment.yaml.example` to `docs/test-artifacts/test-environment.yaml` and customize. The example file is installed at that path by gaia-install.sh.",
     autoInvoke: false,
   }),
   Object.freeze({
     key: "c",
     label:
-      "Skip — bridge is enabled but will fail-fast at Layer 1 with a clear error message until the manifest is created",
+      "Create `docs/test-artifacts/test-environment.yaml` manually using the example as a reference, then run `/gaia-build-configs`.",
+    autoInvoke: false,
+  }),
+  Object.freeze({
+    key: "d",
+    label:
+      "Skip — bridge is enabled but will fail-fast at Layer 1 with a clear error message until the manifest is created.",
     autoInvoke: false,
   }),
 ]);
@@ -80,14 +87,14 @@ function fileExists(path) {
  * @param {string} params.projectRoot  — absolute {project-root} path
  * @param {"enable"|"disable"} params.mode
  * @param {boolean} params.changed     — whether Step 3 actually wrote (state transition occurred)
- * @param {boolean} [params.yolo]      — YOLO mode auto-selects option (c) Skip on absent
- * @param {"a"|"b"|"c"} [params.choice] — pre-captured user choice (absent branch only, normal mode)
+ * @param {boolean} [params.yolo]      — YOLO mode auto-selects option (d) Skip on absent
+ * @param {"a"|"b"|"c"|"d"} [params.choice] — pre-captured user choice (absent branch only, normal mode)
  *
  * @returns {PostFlipResult} one of:
  *   { kind: "skipped",        reason: string }
  *   { kind: "present_valid",  runners: Array<{name,command,tier,...}> }
  *   { kind: "present_invalid", errors: string[] }
- *   { kind: "absent",         options: typeof POST_FLIP_ABSENT_OPTIONS, choice?: "a"|"b"|"c", yoloAutoSkipped?: boolean }
+ *   { kind: "absent",         options: typeof POST_FLIP_ABSENT_OPTIONS, choice?: "a"|"b"|"c"|"d", yoloAutoSkipped?: boolean }
  */
 export function runPostFlipChecks({ projectRoot, mode, changed, yolo = false, choice }) {
   // AC7: disable mode skips Step 4 entirely — no prompt, no validation.
@@ -107,13 +114,13 @@ export function runPostFlipChecks({ projectRoot, mode, changed, yolo = false, ch
   const manifestPath = join(projectRoot, MANIFEST_RELATIVE_PATH);
 
   if (!fileExists(manifestPath)) {
-    // AC3: absent — return the 3-option prompt payload.
+    // AC3: absent — return the 4-option prompt payload.
     if (yolo) {
-      // YOLO mode auto-selects option (c) Skip with a traceable warning.
+      // YOLO mode auto-selects option (d) Skip with a traceable warning.
       return {
         kind: "absent",
         options: POST_FLIP_ABSENT_OPTIONS,
-        choice: "c",
+        choice: "d",
         yoloAutoSkipped: true,
       };
     }
