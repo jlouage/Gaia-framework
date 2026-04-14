@@ -237,6 +237,6 @@ function stripQuotes(s) {
  * @property {Array<{name:string, tier?:number|string, command?:string}>} [runners]
  * @property {string[]} [errors]
  * @property {ReadonlyArray<{key:string,label:string,autoInvoke:boolean}>} [options]
- * @property {"a"|"b"|"c"} [choice]
+ * @property {"a"|"b"|"c"|"d"} [choice]
  * @property {boolean}  [yoloAutoSkipped]
  */
