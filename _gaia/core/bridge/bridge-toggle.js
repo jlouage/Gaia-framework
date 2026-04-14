@@ -149,7 +149,7 @@ export function toggleBridge(yamlPath, mode) {
  *   { kind: "skipped",         reason: string }
  *   { kind: "present_valid",   runners: Array<{name,tier?}> }
  *   { kind: "present_invalid", errors: string[] }
- *   { kind: "absent",          choice: "a"|"b"|"c", options?, yoloAutoSkipped? }
+ *   { kind: "absent",          choice: "a"|"b"|"c"|"d", options?, yoloAutoSkipped? }
  * @returns {string} formatted summary
  */
 export function buildSummary(result) {
@@ -253,7 +253,7 @@ function renderPostFlipSection(postFlipResult) {
       if (postFlipResult.yoloAutoSkipped) {
         out.push("");
         out.push(
-          "YOLO mode auto-selected option (c) **Skip** — bridge is enabled but the manifest is missing."
+          "YOLO mode auto-selected option (d) **Skip** — bridge is enabled but the manifest is missing."
         );
       }
 
@@ -273,23 +273,31 @@ function renderPostFlipSection(postFlipResult) {
             break;
           case "c":
             out.push(
-              "- [c] Skip — bridge enabled without manifest. Layer 1 will fail-fast until the file is created."
+              "- [c] Create `docs/test-artifacts/test-environment.yaml` manually using the example as a reference, then run `/gaia-build-configs`."
+            );
+            break;
+          case "d":
+            out.push(
+              "- [d] Skip — bridge enabled without manifest. Layer 1 will fail-fast until the file is created."
             );
             break;
         }
       } else {
-        // No choice captured — emit the 3-option prompt body so the engine
+        // No choice captured — emit the 4-option prompt body so the engine
         // can render it verbatim via its template-output / ask machinery.
         out.push("");
         out.push("**Options:**");
         out.push(
-          "- [a] Run `/gaia-brownfield` to auto-generate test-environment.yaml (next-step suggestion — not auto-invoked)"
+          "- [a] Run `/gaia-brownfield` — auto-generates test-environment.yaml from your detected stack"
         );
         out.push(
           "- [b] Copy `docs/test-artifacts/test-environment.yaml.example` to `docs/test-artifacts/test-environment.yaml` and customize"
         );
         out.push(
-          "- [c] Skip — bridge is enabled but will fail-fast at Layer 1 with a clear error message until the manifest is created"
+          "- [c] Create `docs/test-artifacts/test-environment.yaml` manually using the example as a reference"
+        );
+        out.push(
+          "- [d] Skip — bridge is enabled but will fail-fast at Layer 1 with a clear error message until the manifest is created"
         );
       }
       break;
