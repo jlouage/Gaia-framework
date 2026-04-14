@@ -9,7 +9,7 @@
  * FR-197 evidence schema.
  *
  * E25-S5 refactor: all stack-specific parsing logic (TAP, Jest JSON, Mocha,
- * BATS) has been moved to per-stack adapters (src/bridge/adapters/).
+ * BATS) has been moved to per-stack adapters (_gaia/core/bridge/adapters/).
  * Layer 3 now delegates to adapter.parseOutput() for format-specific parsing
  * while retaining the evidence file generation and verdict derivation logic
  * which are stack-agnostic.

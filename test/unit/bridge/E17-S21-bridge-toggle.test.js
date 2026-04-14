@@ -17,7 +17,11 @@ import { join } from "path";
 import { mkdtempSync, writeFileSync, readFileSync, rmSync, mkdirSync } from "fs";
 import { tmpdir } from "os";
 
-import { readBridgeState, toggleBridge, buildSummary } from "../../../src/bridge/bridge-toggle.js";
+import {
+  readBridgeState,
+  toggleBridge,
+  buildSummary,
+} from "../../../_gaia/core/bridge/bridge-toggle.js";
 
 // ─── Fixtures ────────────────────────────────────────────────────────────────
 

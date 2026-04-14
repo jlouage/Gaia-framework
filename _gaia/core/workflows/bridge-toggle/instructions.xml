@@ -37,7 +37,7 @@
 <step n="4" title="Post-Flip Checks (Enable Only)">
   <action if="mode == disable">Skip — disable mode does not perform post-flip checks (AC7). Set post_flip_result = {kind: "skipped", reason: "disable-mode"} and proceed to Step 5.</action>
   <action if="mode == enable and not changed">Skip — no state transition occurred (bridge was already enabled). Set post_flip_result = {kind: "skipped", reason: "idempotent"} and proceed to Step 5.</action>
-  <action if="mode == enable and changed">Invoke runPostFlipChecks from {project-path}/src/bridge/bridge-post-flip-checks.js with {projectRoot, mode: "enable", changed: true, yolo: {yolo_mode}}. This module performs the filesystem stat of docs/test-artifacts/test-environment.yaml (resolved relative to {project-root}, NOT {project-path} — per AC) and calls into the existing E17-S7 validator at Gaia-framework/_gaia/core/validators/test-environment-validator.js. Capture its return value as post_flip_result.</action>
+  <action if="mode == enable and changed">Invoke runPostFlipChecks from {project-path}/_gaia/core/bridge/bridge-post-flip-checks.js with {projectRoot, mode: "enable", changed: true, yolo: {yolo_mode}}. This module performs the filesystem stat of docs/test-artifacts/test-environment.yaml (resolved relative to {project-root}, NOT {project-path} — per AC) and calls into the existing E17-S7 validator at Gaia-framework/_gaia/core/validators/test-environment-validator.js. Capture its return value as post_flip_result.</action>
   <action if="post_flip_result.kind == 'present_valid'">Collect post_flip_result.runners[] (name + tier) for inclusion in Step 5's summary. No prompt is shown. Proceed to Step 5.</action>
   <action if="post_flip_result.kind == 'present_invalid'">Collect post_flip_result.errors[] as warnings for inclusion in Step 5's summary. Per AC5, do NOT roll back the bridge_enabled flag flip — the user can manually repair the manifest and re-run /gaia-build-configs. Proceed to Step 5.</action>
   <action if="post_flip_result.kind == 'absent' and not yolo_mode">Render the 3-option prompt — options payload is available as post_flip_result.options (POST_FLIP_ABSENT_OPTIONS from bridge-post-flip-checks.js). Path A (ADR-028 §10.20.12.3): none of the options auto-invoke any sub-workflow. Present the three options exactly as written in the options list and ask the user to select one.</action>
@@ -56,7 +56,7 @@
 </step>
 
 <step n="5" title="Post-Toggle Summary">
-  <action>Invoke buildSummary from {project-path}/src/bridge/bridge-toggle.js with {previousState, newState, mode, changed, postFlipResult} — the postFlipResult field is the structured object captured by Step 4 (or {kind: "skipped", ...} on disable / idempotent paths).</action>
+  <action>Invoke buildSummary from {project-path}/_gaia/core/bridge/bridge-toggle.js with {previousState, newState, mode, changed, postFlipResult} — the postFlipResult field is the structured object captured by Step 4 (or {kind: "skipped", ...} on disable / idempotent paths).</action>
   <action>Display the returned summary. It always includes: previous state, new state, mode, and whether a write occurred.</action>
   <action if="mode == enable and post_flip_result.kind == 'present_valid'">Summary includes the detected runners table (name + tier) produced by Step 4.</action>
   <action if="mode == enable and post_flip_result.kind == 'present_invalid'">Summary includes the schema validation errors as warnings. The bridge_enabled flag is NOT rolled back (AC5).</action>

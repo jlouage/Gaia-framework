@@ -20,7 +20,7 @@ import { PROJECT_ROOT } from "../../helpers/project-root.js";
 
 // ─── Path constants ───────────────────────────────────────────────────────────
 
-const BRIDGE_DIR = join(PROJECT_ROOT, "src", "bridge");
+const BRIDGE_DIR = join(PROJECT_ROOT, "_gaia", "core", "bridge");
 const ADAPTERS_DIR = join(BRIDGE_DIR, "adapters");
 const REGISTRY_PATH = join(ADAPTERS_DIR, "index.js");
 const JS_ADAPTER_PATH = join(ADAPTERS_DIR, "js-adapter.js");
@@ -31,7 +31,7 @@ const LAYER_3_PATH = join(BRIDGE_DIR, "layer-3-result-parsing.js");
 // ─── AC1: Directory and file structure ───────────────────────────────────────
 
 describe("AC1: adapters/ directory structure", () => {
-  it("src/bridge/adapters/ directory exists", () => {
+  it("_gaia/core/bridge/adapters/ directory exists", () => {
     expect(existsSync(ADAPTERS_DIR)).toBe(true);
   });
 
@@ -239,7 +239,9 @@ describe("AC5: E17 regression — byte-identical output after refactor", () => {
     // Import bridge orchestrator and feed pre-captured TAP output through the
     // refactored parsing path to verify byte-identical non-timing output.
     const { runBridge } = await import(
-      join(PROJECT_ROOT, "src", "bridge", "bridge-orchestrator.js") + "?bust=" + Date.now()
+      join(PROJECT_ROOT, "_gaia", "core", "bridge", "bridge-orchestrator.js") +
+        "?bust=" +
+        Date.now()
     );
     const VITEST_FIXTURE = join(PROJECT_ROOT, "test", "fixtures", "bridge", "vitest-project");
     const capturedOutput = readFileSync(join(VITEST_FIXTURE, "captured-output.txt"), "utf8");
@@ -262,7 +264,9 @@ describe("AC5: E17 regression — byte-identical output after refactor", () => {
 
   it("post-refactor BATS evidence matches baseline (non-timing fields byte-identical)", async () => {
     const { runBridge } = await import(
-      join(PROJECT_ROOT, "src", "bridge", "bridge-orchestrator.js") + "?bust=" + Date.now()
+      join(PROJECT_ROOT, "_gaia", "core", "bridge", "bridge-orchestrator.js") +
+        "?bust=" +
+        Date.now()
     );
     const BATS_FIXTURE = join(PROJECT_ROOT, "test", "fixtures", "bridge", "bats-project");
     const capturedOutput = readFileSync(join(BATS_FIXTURE, "captured-output.txt"), "utf8");

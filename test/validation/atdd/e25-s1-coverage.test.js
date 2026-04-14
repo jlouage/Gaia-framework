@@ -21,7 +21,14 @@ import { join } from "path";
 import { tmpdir } from "os";
 import { PROJECT_ROOT } from "../../helpers/project-root.js";
 
-const PYTHON_ADAPTER_PATH = join(PROJECT_ROOT, "src", "bridge", "adapters", "python-adapter.js");
+const PYTHON_ADAPTER_PATH = join(
+  PROJECT_ROOT,
+  "_gaia",
+  "core",
+  "bridge",
+  "adapters",
+  "python-adapter.js"
+);
 
 let adapter;
 beforeAll(async () => {

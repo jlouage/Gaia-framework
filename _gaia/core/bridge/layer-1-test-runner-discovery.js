@@ -7,7 +7,7 @@
  *
  * E25-S5 refactor: all stack-specific logic (runner constants, detection
  * patterns, package.json scanning) has been moved to per-stack adapters
- * (src/bridge/adapters/). Layer 1 now delegates to the adapter passed in
+ * (_gaia/core/bridge/adapters/). Layer 1 now delegates to the adapter passed in
  * from Layer 0.
  *
  * Inputs (read-only):

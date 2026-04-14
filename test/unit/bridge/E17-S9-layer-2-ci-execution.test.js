@@ -19,7 +19,7 @@ import { dirname, join } from "path";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const LAYER2_CI_REL = "../../../src/bridge/layer-2-ci-execution.js";
+const LAYER2_CI_REL = "../../../_gaia/core/bridge/layer-2-ci-execution.js";
 const LAYER2_CI_PATH = join(__dirname, LAYER2_CI_REL);
 
 // ─── Fixture helpers ──────────────────────────────────────────────────────
@@ -59,7 +59,7 @@ function makeDeps({ ghAvailable = true, ghAuthenticated = true, script = [] } = 
 // ─── Module presence ──────────────────────────────────────────────────────
 
 describe("E17-S9: module presence", () => {
-  it("layer-2-ci-execution module exists at src/bridge/", () => {
+  it("layer-2-ci-execution module exists at _gaia/core/bridge/", () => {
     expect(existsSync(LAYER2_CI_PATH)).toBe(true);
   });
 

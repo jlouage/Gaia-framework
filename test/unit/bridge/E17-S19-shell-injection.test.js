@@ -14,7 +14,7 @@
 
 import { describe, it, expect, vi } from "vitest";
 
-const LAYER2_CI_REL = "../../../src/bridge/layer-2-ci-execution.js";
+const LAYER2_CI_REL = "../../../_gaia/core/bridge/layer-2-ci-execution.js";
 
 // ─── Fixture helpers ──────────────────────────────────────────────────────
 

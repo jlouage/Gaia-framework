@@ -18,7 +18,7 @@ import { join } from "path";
 import { tmpdir } from "os";
 import { PROJECT_ROOT } from "../../helpers/project-root.js";
 
-const BRIDGE_DIR = join(PROJECT_ROOT, "src", "bridge");
+const BRIDGE_DIR = join(PROJECT_ROOT, "_gaia", "core", "bridge");
 const ADAPTERS_DIR = join(BRIDGE_DIR, "adapters");
 const REGISTRY_PATH = join(ADAPTERS_DIR, "index.js");
 const JAVA_ADAPTER_PATH = join(ADAPTERS_DIR, "java-adapter.js");

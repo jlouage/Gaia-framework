@@ -19,10 +19,10 @@ import { dirname, join } from "path";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const GUARD_REL = "../../../src/bridge/bridge-scope-guard.js";
+const GUARD_REL = "../../../_gaia/core/bridge/bridge-scope-guard.js";
 const GUARD_PATH = join(__dirname, GUARD_REL);
-const LAYER2_LOCAL_REL = "../../../src/bridge/layer-2-local-execution.js";
-const LAYER2_CI_REL = "../../../src/bridge/layer-2-ci-execution.js";
+const LAYER2_LOCAL_REL = "../../../_gaia/core/bridge/layer-2-local-execution.js";
+const LAYER2_CI_REL = "../../../_gaia/core/bridge/layer-2-ci-execution.js";
 
 // ─── AC1 — Documentation (scope constraint stated) ─────────────────────────
 
@@ -40,7 +40,7 @@ describe("AC1: Bridge scope constraint is documented", () => {
 // ─── AC2 — Layer 2 local command whitelist ─────────────────────────────────
 
 describe("AC2: Layer 2 local only invokes whitelisted commands", () => {
-  it("bridge-scope-guard module exists at src/bridge/", () => {
+  it("bridge-scope-guard module exists at _gaia/core/bridge/", () => {
     expect(existsSync(GUARD_PATH)).toBe(true);
   });
 

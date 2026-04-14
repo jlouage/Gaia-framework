@@ -27,8 +27,8 @@ const POSSIBLE_LAYER3_FILES = [
   join(PROJECT_ROOT, "lib", "bridge", "layer3.js"),
   join(PROJECT_ROOT, "lib", "bridge", "result-parser.js"),
   join(PROJECT_ROOT, "bin", "bridge", "layer3.js"),
-  join(PROJECT_ROOT, "src", "bridge", "layer3.js"),
-  join(PROJECT_ROOT, "src", "bridge", "layer-3-result-parsing.js"),
+  join(PROJECT_ROOT, "_gaia", "core", "bridge", "layer3.js"),
+  join(PROJECT_ROOT, "_gaia", "core", "bridge", "layer-3-result-parsing.js"),
 ];
 
 // Prefer the product source at Gaia-framework/_gaia/... so the test runs in

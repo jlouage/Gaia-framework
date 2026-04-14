@@ -20,7 +20,7 @@ import {
   resolveGateTierMapping,
   getTiersForGate,
   formatNudgeSuggestion,
-} from "../../../src/bridge/review-gate-tier-mapping.js";
+} from "../../../_gaia/core/bridge/review-gate-tier-mapping.js";
 
 describe("E17-S12 — Review Gate-to-Tier Mapping Table", () => {
   describe("DEFAULT_GATE_TIER_MAPPING (AC1)", () => {

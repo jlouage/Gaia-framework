@@ -27,7 +27,7 @@
 import { readFileSync, statSync } from "fs";
 import { join } from "path";
 
-import { validateTestEnvironment } from "../../_gaia/core/validators/test-environment-validator.js";
+import { validateTestEnvironment } from "../validators/test-environment-validator.js";
 
 // Canonical manifest location — per AC, resolved relative to {project-root},
 // NOT {project-path}. Test artifacts live at the framework root.

@@ -18,14 +18,14 @@ import { dirname, join } from "path";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Canonical location for Layer 2 — src/bridge/ matches Layer 0 and Layer 1.
-const LAYER2_REL = "../../../src/bridge/layer-2-local-execution.js";
+// Canonical location for Layer 2 — _gaia/core/bridge/ matches Layer 0 and Layer 1.
+const LAYER2_REL = "../../../_gaia/core/bridge/layer-2-local-execution.js";
 const LAYER2_PATH = join(__dirname, LAYER2_REL);
 
 // ─── AC1 — Runner Invocation (TEB-26) ──────────────────────────────────────
 
 describe("AC1 (TEB-26): Runner invocation via standard test command", () => {
-  it("layer-2-local-execution module exists at src/bridge/", () => {
+  it("layer-2-local-execution module exists at _gaia/core/bridge/", () => {
     expect(existsSync(LAYER2_PATH)).toBe(true);
   });
 

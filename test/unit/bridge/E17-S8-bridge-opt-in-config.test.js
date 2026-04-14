@@ -18,7 +18,7 @@ import { readFileSync, mkdtempSync, writeFileSync, rmSync } from "fs";
 import { tmpdir } from "os";
 import YAML from "yaml";
 
-import { checkEnvironmentReadiness } from "../../../src/bridge/layer-0-environment-check.js";
+import { checkEnvironmentReadiness } from "../../../_gaia/core/bridge/layer-0-environment-check.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const GLOBAL_YAML_PATH = join(__dirname, "..", "..", "..", "_gaia", "_config", "global.yaml");

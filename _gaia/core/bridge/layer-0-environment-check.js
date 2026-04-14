@@ -7,7 +7,7 @@
  * On any failure, halts and emits a remediation message.
  *
  * E25-S5 refactor: all stack-specific logic has been moved to per-stack
- * adapters (src/bridge/adapters/). Layer 0 now delegates to the adapter
+ * adapters (_gaia/core/bridge/adapters/). Layer 0 now delegates to the adapter
  * resolved by the registry's getAdapter().
  *
  * Bridge scope: orchestrate only — this module does NOT modify project files
