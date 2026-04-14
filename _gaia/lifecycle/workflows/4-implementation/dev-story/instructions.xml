@@ -12,7 +12,7 @@
   Test Execution Bridge — Layer 3 integration (E17-S10, FR-194, FR-197, FR-198, NFR-034, ADR-028)
 
   After the GREEN phase's test run, when test_execution_bridge.bridge_enabled is true in global.yaml, the
-  workflow invokes Bridge Layer 3 (src/bridge/layer-3-result-parsing.js) on the captured Layer 2 output
+  workflow invokes Bridge Layer 3 (_gaia/core/bridge/layer-3-result-parsing.js) on the captured Layer 2 output
   { stdout, stderr, exit_code } to parse results and generate the evidence file. Layer 3 supports Vitest
   TAP, Jest JSON, and BATS TAP runner outputs; unknown formats fall back to a minimal evidence record with
   parse_error: true and the first 2KB captured as raw_output_snippet.

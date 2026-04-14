@@ -25,7 +25,7 @@ import { dirname, join } from "path";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const LAYER2_REL = "../../../src/bridge/layer-2-local-execution.js";
+const LAYER2_REL = "../../../_gaia/core/bridge/layer-2-local-execution.js";
 
 // ─── Scope guard: all forbidden operators ─────────────────────────────────
 

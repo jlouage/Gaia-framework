@@ -13,7 +13,7 @@ import { join } from "path";
 import { mkdtempSync, writeFileSync, rmSync } from "fs";
 import { tmpdir } from "os";
 
-import { checkEnvironmentReadiness } from "../../../src/bridge/layer-0-environment-check.js";
+import { checkEnvironmentReadiness } from "../../../_gaia/core/bridge/layer-0-environment-check.js";
 
 // ─── Fixtures ────────────────────────────────────────────────────────────────
 

@@ -28,8 +28,8 @@ import { tmpdir } from "os";
 import {
   runPostFlipChecks,
   POST_FLIP_ABSENT_OPTIONS,
-} from "../../../src/bridge/bridge-post-flip-checks.js";
-import { buildSummary } from "../../../src/bridge/bridge-toggle.js";
+} from "../../../_gaia/core/bridge/bridge-post-flip-checks.js";
+import { buildSummary } from "../../../_gaia/core/bridge/bridge-toggle.js";
 
 // ─── Fixtures ────────────────────────────────────────────────────────────────
 

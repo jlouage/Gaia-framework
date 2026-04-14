@@ -48,7 +48,7 @@ const SIGKILL_GRACE_MS = 2000;
 
 // ─── Scope guard (FR-203) — shared module ─────────────────────────────────
 //
-// FR-203 scope enforcement lives in src/bridge/bridge-scope-guard.js so
+// FR-203 scope enforcement lives in _gaia/core/bridge/bridge-scope-guard.js so
 // Layer 2 local and Layer 2 CI both route through the same policy. This
 // module imports the guards and applies them before any subprocess is
 // spawned — a compromised command string can never reach `spawn`.

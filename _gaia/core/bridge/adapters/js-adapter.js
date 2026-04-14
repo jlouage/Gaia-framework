@@ -199,9 +199,8 @@ function readTextSafe(filePath) {
 // ─── Minimal YAML parser (scoped to the manifest schema) ───────────────────
 //
 // The repo already ships a richer parser in
-// _gaia/core/validators/test-environment-validator.js, but Layer 1 lives in
-// src/bridge/ and must not reach into _gaia/. To avoid a cross-tree import we
-// inline a small schema-aware parser that handles exactly what Layer 1 needs:
+// _gaia/core/validators/test-environment-validator.js. We inline a small
+// schema-aware parser that handles exactly what Layer 1 needs:
 // top-level scalars, a list of runner maps, and an optional `tiers` sub-map.
 
 function parseScalar(raw) {

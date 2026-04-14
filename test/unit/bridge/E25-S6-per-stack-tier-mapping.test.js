@@ -23,16 +23,16 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 
-import pythonAdapter from "../../../src/bridge/adapters/python-adapter.js";
-import javaAdapter from "../../../src/bridge/adapters/java-adapter.js";
-import goAdapter from "../../../src/bridge/adapters/go-adapter.js";
-import flutterAdapter from "../../../src/bridge/adapters/flutter-adapter.js";
-import { resolveAllTierMappings } from "../../../src/bridge/adapters/index.js";
+import pythonAdapter from "../../../_gaia/core/bridge/adapters/python-adapter.js";
+import javaAdapter from "../../../_gaia/core/bridge/adapters/java-adapter.js";
+import goAdapter from "../../../_gaia/core/bridge/adapters/go-adapter.js";
+import flutterAdapter from "../../../_gaia/core/bridge/adapters/flutter-adapter.js";
+import { resolveAllTierMappings } from "../../../_gaia/core/bridge/adapters/index.js";
 import {
   DEFAULT_GATE_TIER_MAPPING,
   resolveGateTierMapping,
   resolvePerStackTierMapping,
-} from "../../../src/bridge/review-gate-tier-mapping.js";
+} from "../../../_gaia/core/bridge/review-gate-tier-mapping.js";
 import { validateTestEnvironment } from "../../../_gaia/core/validators/test-environment-validator.js";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────

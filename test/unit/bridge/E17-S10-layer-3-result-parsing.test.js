@@ -20,11 +20,11 @@ import { dirname, join } from "path";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const LAYER3_REL = "../../../src/bridge/layer-3-result-parsing.js";
+const LAYER3_REL = "../../../_gaia/core/bridge/layer-3-result-parsing.js";
 const LAYER3_PATH = join(__dirname, LAYER3_REL);
 
 // E25-S5: Layer 3 now delegates parsing to the adapter. Import jsAdapter for tests.
-import jsAdapter from "../../../src/bridge/adapters/js-adapter.js";
+import jsAdapter from "../../../_gaia/core/bridge/adapters/js-adapter.js";
 
 // Wrapper: Layer 3 parseResults now requires an adapter as second argument.
 // Wrap calls so existing tests pass the JS adapter by default.
@@ -98,7 +98,7 @@ afterEach(() => {
 // ─── Module existence ──────────────────────────────────────────────────────
 
 describe("Layer 3 module exists", () => {
-  it("module file exists at src/bridge/layer-3-result-parsing.js", () => {
+  it("module file exists at _gaia/core/bridge/layer-3-result-parsing.js", () => {
     expect(existsSync(LAYER3_PATH)).toBe(true);
   });
 

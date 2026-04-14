@@ -13,8 +13,8 @@ import { join } from "path";
 import { mkdtempSync, writeFileSync, rmSync } from "fs";
 import { tmpdir } from "os";
 
-import { discoverRunners } from "../../../src/bridge/layer-1-test-runner-discovery.js";
-import jsAdapter from "../../../src/bridge/adapters/js-adapter.js";
+import { discoverRunners } from "../../../_gaia/core/bridge/layer-1-test-runner-discovery.js";
+import jsAdapter from "../../../_gaia/core/bridge/adapters/js-adapter.js";
 
 let tmpRoot;
 

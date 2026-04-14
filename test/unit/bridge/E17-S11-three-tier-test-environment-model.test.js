@@ -23,8 +23,8 @@ import { existsSync, mkdtempSync, readFileSync, rmSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 
-const SELECT_TIER_MOD = "../../../src/bridge/layer-2-tier-selection.js";
-const LAYER3_MOD = "../../../src/bridge/layer-3-result-parsing.js";
+const SELECT_TIER_MOD = "../../../_gaia/core/bridge/layer-2-tier-selection.js";
+const LAYER3_MOD = "../../../_gaia/core/bridge/layer-3-result-parsing.js";
 
 let tempDir;
 

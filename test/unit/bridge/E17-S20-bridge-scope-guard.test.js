@@ -26,7 +26,7 @@ import {
   checkRunnerCompatibility,
   writeCompatibilityEvidence,
   SUPPORTED_RUNNERS,
-} from "../../../src/bridge/runner-compatibility-guard.js";
+} from "../../../_gaia/core/bridge/runner-compatibility-guard.js";
 
 // ─── Fixture helpers ───────────────────────────────────────────────────────
 
@@ -73,7 +73,7 @@ describe("AC1: SUPPORTED_RUNNERS constant", () => {
   });
 
   it("layer-1-test-runner-discovery.js re-exports SUPPORTED_RUNNERS", async () => {
-    const layer1 = await import("../../../src/bridge/layer-1-test-runner-discovery.js");
+    const layer1 = await import("../../../_gaia/core/bridge/layer-1-test-runner-discovery.js");
     expect(layer1.SUPPORTED_RUNNERS).toEqual(["vitest", "jest", "mocha", "bats"]);
   });
 });

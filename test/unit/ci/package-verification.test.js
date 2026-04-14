@@ -17,6 +17,7 @@ describe("E4-S3: Package Content Verification", () => {
   const TARGET_WHITELIST = [
     "bin/",
     "lib/",
+    "src/",
     "gaia-install.sh",
     "_gaia/",
     ".claude/",

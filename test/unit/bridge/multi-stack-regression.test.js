@@ -19,12 +19,12 @@ import { readFileSync, existsSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 
-import jsAdapter from "../../../src/bridge/adapters/js-adapter.js";
-import pythonAdapter from "../../../src/bridge/adapters/python-adapter.js";
-import javaAdapter from "../../../src/bridge/adapters/java-adapter.js";
-import goAdapter from "../../../src/bridge/adapters/go-adapter.js";
-import flutterAdapter from "../../../src/bridge/adapters/flutter-adapter.js";
-import { validateAdapter } from "../../../src/bridge/adapters/index.js";
+import jsAdapter from "../../../_gaia/core/bridge/adapters/js-adapter.js";
+import pythonAdapter from "../../../_gaia/core/bridge/adapters/python-adapter.js";
+import javaAdapter from "../../../_gaia/core/bridge/adapters/java-adapter.js";
+import goAdapter from "../../../_gaia/core/bridge/adapters/go-adapter.js";
+import flutterAdapter from "../../../_gaia/core/bridge/adapters/flutter-adapter.js";
+import { validateAdapter } from "../../../_gaia/core/bridge/adapters/index.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const FIXTURES_ROOT = join(__dirname, "..", "..", "fixtures", "bridge");

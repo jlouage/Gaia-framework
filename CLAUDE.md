@@ -155,7 +155,7 @@ If any review fails, the story returns to `in-progress`. The Review Gate table i
 
 ### Review Gate-to-Tier Mapping (E17-S12, FR-195)
 
-When the Test Execution Bridge (ADR-028) is enabled, each review gate is linked to a set of test tiers (from the E17-S11 three-tier model) whose evidence is required to produce a PASSED verdict. The canonical mapping lives in `Gaia-framework/src/bridge/review-gate-tier-mapping.js` (`DEFAULT_GATE_TIER_MAPPING`) and can be overridden per-project via the `tiers.gate_mapping` block in `test-environment.yaml`.
+When the Test Execution Bridge (ADR-028) is enabled, each review gate is linked to a set of test tiers (from the E17-S11 three-tier model) whose evidence is required to produce a PASSED verdict. The canonical mapping lives in `Gaia-framework/_gaia/core/bridge/review-gate-tier-mapping.js` (`DEFAULT_GATE_TIER_MAPPING`) and can be overridden per-project via the `tiers.gate_mapping` block in `test-environment.yaml`.
 
 | Review Gate | Required Tiers |
 |---|---|
@@ -189,7 +189,7 @@ The Test Execution Bridge (ADR-028, architecture §10.20) orchestrates test runs
 
 **Supported stacks (built-in adapters, architecture §10.20.11):**
 
-The bridge ships with five static-import stack adapters, selected automatically by `getAdapter()` in `Gaia-framework/src/bridge/adapters/index.js`. Priority order is deterministic: `javascript → python → java → go → flutter`.
+The bridge ships with five static-import stack adapters, selected automatically by `getAdapter()` in `Gaia-framework/_gaia/core/bridge/adapters/index.js`. Priority order is deterministic: `javascript → python → java → go → flutter`.
 
 | Stack | Representative runner command | Detection pattern |
 |---|---|---|
@@ -218,7 +218,7 @@ Adding a new stack adapter is documented in `docs/architecture/bridge-adapter-co
 - Trigger any GitHub Actions workflow other than the `ci_workflow` declared in `test-environment.yaml`
 
 **Enforcement points:**
-- `Gaia-framework/src/bridge/bridge-scope-guard.js` — shared scope guard module exporting `assertInScope`, `assertCommandAllowed`, `assertCiWorkflowAllowed`
+- `Gaia-framework/_gaia/core/bridge/bridge-scope-guard.js` — shared scope guard module exporting `assertInScope`, `assertCommandAllowed`, `assertCiWorkflowAllowed`
 - Layer 2 local execution (`layer-2-local-execution.js`) calls all three guards before `spawn`
 - Layer 2 CI execution (`layer-2-ci-execution.js`) calls the shell-operator guard on the runner command and the CI workflow allowlist guard before `gh workflow run`
 

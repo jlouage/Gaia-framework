@@ -66,7 +66,7 @@ describe("E25-S8 registry performance gate (NFR-047)", () => {
     for (let i = 0; i < ITERATIONS; i++) {
       // Cache-bust via a query-string import so each iteration re-evaluates
       // the module graph instead of returning the cached resolver.
-      const url = `../../../src/bridge/adapters/index.js?p95=${i}-${Math.random()}`;
+      const url = `../../../_gaia/core/bridge/adapters/index.js?p95=${i}-${Math.random()}`;
       const { ms } = await measureMsAsync(() => import(url));
       samples.push(ms);
     }
@@ -78,7 +78,7 @@ describe("E25-S8 registry performance gate (NFR-047)", () => {
   });
 
   it("getAdapter single-stack selection P95 < 10 ms over 100 iterations", async () => {
-    const { getAdapter } = await import("../../../src/bridge/adapters/index.js");
+    const { getAdapter } = await import("../../../_gaia/core/bridge/adapters/index.js");
     const projectPath = mkSingleStack();
     try {
       const samples = [];
@@ -99,7 +99,7 @@ describe("E25-S8 registry performance gate (NFR-047)", () => {
   });
 
   it("TEB-MS-S02: getAdapter monorepo selection P95 < 25 ms over 100 iterations", async () => {
-    const { getAdapter } = await import("../../../src/bridge/adapters/index.js");
+    const { getAdapter } = await import("../../../_gaia/core/bridge/adapters/index.js");
     const projectPath = mkMonorepo();
     try {
       const samples = [];
