@@ -3,7 +3,7 @@ name: ground-truth-management
 version: '1.0'
 applicable_agents: [validator]
 description: 'Ground truth operations: entry structure, refresh strategies, conflict resolution, archival, token budget management, and brownfield extraction.'
-sections: [entry-structure, incremental-refresh, full-refresh, conflict-resolution, archival, token-budget, brownfield-extraction]
+sections: [entry-structure, incremental-refresh, full-refresh, dual-refresh, conflict-resolution, archival, token-budget, brownfield-extraction]
 ---
 
 <!-- SECTION: entry-structure -->
@@ -101,6 +101,40 @@ The scan produces a complete fact inventory structured by category. Each fact fo
 1. For each scanned fact: search existing entries for a matching category + statement
 2. Apply incremental-refresh comparison logic (match / update / new / stale)
 3. Entries in `ground-truth.md` with no corresponding scanned fact → mark as stale candidates
+<!-- END SECTION -->
+
+<!-- SECTION: dual-refresh -->
+## Dual Refresh (Runtime Sidecar + Committed Seed)
+
+When the framework and the project source are in separate directories (`project_path` differs from `.`), each Tier 1 agent has **two** `ground-truth.md` files that must stay in sync:
+
+| Location | Path (resolved) | Role | Content |
+|----------|-----------------|------|---------|
+| Runtime sidecar | `{project-root}/_memory/{agent}-sidecar/ground-truth.md` | Working copy used by the agent at runtime | Full runtime entries — `entry_count` and `estimated_tokens` reflect reality |
+| Committed seed | `{project-path}/_memory/{agent}-sidecar/ground-truth.md` | Shipping template committed to the framework repo and published to npm | **Empty template** — `entry_count: 0`, `estimated_tokens: 0` (per E28-S31 invariant) |
+
+### Why both must refresh together
+
+Historically, only the runtime sidecar was refreshed; the committed seed was updated manually (see E28-S3 finding #4). This invited drift between the two files: the runtime copy gained entries while the committed template stayed frozen at an older timestamp, and operators had no reliable signal that the seed was stale. `val-refresh-ground-truth` now writes both by default so the two locations cannot drift independently.
+
+### Refresh rules
+
+1. **Runtime sidecar (Step 8)** — written normally with full entry inventory, updated `last_refresh`, live `entry_count` and `estimated_tokens`.
+2. **Committed seed (Step 8b)** — only the `last_refresh` frontmatter field is updated; all other frontmatter (`agent`, `tier`, `token_budget`) and the body (including the `Invariants` section) are preserved verbatim.
+3. **Empty-seed invariant is hard-enforced.** After writing the committed seed, the workflow re-parses the frontmatter and HALTS if `entry_count` or `estimated_tokens` is anything other than `0`. See memory-management skill section `empty-seed-invariant` for the full rule.
+4. **Fail-loud on missing files.** If either location is missing when the workflow runs, the workflow halts with a clear error. There is no silent create-on-demand for the committed seed — that file is part of the framework's shipping template and must be added intentionally.
+5. **Single-location projects.** When `project_path: "."` (runtime and committed paths resolve to the same file), Step 8b is a no-op — Step 8 already wrote the only copy.
+
+### Agent mapping
+
+All four Tier 1 agents follow the same dual-refresh rule with their respective sidecar directories:
+
+- `val` → `validator-sidecar/`
+- `theo` → `architect-sidecar/`
+- `derek` → `pm-sidecar/`
+- `nate` → `sm-sidecar/`
+
+When `--agent all` is used, dual-refresh runs once per agent inside the per-agent refresh loop, and the combined summary reports both runtime and committed-seed results for each agent.
 <!-- END SECTION -->
 
 <!-- SECTION: conflict-resolution -->

@@ -5,6 +5,7 @@
   <mandate>Load ground-truth-management skill sections JIT — never pre-load</mandate>
   <mandate>Show section-by-section progress during scanning</mandate>
   <mandate>Behavior must be identical whether called standalone or as sub-step from another workflow</mandate>
+  <mandate>Dual-refresh: when {project-path} differs from {project-root}, BOTH the runtime sidecar at {project-root}/_memory/ AND the committed seed at {project-path}/_memory/ MUST be refreshed. The committed seed MUST preserve the empty-seed invariant (entry_count: 0, estimated_tokens: 0) per E28-S31. Fail-loud if either file is missing.</mandate>
 </critical>
 
 <step n="1" title="Resolve Agent Target">
@@ -164,6 +165,24 @@
   <action>Organize entries by category appropriate to the target agent</action>
   <action>Include verified counts, locations, and structural patterns for each category</action>
   <action>Preserve REMOVED entries with their detection dates — do not purge</action>
+</step>
+
+<step n="8b" title="Dual-Write Committed Tier 1 Seed (Empty-Seed Invariant)">
+  <action>Load ground-truth-management skill section: dual-refresh (JIT). Cross-reference memory-management skill section: empty-seed-invariant for the authoritative invariant definition (established by E28-S31).</action>
+  <action>Resolve the committed seed path for the target agent under {project-path}/_memory/:
+    - val: {project-path}/_memory/validator-sidecar/ground-truth.md
+    - theo: {project-path}/_memory/architect-sidecar/ground-truth.md
+    - derek: {project-path}/_memory/pm-sidecar/ground-truth.md
+    - nate: {project-path}/_memory/sm-sidecar/ground-truth.md
+    If {project-path} resolves to {project-root} (project_path: "."), the committed seed path equals the runtime sidecar path. In that case SKIP dual-write — there is only one file and Step 8 already handled it.</action>
+  <action if="committed seed path == runtime sidecar path">Skip this step — single-location project layout, no mirror to refresh.</action>
+  <action if="committed seed file missing">HALT with error: "Committed Tier 1 seed missing at {committed_seed_path}. Fail-loud per E28-S30 AC: both ground-truth.md locations must exist before refresh. Create the empty template first."</action>
+  <action>Read the committed seed's current frontmatter. Preserve ALL existing frontmatter fields (agent, tier, token_budget, etc.) except update `last_refresh` to the current date.</action>
+  <action>ENFORCE empty-seed invariant (per E28-S31): after the write, the committed seed MUST retain `entry_count: 0` and `estimated_tokens: 0`. These fields count runtime-populated entries only — they are NEVER raised above zero on a committed seed, regardless of how many entries the runtime sidecar now holds.</action>
+  <action>Preserve the committed seed's body content below the frontmatter unchanged (this includes the Invariants section and any shipping-template documentation). Do NOT copy runtime entries from Step 8's output into the committed seed.</action>
+  <action>Write the updated committed seed file. The only diff from the previous committed version should be the `last_refresh` timestamp (and potentially corrections to preserved static content if the human author edited the source).</action>
+  <action>Post-write verification: re-parse the committed seed's frontmatter and assert `entry_count == 0 AND estimated_tokens == 0`. If either is non-zero, HALT with error: "Empty-seed invariant violated during dual-write: {field}={value}. This is a bug in val-refresh-ground-truth — the committed seed must never carry runtime entry counts."</action>
+  <action>Report to user: "Dual-refresh: runtime sidecar updated ({runtime_path}, N entries), committed seed timestamp refreshed ({committed_seed_path}, entry_count: 0 preserved)."</action>
 </step>
 
 <step n="9" title="Generate Diff Report">
