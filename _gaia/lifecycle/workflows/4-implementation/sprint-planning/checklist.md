@@ -15,6 +15,9 @@ validation-target: 'Sprint plan and status files'
 - [ ] P0 stories not selected are flagged with warning
 - [ ] Priority ordering applied
 - [ ] Selected story files updated with sprint_id
+## Dependency Inversion Lint (E28-S33)
+- [ ] Step 4b executed after story selection
+- [ ] Lint result recorded in sprint plan output (no issues found, or warnings listed with suggested fixes)
 ## Testing Readiness
 - [ ] test-plan.md checked (warn if missing)
 - [ ] High-risk stories identified from risk_level field
