@@ -22,8 +22,10 @@ required_skill_sections:
   - "ground-truth-management:full-refresh"
   - "ground-truth-management:incremental-refresh"
   - "ground-truth-management:entry-structure"
+  - "ground-truth-management:dual-refresh"
   - "ground-truth-management:conflict-resolution"
   - "ground-truth-management:token-budget"
+  - "memory-management:empty-seed-invariant"
 input_file_patterns:
   ground_truth:
     whole: "{memory_path}/validator-sidecar/ground-truth.md"
@@ -34,3 +36,4 @@ on_error:
 
 output:
   primary: "{memory_path}/validator-sidecar/ground-truth.md"
+  committed_seed: "{project-path}/_memory/validator-sidecar/ground-truth.md"
