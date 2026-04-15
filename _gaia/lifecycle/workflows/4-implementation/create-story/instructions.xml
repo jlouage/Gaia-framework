@@ -29,7 +29,7 @@
 </step>
 <step n="2" title="Load Context">
   <action>Read story summary from epics-and-stories.md</action>
-  <action>Read architecture.md for technical context</action>
+  <action>Read architecture.md for technical context. ADRs live inline in the architecture.md §Decision Log table — there is no separate ADR directory. When the story requires ADR lookups, reference the decision-log section of architecture.md.</action>
 </step>
 <step n="3" title="Web Access Guard">
   <check if="story_references_external_apis">Check if web tools available for API documentation lookup</check>
