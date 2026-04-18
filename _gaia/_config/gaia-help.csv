@@ -58,6 +58,7 @@ module,phase,name,code,command,required,agent-name,description,output-location
 "lifecycle","3-solutioning","infrastructure-design","infra-design","gaia-infra-design","false","devops","Design deployment topology and IaC","docs/planning-artifacts"
 "lifecycle","5-deployment","deployment-checklist","deploy-checklist","gaia-deploy-checklist","false","devops","Pre-deployment verification checklist","docs/implementation-artifacts"
 "lifecycle","5-deployment","release-plan","release-plan","gaia-release-plan","false","devops","Staged rollout and release strategy","docs/implementation-artifacts"
+"lifecycle","5-deployment","release","release","gaia-release","false","devops","Version bump, tag, push, and GitHub Release procedure","n/a"
 "lifecycle","5-deployment","post-deploy-verify","post-deploy","gaia-post-deploy","false","devops","Post-deployment health validation","docs/implementation-artifacts"
 "lifecycle","5-deployment","rollback-plan","rollback-plan","gaia-rollback-plan","false","devops","Rollback trigger criteria and procedures","docs/implementation-artifacts"
 "lifecycle","anytime","performance-review","performance-review","gaia-performance-review","false","performance","Analyze performance bottlenecks","docs/test-artifacts"
