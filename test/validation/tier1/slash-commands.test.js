@@ -1,3 +1,19 @@
+// E28-S180 scope: This file enforces slash-command <-> manifest <->
+// filesystem consistency for the LEGACY tree only. The AC1..AC5 +
+// Deprecated-Command-Handling assertions below operate on
+// `_gaia/_config/{workflow,agent}-manifest.csv` and the matching command
+// stubs under `.claude/commands/gaia*.md`. They DO NOT cover skills/agents
+// that live only in the native plugin tree (`gaia-public/plugins/gaia/...`)
+// such as `/gaia-release` (E28-S167). Native-plugin-only skills are
+// intentionally absent from legacy `_gaia/_config/workflow-manifest.csv`
+// and from `.claude/commands/`, so this consistency test never fires on
+// them. Per ADR-049 (V1 retirement) and ADR-076 (native-plugin-only
+// skills are exempt from legacy scaffolds), do not extend AC3a/AC3b to
+// scan the native-plugin tree — that would re-introduce the scaffold
+// burden the retire-path decision rejected. See:
+//   - docs/implementation-artifacts/E28-S167-document-version-bump-procedure-in-gaia-release-skill.md (Findings #1)
+//   - docs/implementation-artifacts/E28-S180-retire-legacy-tree-cross-tree-consistency-test.md
+//   - docs/planning-artifacts/architecture.md §Decision Log ADR-076
 import { describe, it, expect } from "vitest";
 import { readFileSync, existsSync } from "fs";
 import { join } from "path";
